@@ -37,6 +37,10 @@ static BRICK_NORMAL_MAP: OnceLock<TextureMap> = OnceLock::new();
 static BRICK_ROUGHNESS_MAP: OnceLock<TextureMap> = OnceLock::new();
 static BRICK_AO_MAP: OnceLock<TextureMap> = OnceLock::new();
 
+static ROOF_COLOR_MAP: OnceLock<TextureMap> = OnceLock::new();
+static ROOF_NORMAL_MAP: OnceLock<TextureMap> = OnceLock::new();
+static ROOF_ROUGHNESS_MAP: OnceLock<TextureMap> = OnceLock::new();
+
 fn grass_color_map() -> &'static TextureMap {
     GRASS_COLOR_MAP.get_or_init(|| {
         TextureMap::from_file(
@@ -217,6 +221,30 @@ fn brick_ao_map() -> &'static TextureMap {
     BRICK_AO_MAP.get_or_init(|| {
         TextureMap::from_file(
             "assets/textures/bricks/Bricks060_1K-PNG_AmbientOcclusion.png",
+        )
+    })
+}
+
+fn roof_color_map() -> &'static TextureMap {
+    ROOF_COLOR_MAP.get_or_init(|| {
+        TextureMap::from_file(
+            "assets/textures/roof/RoofingTiles014A_1K-PNG_Color.png",
+        )
+    })
+}
+
+fn roof_normal_map() -> &'static TextureMap {
+    ROOF_NORMAL_MAP.get_or_init(|| {
+        TextureMap::from_file(
+            "assets/textures/roof/RoofingTiles014A_1K-PNG_NormalGL.png",
+        )
+    })
+}
+
+fn roof_roughness_map() -> &'static TextureMap {
+    ROOF_ROUGHNESS_MAP.get_or_init(|| {
+        TextureMap::from_file(
+            "assets/textures/roof/RoofingTiles014A_1K-PNG_Roughness.png",
         )
     })
 }
@@ -413,12 +441,20 @@ pub fn create_forest_diorama() -> Vec<Object> {
         Some(brick_ao_map()),
     );
 
-    let roof = Material::new(
-        Vec3::new(0.55, 0.10, 0.05),
-        0.78,
-        0.15,
+    let roof = Material::textured(
+        Vec3::new(
+            0.95,
+            0.75,
+            0.65,
+        ),
+        0.82,
+        0.18,
         0.0,
         0.02,
+        Some(roof_color_map()),
+        Some(roof_normal_map()),
+        Some(roof_roughness_map()),
+        None,
     );
 
     let pipe = Material::new(
