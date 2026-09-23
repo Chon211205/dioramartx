@@ -256,16 +256,16 @@ fn main() {
     let light =
         Light::new(
             Vec3::new(
-                -3.0,
-                5.0,
-                5.0,
+                -2.5,
+                6.0,
+                6.5,
             ),
             Vec3::new(
                 1.0,
                 1.0,
                 1.0,
             ),
-            1.0,
+            1.35,
         );
 
     let mut camera =

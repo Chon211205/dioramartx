@@ -431,20 +431,18 @@ fn cast_ray(
             );
 
     let ambient =
-        0.12
+        0.22
             * ao;
 
     let diffuse_factor =
         if in_shadow {
-            0.0
+            0.18
         } else {
             normal
                 .dot(
                     &light_direction,
                 )
-                .max(
-                    0.0,
-                )
+                .max(0.0)
         };
 
     let diffuse =
@@ -481,15 +479,13 @@ fn cast_ray(
 
     let specular_factor =
         if in_shadow {
-            0.0
+            0.08
         } else {
             view_direction
                 .dot(
                     &reflected_light,
                 )
-                .max(
-                    0.0,
-                )
+                .max(0.0)
                 .powf(
                     shininess,
                 )
