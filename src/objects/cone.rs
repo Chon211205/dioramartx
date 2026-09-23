@@ -3,6 +3,7 @@ use crate::materials::material::Material;
 
 pub struct Cone {
     pub center: Vec3,
+    pub axis: Vec3,
     pub radius: f32,
     pub height: f32,
     pub material: Material,
@@ -15,8 +16,25 @@ impl Cone {
         height: f32,
         material: Material,
     ) -> Self {
+        Self::new_oriented(
+            center,
+            Vec3::new(0.0, 1.0, 0.0),
+            radius,
+            height,
+            material,
+        )
+    }
+
+    pub fn new_oriented(
+        center: Vec3,
+        axis: Vec3,
+        radius: f32,
+        height: f32,
+        material: Material,
+    ) -> Self {
         Self {
             center,
+            axis: axis.normalize(),
             radius,
             height,
             material,
@@ -28,85 +46,114 @@ impl Cone {
         origin: &Vec3,
         direction: &Vec3,
     ) -> Option<f32> {
-        let local_origin = *origin - self.center;
+        let oc =
+            *origin - self.center;
 
-        let half_height = self.height * 0.5;
-        let apex_y = half_height;
-        let base_y = -half_height;
+        let axis =
+            self.axis;
 
-        let k = self.radius / self.height;
-        let k2 = k * k;
+        let d_axis =
+            direction.dot(&axis);
 
-        let oy = local_origin.y - apex_y;
+        let oc_axis =
+            oc.dot(&axis);
+
+        let d_perp =
+            *direction
+                - axis * d_axis;
+
+        let oc_perp =
+            oc
+                - axis * oc_axis;
+
+        let half_height =
+            self.height * 0.5;
+
+        let q =
+            oc_axis - half_height;
+
+        let k =
+            self.radius / self.height;
+
+        let k2 =
+            k * k;
 
         let a =
-            direction.x * direction.x
-            + direction.z * direction.z
-            - k2 * direction.y * direction.y;
+            d_perp.dot(&d_perp)
+                - k2
+                    * d_axis
+                    * d_axis;
 
         let b =
             2.0
                 * (
-                    local_origin.x * direction.x
-                    + local_origin.z * direction.z
-                    - k2 * oy * direction.y
+                    oc_perp.dot(&d_perp)
+                        - k2
+                            * q
+                            * d_axis
                 );
 
         let c =
-            local_origin.x * local_origin.x
-            + local_origin.z * local_origin.z
-            - k2 * oy * oy;
+            oc_perp.dot(&oc_perp)
+                - k2 * q * q;
 
-        let mut closest = f32::INFINITY;
+        let mut closest =
+            f32::INFINITY;
 
-        let discriminant =
-            b * b - 4.0 * a * c;
+        if a.abs() > 0.0001 {
+            let discriminant =
+                b * b - 4.0 * a * c;
 
-        if discriminant >= 0.0
-            && a.abs() > 0.0001
-        {
-            let sqrt_discriminant =
-                discriminant.sqrt();
+            if discriminant >= 0.0 {
+                let sqrt_d =
+                    discriminant.sqrt();
 
-            let t1 =
-                (-b - sqrt_discriminant)
-                    / (2.0 * a);
+                let t1 =
+                    (-b - sqrt_d)
+                        / (2.0 * a);
 
-            let t2 =
-                (-b + sqrt_discriminant)
-                    / (2.0 * a);
+                let t2 =
+                    (-b + sqrt_d)
+                        / (2.0 * a);
 
-            for t in [t1, t2] {
-                if t > 0.001 {
-                    let y =
-                        local_origin.y
-                            + direction.y * t;
+                for t in [t1, t2] {
+                    if t > 0.001 {
+                        let axial =
+                            oc_axis
+                                + d_axis * t;
 
-                    if y >= base_y
-                        && y <= apex_y
-                        && t < closest
-                    {
-                        closest = t;
+                        if axial >= -half_height
+                            && axial <= half_height
+                            && t < closest
+                        {
+                            closest = t;
+                        }
                     }
                 }
             }
         }
 
-        if direction.y.abs() > 0.0001 {
+        if d_axis.abs() > 0.0001 {
+            let base =
+                -half_height;
+
             let t =
-                (base_y - local_origin.y)
-                    / direction.y;
+                (base - oc_axis)
+                    / d_axis;
 
             if t > 0.001 {
-                let x =
-                    local_origin.x
-                        + direction.x * t;
+                let point =
+                    oc
+                        + *direction * t;
 
-                let z =
-                    local_origin.z
-                        + direction.z * t;
+                let axial =
+                    point.dot(&axis);
 
-                if x * x + z * z
+                let radial =
+                    point
+                        - axis * axial;
+
+                if radial.dot(&radial)
                     <= self.radius * self.radius
                     && t < closest
                 {
@@ -126,43 +173,40 @@ impl Cone {
         &self,
         point: &Vec3,
     ) -> Vec3 {
-        let local_point =
+        let local =
             *point - self.center;
+
+        let axial =
+            local.dot(&self.axis);
 
         let half_height =
             self.height * 0.5;
 
-        let base_y =
-            -half_height;
+        let epsilon = 0.002;
 
-        let epsilon =
-            0.001;
-
-        if (local_point.y - base_y).abs()
+        if (axial + half_height).abs()
             < epsilon
         {
-            return Vec3::new(
-                0.0,
-                -1.0,
-                0.0,
-            );
+            return -self.axis;
         }
 
         let radial =
-            (
-                local_point.x * local_point.x
-                + local_point.z * local_point.z
-            )
-            .sqrt();
+            local
+                - self.axis * axial;
 
-        let slope =
+        let q =
+            axial - half_height;
+
+        let k =
             self.radius / self.height;
 
-        Vec3::new(
-            local_point.x,
-            radial * slope,
-            local_point.z,
+        let k2 =
+            k * k;
+
+        (
+            radial
+                - self.axis * (k2 * q)
         )
-        .normalize()
+            .normalize()
     }
 }

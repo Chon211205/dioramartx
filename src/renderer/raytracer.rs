@@ -4,8 +4,12 @@ use crate::core::camera::Camera;
 use crate::core::framebuffer::Framebuffer;
 use crate::core::vec3::Vec3;
 
-use crate::objects::object::Object;
+use crate::materials::material::{
+    Material,
+    MaterialPattern,
+};
 
+use crate::objects::object::Object;
 use crate::scene::light::Light;
 
 pub fn render(
@@ -30,11 +34,7 @@ pub fn render(
             .normalize();
 
     let world_up =
-        Vec3::new(
-            0.0,
-            1.0,
-            0.0,
-        );
+        Vec3::new(0.0, 1.0, 0.0);
 
     let right =
         forward
@@ -96,6 +96,7 @@ pub fn render(
                 &ray_direction,
                 objects,
                 light,
+                0,
             );
 
             framebuffer.set_depth(
@@ -121,17 +122,21 @@ fn cast_ray(
     direction: &Vec3,
     objects: &[Object],
     light: &Light,
+    depth: u32,
 ) -> (Color, f32) {
+    if depth > 4 {
+        return (
+            Color::new(5, 5, 20, 255),
+            f32::INFINITY,
+        );
+    }
+
     let mut zbuffer =
         f32::INFINITY;
 
-    let mut final_color =
-        Color::new(
-            5,
-            5,
-            20,
-            255,
-        );
+    let mut closest_object:
+        Option<&Object> =
+        None;
 
     for object in objects {
         if let Some(distance) =
@@ -141,120 +146,260 @@ fn cast_ray(
             )
         {
             if distance < zbuffer {
-                zbuffer =
-                    distance;
-
-                let hit_point =
-                    *origin
-                        + *direction
-                            * distance;
-
-                let normal =
-                    object.normal_at(
-                        &hit_point,
-                    );
-
-                let material =
-                    object.material();
-
-                let light_direction =
-                    (
-                        light.position
-                            - hit_point
-                    )
-                        .normalize();
-
-                let diffuse =
-                    normal
-                        .dot(
-                            &light_direction,
-                        )
-                        .max(0.0);
-
-                let view_direction =
-                    (
-                        *origin
-                            - hit_point
-                    )
-                        .normalize();
-
-                let reflect_direction =
-                    reflect(
-                        -light_direction,
-                        normal,
-                    );
-
-                let specular_intensity =
-                    view_direction
-                        .dot(
-                            &reflect_direction,
-                        )
-                        .max(0.0)
-                        .powf(32.0);
-
-                let ambient =
-                    0.12;
-
-                let diffuse_component =
-                    diffuse
-                        * material.albedo
-                        * light.intensity;
-
-                let specular_component =
-                    specular_intensity
-                        * material.specular
-                        * light.intensity;
-
-                let r =
-                    (
-                        material.color.x
-                            * light.color.x
-                            * (
-                                ambient
-                                    + diffuse_component
-                            )
-                            + specular_component
-                    )
-                        .min(1.0);
-
-                let g =
-                    (
-                        material.color.y
-                            * light.color.y
-                            * (
-                                ambient
-                                    + diffuse_component
-                            )
-                            + specular_component
-                    )
-                        .min(1.0);
-
-                let b =
-                    (
-                        material.color.z
-                            * light.color.z
-                            * (
-                                ambient
-                                    + diffuse_component
-                            )
-                            + specular_component
-                    )
-                        .min(1.0);
-
-                final_color =
-                    Color::new(
-                        (r * 255.0) as u8,
-                        (g * 255.0) as u8,
-                        (b * 255.0) as u8,
-                        255,
-                    );
+                zbuffer = distance;
+                closest_object =
+                    Some(object);
             }
         }
     }
 
+    let Some(object) =
+        closest_object
+    else {
+        return (
+            Color::new(5, 5, 20, 255),
+            f32::INFINITY,
+        );
+    };
+
+    let hit_point =
+        *origin
+            + *direction * zbuffer;
+
+    let normal =
+        object.normal_at(
+            &hit_point,
+        );
+
+    let material =
+        object.material();
+
+    let surface_color =
+        get_material_color(
+            &material,
+            &hit_point,
+            &normal,
+        );
+
+    let light_direction =
+        (
+            light.position
+                - hit_point
+        )
+            .normalize();
+
+    let diffuse =
+        normal
+            .dot(&light_direction)
+            .max(0.0);
+
+    let view_direction =
+        (
+            *origin
+                - hit_point
+        )
+            .normalize();
+
+    let reflect_direction =
+        reflect(
+            -light_direction,
+            normal,
+        );
+
+    let specular_intensity =
+        view_direction
+            .dot(&reflect_direction)
+            .max(0.0)
+            .powf(32.0);
+
+    let ambient =
+        0.12;
+
+    let diffuse_component =
+        diffuse
+            * material.albedo
+            * light.intensity;
+
+    let specular_component =
+        specular_intensity
+            * material.specular
+            * light.intensity;
+
+    let r =
+        (
+            surface_color.x
+                * light.color.x
+                * (
+                    ambient
+                        + diffuse_component
+                )
+                + specular_component
+        )
+            .clamp(0.0, 1.0);
+
+    let g =
+        (
+            surface_color.y
+                * light.color.y
+                * (
+                    ambient
+                        + diffuse_component
+                )
+                + specular_component
+        )
+            .clamp(0.0, 1.0);
+
+    let b =
+        (
+            surface_color.z
+                * light.color.z
+                * (
+                    ambient
+                        + diffuse_component
+                )
+                + specular_component
+        )
+            .clamp(0.0, 1.0);
+
+    let rendered_color =
+        Color::new(
+            (r * 255.0) as u8,
+            (g * 255.0) as u8,
+            (b * 255.0) as u8,
+            255,
+        );
+
+    if material.transparency > 0.0 {
+        let epsilon =
+            0.002;
+
+        let new_origin =
+            hit_point
+                + *direction * epsilon;
+
+        let (
+            behind_color,
+            _,
+        ) = cast_ray(
+            &new_origin,
+            direction,
+            objects,
+            light,
+            depth + 1,
+        );
+
+        let transparency =
+            material
+                .transparency
+                .clamp(0.0, 1.0);
+
+        let opacity =
+            1.0 - transparency;
+
+        let final_r =
+            rendered_color.r as f32
+                * opacity
+                + behind_color.r as f32
+                    * transparency;
+
+        let final_g =
+            rendered_color.g as f32
+                * opacity
+                + behind_color.g as f32
+                    * transparency;
+
+        let final_b =
+            rendered_color.b as f32
+                * opacity
+                + behind_color.b as f32
+                    * transparency;
+
+        return (
+            Color::new(
+                final_r as u8,
+                final_g as u8,
+                final_b as u8,
+                255,
+            ),
+            zbuffer,
+        );
+    }
+
     (
-        final_color,
+        rendered_color,
         zbuffer,
+    )
+}
+
+fn get_material_color(
+    material: &Material,
+    point: &Vec3,
+    normal: &Vec3,
+) -> Vec3 {
+    match material.pattern {
+        MaterialPattern::Solid => {
+            material.color
+        }
+
+        MaterialPattern::Grass => {
+            grass_color(
+                material.color,
+                point,
+                normal,
+            )
+        }
+    }
+}
+
+fn grass_color(
+    base: Vec3,
+    point: &Vec3,
+    normal: &Vec3,
+) -> Vec3 {
+    let large_pattern =
+        (
+            (point.x * 8.0).sin()
+                * (point.z * 9.0).cos()
+                + (point.y * 7.0).sin()
+        ) * 0.035;
+
+    let small_pattern =
+        (
+            (point.x * 31.0).sin()
+                * (point.y * 27.0).cos()
+                * (point.z * 29.0).sin()
+        ) * 0.025;
+
+    let normal_pattern =
+        (
+            (normal.x * 15.0).sin()
+                + (normal.y * 17.0).cos()
+                + (normal.z * 19.0).sin()
+        ) * 0.015;
+
+    let variation =
+        large_pattern
+            + small_pattern
+            + normal_pattern;
+
+    Vec3::new(
+        (
+            base.x
+                + variation * 0.45
+        )
+            .clamp(0.0, 1.0),
+
+        (
+            base.y
+                + variation
+        )
+            .clamp(0.0, 1.0),
+
+        (
+            base.z
+                + variation * 0.35
+        )
+            .clamp(0.0, 1.0),
     )
 }
 
