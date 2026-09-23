@@ -32,6 +32,11 @@ static GROUND_NORMAL_MAP: OnceLock<TextureMap> = OnceLock::new();
 static GROUND_ROUGHNESS_MAP: OnceLock<TextureMap> = OnceLock::new();
 static GROUND_AO_MAP: OnceLock<TextureMap> = OnceLock::new();
 
+static BRICK_COLOR_MAP: OnceLock<TextureMap> = OnceLock::new();
+static BRICK_NORMAL_MAP: OnceLock<TextureMap> = OnceLock::new();
+static BRICK_ROUGHNESS_MAP: OnceLock<TextureMap> = OnceLock::new();
+static BRICK_AO_MAP: OnceLock<TextureMap> = OnceLock::new();
+
 fn grass_color_map() -> &'static TextureMap {
     GRASS_COLOR_MAP.get_or_init(|| {
         TextureMap::from_file(
@@ -180,6 +185,38 @@ fn ground_ao_map() -> &'static TextureMap {
     GROUND_AO_MAP.get_or_init(|| {
         TextureMap::from_file(
             "assets/textures/ground/Ground048_1K-PNG_AmbientOcclusion.png",
+        )
+    })
+}
+
+fn brick_color_map() -> &'static TextureMap {
+    BRICK_COLOR_MAP.get_or_init(|| {
+        TextureMap::from_file(
+            "assets/textures/bricks/Bricks060_1K-PNG_Color.png",
+        )
+    })
+}
+
+fn brick_normal_map() -> &'static TextureMap {
+    BRICK_NORMAL_MAP.get_or_init(|| {
+        TextureMap::from_file(
+            "assets/textures/bricks/Bricks060_1K-PNG_NormalGL.png",
+        )
+    })
+}
+
+fn brick_roughness_map() -> &'static TextureMap {
+    BRICK_ROUGHNESS_MAP.get_or_init(|| {
+        TextureMap::from_file(
+            "assets/textures/bricks/Bricks060_1K-PNG_Roughness.png",
+        )
+    })
+}
+
+fn brick_ao_map() -> &'static TextureMap {
+    BRICK_AO_MAP.get_or_init(|| {
+        TextureMap::from_file(
+            "assets/textures/bricks/Bricks060_1K-PNG_AmbientOcclusion.png",
         )
     })
 }
@@ -368,12 +405,20 @@ pub fn create_forest_diorama() -> Vec<Object> {
         Some(flower_ao_map()),
     );
 
-    let wall = Material::new(
-        Vec3::new(0.72, 0.62, 0.44),
-        0.80,
-        0.15,
+    let wall = Material::textured(
+        Vec3::new(
+            0.90,
+            0.88,
+            0.84,
+        ),
+        0.82,
+        0.16,
         0.0,
-        0.0,
+        0.02,
+        Some(brick_color_map()),
+        Some(brick_normal_map()),
+        Some(brick_roughness_map()),
+        Some(brick_ao_map()),
     );
 
     let roof = Material::new(
