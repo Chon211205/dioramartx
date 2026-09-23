@@ -27,6 +27,11 @@ static FLOWER_NORMAL_MAP: OnceLock<TextureMap> = OnceLock::new();
 static FLOWER_ROUGHNESS_MAP: OnceLock<TextureMap> = OnceLock::new();
 static FLOWER_AO_MAP: OnceLock<TextureMap> = OnceLock::new();
 
+static GROUND_COLOR_MAP: OnceLock<TextureMap> = OnceLock::new();
+static GROUND_NORMAL_MAP: OnceLock<TextureMap> = OnceLock::new();
+static GROUND_ROUGHNESS_MAP: OnceLock<TextureMap> = OnceLock::new();
+static GROUND_AO_MAP: OnceLock<TextureMap> = OnceLock::new();
+
 fn grass_color_map() -> &'static TextureMap {
     GRASS_COLOR_MAP.get_or_init(|| {
         TextureMap::from_file(
@@ -147,6 +152,38 @@ fn flower_ao_map() -> &'static TextureMap {
     })
 }
 
+fn ground_color_map() -> &'static TextureMap {
+    GROUND_COLOR_MAP.get_or_init(|| {
+        TextureMap::from_file(
+            "assets/textures/ground/Ground048_1K-PNG_Color.png",
+        )
+    })
+}
+
+fn ground_normal_map() -> &'static TextureMap {
+    GROUND_NORMAL_MAP.get_or_init(|| {
+        TextureMap::from_file(
+            "assets/textures/ground/Ground048_1K-PNG_NormalGL.png",
+        )
+    })
+}
+
+fn ground_roughness_map() -> &'static TextureMap {
+    GROUND_ROUGHNESS_MAP.get_or_init(|| {
+        TextureMap::from_file(
+            "assets/textures/ground/Ground048_1K-PNG_Roughness.png",
+        )
+    })
+}
+
+fn ground_ao_map() -> &'static TextureMap {
+    GROUND_AO_MAP.get_or_init(|| {
+        TextureMap::from_file(
+            "assets/textures/ground/Ground048_1K-PNG_AmbientOcclusion.png",
+        )
+    })
+}
+
 
 pub fn create_forest_diorama() -> Vec<Object> {
     let mut objects = Vec::new();
@@ -171,12 +208,20 @@ pub fn create_forest_diorama() -> Vec<Object> {
         0.0,
     );
 
-    let soil = Material::new(
-        Vec3::new(0.34, 0.16, 0.06),
-        0.80,
-        0.08,
+    let soil = Material::textured(
+        Vec3::new(
+            0.55,
+            0.40,
+            0.28,
+        ),
+        0.82,
+        0.10,
         0.0,
-        0.0,
+        0.01,
+        Some(ground_color_map()),
+        Some(ground_normal_map()),
+        Some(ground_roughness_map()),
+        Some(ground_ao_map()),
     );
 
     let wood = Material::textured(
