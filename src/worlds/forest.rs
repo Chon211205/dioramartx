@@ -86,11 +86,7 @@ pub fn create_forest_diorama() -> Vec<Object> {
     let mut objects = Vec::new();
 
     let grass = Material::grass_textured(
-        Vec3::new(
-            0.14,
-            0.55,
-            0.12,
-        ),
+        Vec3::new(0.14, 0.55, 0.12),
         0.85,
         0.12,
         0.0,
@@ -102,11 +98,7 @@ pub fn create_forest_diorama() -> Vec<Object> {
     );
 
     let grass_detail = Material::new(
-        Vec3::new(
-            0.08,
-            0.42,
-            0.06,
-        ),
+        Vec3::new(0.08, 0.42, 0.06),
         0.85,
         0.10,
         0.0,
@@ -114,11 +106,7 @@ pub fn create_forest_diorama() -> Vec<Object> {
     );
 
     let soil = Material::new(
-        Vec3::new(
-            0.34,
-            0.16,
-            0.06,
-        ),
+        Vec3::new(0.34, 0.16, 0.06),
         0.80,
         0.08,
         0.0,
@@ -126,11 +114,7 @@ pub fn create_forest_diorama() -> Vec<Object> {
     );
 
     let wood = Material::textured(
-        Vec3::new(
-            0.30,
-            0.12,
-            0.035,
-        ),
+        Vec3::new(0.30, 0.12, 0.035),
         0.78,
         0.12,
         0.0,
@@ -142,11 +126,7 @@ pub fn create_forest_diorama() -> Vec<Object> {
     );
 
     let leaves_dark = Material::textured(
-        Vec3::new(
-            0.04,
-            0.30,
-            0.05,
-        ),
+        Vec3::new(0.04, 0.30, 0.05),
         0.85,
         0.15,
         0.0,
@@ -158,11 +138,7 @@ pub fn create_forest_diorama() -> Vec<Object> {
     );
 
     let leaves_light = Material::textured(
-        Vec3::new(
-            0.08,
-            0.46,
-            0.08,
-        ),
+        Vec3::new(0.08, 0.46, 0.08),
         0.88,
         0.15,
         0.0,
@@ -174,11 +150,7 @@ pub fn create_forest_diorama() -> Vec<Object> {
     );
 
     let bush = Material::textured(
-        Vec3::new(
-            0.05,
-            0.35,
-            0.07,
-        ),
+        Vec3::new(0.05, 0.35, 0.07),
         0.82,
         0.12,
         0.0,
@@ -190,11 +162,7 @@ pub fn create_forest_diorama() -> Vec<Object> {
     );
 
     let rock = Material::new(
-        Vec3::new(
-            0.33,
-            0.34,
-            0.32,
-        ),
+        Vec3::new(0.33, 0.34, 0.32),
         0.70,
         0.25,
         0.0,
@@ -202,11 +170,7 @@ pub fn create_forest_diorama() -> Vec<Object> {
     );
 
     let rock_light = Material::new(
-        Vec3::new(
-            0.48,
-            0.49,
-            0.46,
-        ),
+        Vec3::new(0.48, 0.49, 0.46),
         0.72,
         0.22,
         0.0,
@@ -214,11 +178,7 @@ pub fn create_forest_diorama() -> Vec<Object> {
     );
 
     let yellow = Material::new(
-        Vec3::new(
-            1.0,
-            0.82,
-            0.05,
-        ),
+        Vec3::new(1.0, 0.82, 0.05),
         0.85,
         0.30,
         0.0,
@@ -226,11 +186,7 @@ pub fn create_forest_diorama() -> Vec<Object> {
     );
 
     let purple = Material::new(
-        Vec3::new(
-            0.60,
-            0.18,
-            0.80,
-        ),
+        Vec3::new(0.60, 0.18, 0.80),
         0.82,
         0.30,
         0.0,
@@ -238,11 +194,7 @@ pub fn create_forest_diorama() -> Vec<Object> {
     );
 
     let pink = Material::new(
-        Vec3::new(
-            1.0,
-            0.30,
-            0.55,
-        ),
+        Vec3::new(1.0, 0.30, 0.55),
         0.82,
         0.30,
         0.0,
@@ -250,11 +202,7 @@ pub fn create_forest_diorama() -> Vec<Object> {
     );
 
     let white = Material::new(
-        Vec3::new(
-            0.95,
-            0.95,
-            0.95,
-        ),
+        Vec3::new(0.95, 0.95, 0.95),
         0.85,
         0.40,
         0.0,
@@ -262,11 +210,7 @@ pub fn create_forest_diorama() -> Vec<Object> {
     );
 
     let wall = Material::new(
-        Vec3::new(
-            0.72,
-            0.62,
-            0.44,
-        ),
+        Vec3::new(0.72, 0.62, 0.44),
         0.80,
         0.15,
         0.0,
@@ -274,11 +218,7 @@ pub fn create_forest_diorama() -> Vec<Object> {
     );
 
     let roof = Material::new(
-        Vec3::new(
-            0.55,
-            0.10,
-            0.05,
-        ),
+        Vec3::new(0.55, 0.10, 0.05),
         0.78,
         0.15,
         0.0,
@@ -286,11 +226,7 @@ pub fn create_forest_diorama() -> Vec<Object> {
     );
 
     let pipe = Material::new(
-        Vec3::new(
-            0.12,
-            0.55,
-            0.16,
-        ),
+        Vec3::new(0.12, 0.55, 0.16),
         0.75,
         0.35,
         0.0,
@@ -298,11 +234,7 @@ pub fn create_forest_diorama() -> Vec<Object> {
     );
 
     let mushroom_red = Material::new(
-        Vec3::new(
-            0.85,
-            0.05,
-            0.04,
-        ),
+        Vec3::new(0.85, 0.05, 0.04),
         0.80,
         0.30,
         0.0,
@@ -312,11 +244,7 @@ pub fn create_forest_diorama() -> Vec<Object> {
     objects.push(
         Object::Sphere(
             Sphere::new(
-                Vec3::new(
-                    0.0,
-                    0.0,
-                    0.0,
-                ),
+                Vec3::new(0.0, 0.0, 0.0),
                 1.8,
                 grass,
             ),
@@ -325,27 +253,19 @@ pub fn create_forest_diorama() -> Vec<Object> {
 
     add_grass_field(
         &mut objects,
-        12,
         grass_detail,
     );
 
     let patches = [
-        (
-            Vec3::new(0.20, 1.0, 0.20),
-            0.28,
-        ),
-        (
-            Vec3::new(-0.65, 0.65, 0.40),
-            0.22,
-        ),
-        (
-            Vec3::new(0.65, 0.55, -0.45),
-            0.25,
-        ),
-        (
-            Vec3::new(-0.30, 0.75, -0.75),
-            0.20,
-        ),
+        (Vec3::new(0.20, 1.0, 0.20), 0.28),
+        (Vec3::new(-0.65, 0.65, 0.40), 0.22),
+        (Vec3::new(0.65, 0.55, -0.45), 0.25),
+        (Vec3::new(-0.30, 0.75, -0.75), 0.20),
+
+        (Vec3::new(0.30, -0.90, 0.20), 0.20),
+        (Vec3::new(-0.50, -0.75, 0.35), 0.22),
+        (Vec3::new(0.50, -0.65, -0.55), 0.20),
+        (Vec3::new(-0.55, -0.65, -0.45), 0.18),
     ];
 
     for (direction, radius) in patches {
@@ -357,309 +277,219 @@ pub fn create_forest_diorama() -> Vec<Object> {
         );
     }
 
-    add_tree_on_planet(
-        &mut objects,
-        Vec3::new(
-            -0.55,
-            0.85,
-            0.20,
-        ),
-        0.55,
-        wood,
-        leaves_dark,
-        leaves_light,
-    );
+    let trees = [
+        (Vec3::new(-0.55, 0.85, 0.20), 0.55),
+        (Vec3::new(0.30, 1.00, 0.10), 0.60),
+        (Vec3::new(0.75, 0.60, 0.30), 0.48),
+        (Vec3::new(-0.80, 0.45, -0.35), 0.50),
+        (Vec3::new(0.55, 0.45, -0.65), 0.52),
+        (Vec3::new(-0.15, 0.70, 0.80), 0.46),
+        (Vec3::new(0.10, 0.50, -0.90), 0.44),
 
-    add_tree_on_planet(
-        &mut objects,
-        Vec3::new(
-            0.30,
-            1.0,
-            0.10,
-        ),
-        0.60,
-        wood,
-        leaves_dark,
-        leaves_light,
-    );
+        (Vec3::new(0.35, -0.90, 0.25), 0.48),
+        (Vec3::new(-0.45, -0.85, 0.20), 0.52),
+        (Vec3::new(0.60, -0.65, -0.45), 0.44),
+        (Vec3::new(-0.65, -0.60, -0.40), 0.46),
+        (Vec3::new(0.10, -0.75, 0.75), 0.43),
+        (Vec3::new(-0.15, -0.75, -0.80), 0.42),
 
-    add_tree_on_planet(
-        &mut objects,
-        Vec3::new(
-            0.75,
-            0.60,
-            0.30,
-        ),
-        0.48,
-        wood,
-        leaves_dark,
-        leaves_light,
-    );
+        (Vec3::new(0.95, 0.05, 0.20), 0.42),
+        (Vec3::new(-0.95, -0.05, 0.15), 0.44),
+        (Vec3::new(0.85, 0.05, -0.50), 0.40),
+        (Vec3::new(-0.85, 0.10, -0.50), 0.43),
+    ];
 
-    add_tree_on_planet(
-        &mut objects,
-        Vec3::new(
-            -0.80,
-            0.45,
-            -0.35,
-        ),
-        0.50,
-        wood,
-        leaves_dark,
-        leaves_light,
-    );
+    for (direction, size) in trees {
+        add_tree_on_planet(
+            &mut objects,
+            direction,
+            size,
+            wood,
+            leaves_dark,
+            leaves_light,
+        );
+    }
 
-    add_tree_on_planet(
-        &mut objects,
-        Vec3::new(
-            0.55,
-            0.45,
-            -0.65,
-        ),
-        0.52,
-        wood,
-        leaves_dark,
-        leaves_light,
-    );
+    let bushes = [
+        (Vec3::new(-0.15, 0.90, 0.55), 0.18),
+        (Vec3::new(0.60, 0.75, 0.10), 0.20),
+        (Vec3::new(-0.60, 0.60, -0.55), 0.17),
 
-    add_tree_on_planet(
-        &mut objects,
-        Vec3::new(
-            -0.15,
-            0.70,
-            0.80,
-        ),
-        0.46,
-        wood,
-        leaves_dark,
-        leaves_light,
-    );
+        (Vec3::new(0.20, -0.95, 0.40), 0.18),
+        (Vec3::new(-0.50, -0.75, 0.45), 0.17),
+        (Vec3::new(0.55, -0.70, -0.45), 0.19),
+        (Vec3::new(-0.60, -0.65, -0.45), 0.16),
 
-    add_tree_on_planet(
-        &mut objects,
-        Vec3::new(
-            0.10,
-            0.50,
-            -0.90,
-        ),
-        0.44,
-        wood,
-        leaves_dark,
-        leaves_light,
-    );
+        (Vec3::new(0.95, 0.15, -0.10), 0.16),
+        (Vec3::new(-0.95, 0.10, 0.10), 0.17),
+        (Vec3::new(0.15, 0.15, 0.98), 0.18),
+        (Vec3::new(-0.15, -0.10, -0.98), 0.17),
+    ];
 
-    add_bush_on_planet(
-        &mut objects,
-        Vec3::new(
-            -0.15,
-            0.9,
-            0.55,
-        ),
-        0.18,
-        bush,
-    );
+    for (direction, size) in bushes {
+        add_bush_on_planet(
+            &mut objects,
+            direction,
+            size,
+            bush,
+        );
+    }
 
-    add_bush_on_planet(
-        &mut objects,
-        Vec3::new(
-            0.60,
-            0.75,
-            0.10,
-        ),
-        0.20,
-        bush,
-    );
+    let rocks = [
+        (Vec3::new(0.15, 0.85, 0.65), 0.16, rock),
+        (Vec3::new(-0.35, 0.95, -0.40), 0.13, rock_light),
+        (Vec3::new(0.75, 0.45, 0.55), 0.18, rock),
+        (Vec3::new(-0.75, 0.40, 0.45), 0.14, rock_light),
+        (Vec3::new(0.25, 0.60, -0.85), 0.15, rock),
 
-    add_bush_on_planet(
-        &mut objects,
-        Vec3::new(
-            -0.60,
-            0.60,
-            -0.55,
-        ),
-        0.17,
-        bush,
-    );
+        (Vec3::new(0.45, -0.85, 0.15), 0.15, rock),
+        (Vec3::new(-0.40, -0.90, -0.20), 0.13, rock_light),
+        (Vec3::new(0.75, -0.45, 0.40), 0.16, rock),
+        (Vec3::new(-0.75, -0.45, 0.35), 0.14, rock_light),
 
-    add_rock_on_planet(
-        &mut objects,
-        Vec3::new(
-            0.15,
-            0.85,
-            0.65,
-        ),
-        0.16,
-        rock,
-    );
+        (Vec3::new(0.95, -0.10, -0.35), 0.13, rock),
+        (Vec3::new(-0.95, 0.05, -0.25), 0.14, rock_light),
+    ];
 
-    add_rock_on_planet(
-        &mut objects,
-        Vec3::new(
-            -0.35,
-            0.95,
-            -0.40,
-        ),
-        0.13,
-        rock_light,
-    );
-
-    add_rock_on_planet(
-        &mut objects,
-        Vec3::new(
-            0.75,
-            0.45,
-            0.55,
-        ),
-        0.18,
-        rock,
-    );
-
-    add_rock_on_planet(
-        &mut objects,
-        Vec3::new(
-            -0.75,
-            0.40,
-            0.45,
-        ),
-        0.14,
-        rock_light,
-    );
-
-    add_rock_on_planet(
-        &mut objects,
-        Vec3::new(
-            0.25,
-            0.60,
-            -0.85,
-        ),
-        0.15,
-        rock,
-    );
+    for (direction, radius, material) in rocks {
+        add_rock_on_planet(
+            &mut objects,
+            direction,
+            radius,
+            material,
+        );
+    }
 
     add_flower_patch(
         &mut objects,
-        Vec3::new(
-            0.15,
-            1.0,
-            0.45,
-        ),
+        Vec3::new(0.15, 1.0, 0.45),
         yellow,
         white,
     );
 
     add_flower_patch(
         &mut objects,
-        Vec3::new(
-            -0.45,
-            0.85,
-            0.40,
-        ),
+        Vec3::new(-0.45, 0.85, 0.40),
         purple,
         white,
     );
 
     add_flower_patch(
         &mut objects,
-        Vec3::new(
-            0.55,
-            0.75,
-            -0.30,
-        ),
+        Vec3::new(0.55, 0.75, -0.30),
         pink,
         white,
     );
 
     add_flower_patch(
         &mut objects,
-        Vec3::new(
-            -0.25,
-            0.70,
-            -0.75,
-        ),
+        Vec3::new(-0.25, 0.70, -0.75),
+        yellow,
+        purple,
+    );
+
+    add_flower_patch(
+        &mut objects,
+        Vec3::new(0.25, -0.95, 0.25),
+        yellow,
+        white,
+    );
+
+    add_flower_patch(
+        &mut objects,
+        Vec3::new(-0.30, -0.90, 0.35),
+        purple,
+        white,
+    );
+
+    add_flower_patch(
+        &mut objects,
+        Vec3::new(0.50, -0.70, -0.50),
+        pink,
+        white,
+    );
+
+    add_flower_patch(
+        &mut objects,
+        Vec3::new(-0.55, -0.65, -0.45),
         yellow,
         purple,
     );
 
     add_pipe_on_planet(
         &mut objects,
-        Vec3::new(
-            0.85,
-            0.45,
-            -0.15,
-        ),
+        Vec3::new(0.85, 0.45, -0.15),
         pipe,
     );
 
     add_pipe_on_planet(
         &mut objects,
-        Vec3::new(
-            -0.85,
-            0.40,
-            0.05,
-        ),
+        Vec3::new(-0.85, 0.40, 0.05),
         pipe,
     );
 
     add_tower_on_planet(
         &mut objects,
-        Vec3::new(
-            0.0,
-            1.0,
-            -0.30,
-        ),
+        Vec3::new(0.0, 1.0, -0.30),
         wall,
         roof,
     );
 
     add_tower_on_planet(
         &mut objects,
-        Vec3::new(
-            -0.45,
-            0.80,
-            -0.50,
-        ),
+        Vec3::new(-0.45, 0.80, -0.50),
         wall,
         roof,
     );
 
     add_stump_on_planet(
         &mut objects,
-        Vec3::new(
-            0.35,
-            0.85,
-            0.55,
-        ),
+        Vec3::new(0.35, 0.85, 0.55),
         wood,
     );
 
     add_stump_on_planet(
         &mut objects,
-        Vec3::new(
-            -0.55,
-            0.70,
-            0.55,
-        ),
+        Vec3::new(-0.55, 0.70, 0.55),
+        wood,
+    );
+
+    add_stump_on_planet(
+        &mut objects,
+        Vec3::new(0.45, -0.75, 0.55),
+        wood,
+    );
+
+    add_stump_on_planet(
+        &mut objects,
+        Vec3::new(-0.45, -0.75, -0.55),
         wood,
     );
 
     add_mushroom_on_planet(
         &mut objects,
-        Vec3::new(
-            0.45,
-            0.90,
-            0.35,
-        ),
+        Vec3::new(0.45, 0.90, 0.35),
         white,
         mushroom_red,
     );
 
     add_mushroom_on_planet(
         &mut objects,
-        Vec3::new(
-            -0.35,
-            0.90,
-            0.55,
-        ),
+        Vec3::new(-0.35, 0.90, 0.55),
+        white,
+        mushroom_red,
+    );
+
+    add_mushroom_on_planet(
+        &mut objects,
+        Vec3::new(0.35, -0.90, 0.45),
+        white,
+        mushroom_red,
+    );
+
+    add_mushroom_on_planet(
+        &mut objects,
+        Vec3::new(-0.40, -0.85, -0.45),
         white,
         mushroom_red,
     );
@@ -685,30 +515,54 @@ fn surface_point(
 
 fn add_grass_field(
     objects: &mut Vec<Object>,
-    count: usize,
     material: Material,
 ) {
     let directions = [
-        Vec3::new(0.15, 1.0, 0.20),
-        Vec3::new(-0.20, 1.0, 0.10),
-        Vec3::new(0.40, 0.9, 0.25),
+        Vec3::new(0.15, 1.00, 0.20),
+        Vec3::new(-0.20, 1.00, 0.10),
+        Vec3::new(0.40, 0.90, 0.25),
         Vec3::new(-0.45, 0.85, 0.15),
-        Vec3::new(0.65, 0.75, -0.10),
-        Vec3::new(-0.65, 0.70, -0.20),
-        Vec3::new(0.20, 0.80, -0.60),
-        Vec3::new(-0.25, 0.80, -0.65),
-        Vec3::new(0.75, 0.55, 0.40),
-        Vec3::new(-0.75, 0.55, 0.35),
-        Vec3::new(0.50, 0.60, -0.55),
-        Vec3::new(-0.50, 0.60, -0.60),
+
+        Vec3::new(0.20, 0.55, 0.90),
+        Vec3::new(-0.35, 0.50, 0.85),
+        Vec3::new(0.65, 0.30, 0.70),
+        Vec3::new(-0.70, 0.25, 0.65),
+
+        Vec3::new(0.25, 0.50, -0.90),
+        Vec3::new(-0.30, 0.55, -0.85),
+        Vec3::new(0.65, 0.25, -0.70),
+        Vec3::new(-0.65, 0.30, -0.75),
+
+        Vec3::new(1.00, 0.15, 0.15),
+        Vec3::new(0.95, -0.15, 0.25),
+        Vec3::new(0.90, 0.10, -0.35),
+        Vec3::new(0.85, -0.30, -0.20),
+
+        Vec3::new(-1.00, 0.15, 0.15),
+        Vec3::new(-0.95, -0.15, 0.30),
+        Vec3::new(-0.90, 0.10, -0.35),
+        Vec3::new(-0.85, -0.30, -0.20),
+
+        Vec3::new(0.15, -1.00, 0.20),
+        Vec3::new(-0.20, -1.00, 0.10),
+        Vec3::new(0.40, -0.90, 0.25),
+        Vec3::new(-0.45, -0.85, 0.15),
+
+        Vec3::new(0.55, -0.75, -0.30),
+        Vec3::new(-0.55, -0.75, -0.35),
+        Vec3::new(0.25, -0.80, 0.65),
+        Vec3::new(-0.30, -0.80, 0.60),
+
+        Vec3::new(0.65, -0.55, 0.45),
+        Vec3::new(-0.65, -0.55, 0.45),
+        Vec3::new(0.60, -0.55, -0.50),
+        Vec3::new(-0.60, -0.55, -0.50),
     ];
 
-    for i in 0..count.min(
-        directions.len(),
-    ) {
+    for direction in directions {
         add_grass_tuft(
             objects,
-            directions[i],
+            direction,
             material,
         );
     }
@@ -719,13 +573,11 @@ fn add_grass_tuft(
     direction: Vec3,
     material: Material,
 ) {
-    let (
-        point,
-        normal,
-    ) = surface_point(
-        direction,
-        0.035,
-    );
+    let (point, normal) =
+        surface_point(
+            direction,
+            0.035,
+        );
 
     let height =
         0.075;
@@ -756,13 +608,11 @@ fn add_tree_on_planet(
     leaves_dark: Material,
     leaves_light: Material,
 ) {
-    let (
-        surface,
-        normal,
-    ) = surface_point(
-        direction,
-        0.0,
-    );
+    let (surface, normal) =
+        surface_point(
+            direction,
+            0.0,
+        );
 
     let trunk_height =
         size * 0.62;
@@ -773,10 +623,7 @@ fn add_tree_on_planet(
     let trunk_center =
         surface
             + normal
-                * (
-                    trunk_height
-                        * 0.5
-                );
+                * (trunk_height * 0.5);
 
     objects.push(
         Object::Cylinder(
@@ -798,8 +645,7 @@ fn add_tree_on_planet(
             + normal
                 * (
                     trunk_height
-                        + lower_height
-                            * 0.22
+                        + lower_height * 0.22
                 );
 
     objects.push(
@@ -844,13 +690,11 @@ fn add_bush_on_planet(
     size: f32,
     material: Material,
 ) {
-    let (
-        point,
-        normal,
-    ) = surface_point(
-        direction,
-        size * 0.35,
-    );
+    let (point, normal) =
+        surface_point(
+            direction,
+            size * 0.35,
+        );
 
     let helper =
         if normal.y.abs() < 0.9 {
@@ -924,13 +768,11 @@ fn add_rock_on_planet(
     radius: f32,
     material: Material,
 ) {
-    let (
-        point,
-        _,
-    ) = surface_point(
-        direction,
-        radius * 0.35,
-    );
+    let (point, _) =
+        surface_point(
+            direction,
+            radius * 0.35,
+        );
 
     objects.push(
         Object::Sphere(
@@ -956,8 +798,7 @@ fn add_patch(
         normal
             * (
                 1.8
-                    - radius
-                        * 0.72
+                    - radius * 0.72
             );
 
     objects.push(
@@ -1009,32 +850,24 @@ fn add_flower_patch(
             )
             .normalize();
 
-    let (
-        center,
-        _,
-    ) = surface_point(
-        direction,
-        0.045,
-    );
+    let (center, _) =
+        surface_point(
+            direction,
+            0.045,
+        );
 
     let positions = [
         center,
-        center
-            + tangent * 0.08,
-        center
-            - tangent * 0.08,
-        center
-            + bitangent * 0.07,
-        center
-            - bitangent * 0.07,
+        center + tangent * 0.08,
+        center - tangent * 0.08,
+        center + bitangent * 0.07,
+        center - bitangent * 0.07,
     ];
 
-    for (
-        i,
-        position,
-    ) in positions
-        .iter()
-        .enumerate()
+    for (i, position) in
+        positions
+            .iter()
+            .enumerate()
     {
         let material =
             if i % 2 == 0 {
@@ -1060,13 +893,11 @@ fn add_pipe_on_planet(
     direction: Vec3,
     material: Material,
 ) {
-    let (
-        surface,
-        normal,
-    ) = surface_point(
-        direction,
-        0.0,
-    );
+    let (surface, normal) =
+        surface_point(
+            direction,
+            0.0,
+        );
 
     let height =
         0.30;
@@ -1074,10 +905,7 @@ fn add_pipe_on_planet(
     let center =
         surface
             + normal
-                * (
-                    height
-                        * 0.5
-                );
+                * (height * 0.5);
 
     objects.push(
         Object::Cylinder(
@@ -1094,10 +922,7 @@ fn add_pipe_on_planet(
     let top =
         surface
             + normal
-                * (
-                    height
-                        + 0.025
-                );
+                * (height + 0.025);
 
     objects.push(
         Object::Cylinder(
@@ -1118,13 +943,11 @@ fn add_tower_on_planet(
     wall: Material,
     roof: Material,
 ) {
-    let (
-        surface,
-        normal,
-    ) = surface_point(
-        direction,
-        0.0,
-    );
+    let (surface, normal) =
+        surface_point(
+            direction,
+            0.0,
+        );
 
     let body_height =
         0.44;
@@ -1132,10 +955,7 @@ fn add_tower_on_planet(
     let body_center =
         surface
             + normal
-                * (
-                    body_height
-                        * 0.5
-                );
+                * (body_height * 0.5);
 
     objects.push(
         Object::Cylinder(
@@ -1157,8 +977,7 @@ fn add_tower_on_planet(
             + normal
                 * (
                     body_height
-                        + roof_height
-                            * 0.28
+                        + roof_height * 0.28
                 );
 
     objects.push(
@@ -1179,13 +998,11 @@ fn add_stump_on_planet(
     direction: Vec3,
     material: Material,
 ) {
-    let (
-        surface,
-        normal,
-    ) = surface_point(
-        direction,
-        0.0,
-    );
+    let (surface, normal) =
+        surface_point(
+            direction,
+            0.0,
+        );
 
     let height =
         0.20;
@@ -1193,10 +1010,7 @@ fn add_stump_on_planet(
     let center =
         surface
             + normal
-                * (
-                    height
-                        * 0.5
-                );
+                * (height * 0.5);
 
     objects.push(
         Object::Cylinder(
@@ -1217,13 +1031,11 @@ fn add_mushroom_on_planet(
     stem_material: Material,
     cap_material: Material,
 ) {
-    let (
-        surface,
-        normal,
-    ) = surface_point(
-        direction,
-        0.0,
-    );
+    let (surface, normal) =
+        surface_point(
+            direction,
+            0.0,
+        );
 
     let stem_height =
         0.17;
@@ -1231,10 +1043,7 @@ fn add_mushroom_on_planet(
     let stem_center =
         surface
             + normal
-                * (
-                    stem_height
-                        * 0.5
-                );
+                * (stem_height * 0.5);
 
     objects.push(
         Object::Cylinder(
@@ -1251,10 +1060,7 @@ fn add_mushroom_on_planet(
     let cap_center =
         surface
             + normal
-                * (
-                    stem_height
-                        + 0.035
-                );
+                * (stem_height + 0.035);
 
     objects.push(
         Object::Sphere(
@@ -1270,8 +1076,7 @@ fn add_mushroom_on_planet(
         Object::Sphere(
             Sphere::new(
                 cap_center
-                    + normal
-                        * 0.105,
+                    + normal * 0.105,
                 0.025,
                 stem_material,
             ),
