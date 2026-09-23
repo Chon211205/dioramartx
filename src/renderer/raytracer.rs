@@ -6,11 +6,7 @@ use crate::core::camera::Camera;
 use crate::core::framebuffer::Framebuffer;
 use crate::core::vec3::Vec3;
 
-use crate::materials::material::{
-    Material,
-    MaterialPattern,
-};
-
+use crate::materials::material::MaterialPattern;
 use crate::objects::object::Object;
 use crate::scene::light::Light;
 
@@ -20,19 +16,37 @@ pub fn render(
     light: &Light,
     camera: &Camera,
 ) {
-    framebuffer.clear_zbuffer();
-
     let width =
-        framebuffer.width as f32;
+        framebuffer.width as usize;
 
     let height =
-        framebuffer.height as f32;
+        framebuffer.height as usize;
+
+    framebuffer.clear(
+        Color::BLACK,
+    );
 
     let aspect_ratio =
-        width / height;
+        width as f32
+            / height as f32;
+
+    let scale =
+        (
+            camera
+                .fov
+                .to_radians()
+                * 0.5
+        )
+            .tan();
+
+    let camera_position =
+        camera.position;
 
     let forward =
-        (camera.target - camera.position)
+        (
+            camera.target
+                - camera.position
+        )
             .normalize();
 
     let world_up =
@@ -44,81 +58,146 @@ pub fn render(
 
     let right =
         forward
-            .cross(&world_up)
+            .cross(
+                &world_up,
+            )
             .normalize();
 
     let up =
         right
-            .cross(&forward)
+            .cross(
+                &forward,
+            )
             .normalize();
 
-    let scale =
+    let thread_count =
+        std::thread::available_parallelism()
+            .map(
+                |value| {
+                    value.get()
+                },
+            )
+            .unwrap_or(
+                4,
+            )
+            .min(
+                height,
+            );
+
+    let rows_per_thread =
         (
-            camera.fov.to_radians()
-                * 0.5
+            height
+                + thread_count
+                - 1
         )
-            .tan();
+            / thread_count;
 
-    for y in 0..framebuffer.height {
-        for x in 0..framebuffer.width {
-            let px =
-                (
-                    2.0
-                        * (
-                            (x as f32 + 0.5)
-                                / width
-                        )
-                        - 1.0
+    let pixels =
+        framebuffer.pixels_mut();
+
+    let pixels_per_chunk =
+        rows_per_thread
+            * width;
+
+    std::thread::scope(
+        |scope| {
+            for (
+                chunk_index,
+                pixel_chunk,
+            ) in pixels
+                .chunks_mut(
+                    pixels_per_chunk,
                 )
-                    * aspect_ratio
-                    * scale;
+                .enumerate()
+            {
+                let start_y =
+                    chunk_index
+                        * rows_per_thread;
 
-            let py =
-                (
-                    1.0
-                        - 2.0
-                            * (
-                                (y as f32 + 0.5)
-                                    / height
-                            )
-                )
-                    * scale;
+                scope.spawn(
+                    move || {
+                        let rows_in_chunk =
+                            pixel_chunk.len()
+                                / width;
 
-            let ray_direction =
-                (
-                    forward
-                        + right * px
-                        + up * py
-                )
-                    .normalize();
+                        for local_y in
+                            0..rows_in_chunk
+                        {
+                            let y =
+                                start_y
+                                    + local_y;
 
-            let (
-                pixel_color,
-                depth,
-            ) = cast_ray(
-                &camera.position,
-                &ray_direction,
-                objects,
-                light,
-                0,
-            );
+                            let py =
+                                (
+                                    1.0
+                                        - 2.0
+                                            * (
+                                                (
+                                                    y as f32
+                                                        + 0.5
+                                                )
+                                                    / height
+                                                        as f32
+                                            )
+                                )
+                                    * scale;
 
-            framebuffer.set_depth(
-                x,
-                y,
-                depth,
-            );
+                            for x in
+                                0..width
+                            {
+                                let px =
+                                    (
+                                        2.0
+                                            * (
+                                                (
+                                                    x as f32
+                                                        + 0.5
+                                                )
+                                                    / width
+                                                        as f32
+                                            )
+                                            - 1.0
+                                    )
+                                        * aspect_ratio
+                                        * scale;
 
-            framebuffer.set_current_color(
-                pixel_color,
-            );
+                                let direction =
+                                    (
+                                        forward
+                                            + right
+                                                * px
+                                            + up
+                                                * py
+                                    )
+                                        .normalize();
 
-            framebuffer.point(
-                x,
-                y,
-            );
-        }
-    }
+                                let color =
+                                    cast_ray(
+                                        &camera_position,
+                                        &direction,
+                                        objects,
+                                        light,
+                                        0,
+                                    );
+
+                                let index =
+                                    local_y
+                                        * width
+                                        + x;
+
+                                pixel_chunk[
+                                    index
+                                ] =
+                                    to_color(
+                                        color,
+                                    );
+                            }
+                        }
+                    },
+                );
+            }
+        },
+    );
 }
 
 fn cast_ray(
@@ -127,22 +206,25 @@ fn cast_ray(
     objects: &[Object],
     light: &Light,
     depth: u32,
-) -> (Color, f32) {
+) -> Vec3 {
     if depth > 4 {
-        return (
-            skybox_color(direction),
-            f32::INFINITY,
+        return skybox_color(
+            direction,
         );
     }
 
     let mut closest_distance =
         f32::INFINITY;
 
-    let mut closest_object:
-        Option<&Object> =
+    let mut closest_index:
+        Option<usize> =
         None;
 
-    for object in objects {
+    for (index, object) in
+        objects
+            .iter()
+            .enumerate()
+    {
         if let Some(distance) =
             object.intersect(
                 origin,
@@ -155,20 +237,24 @@ fn cast_ray(
                 closest_distance =
                     distance;
 
-                closest_object =
-                    Some(object);
+                closest_index =
+                    Some(index);
             }
         }
     }
 
-    let Some(object) =
-        closest_object
-    else {
-        return (
-            skybox_color(direction),
-            f32::INFINITY,
-        );
-    };
+    let object_index =
+        match closest_index {
+            Some(index) => index,
+            None => {
+                return skybox_color(
+                    direction,
+                );
+            }
+        };
+
+    let object =
+        &objects[object_index];
 
     let hit_point =
         *origin
@@ -185,43 +271,122 @@ fn cast_ray(
     let material =
         object.material();
 
-    let (
-        u,
-        v,
-    ) = spherical_uv(
-        &geometric_normal,
-    );
-
-    let surface_color =
-        get_material_color(
-            &material,
+    let (u, v) =
+        object_uv(
+            object,
             &hit_point,
             &geometric_normal,
-            u,
-            v,
         );
 
-    let shading_normal =
-        get_shading_normal(
-            &material,
-            &geometric_normal,
-            u,
-            v,
-        );
+    let mut surface_color =
+        if let Some(texture) =
+            material.albedo_texture
+        {
+            texture.sample(
+                u,
+                v,
+            )
+        } else {
+            match material.pattern {
+                MaterialPattern::Solid => {
+                    material.color
+                }
+
+                MaterialPattern::Grass => {
+                    procedural_grass(
+                        &hit_point,
+                        &material.color,
+                    )
+                }
+            }
+        };
+
+    if material
+        .albedo_texture
+        .is_some()
+    {
+        surface_color =
+            multiply_vec3(
+                surface_color,
+                material.color,
+            );
+    }
+
+    let mut normal =
+        geometric_normal;
+
+    if let Some(normal_map) =
+        material.normal_texture
+    {
+        let sampled =
+            normal_map.sample(
+                u,
+                v,
+            );
+
+        let tangent_normal =
+            Vec3::new(
+                sampled.x * 2.0 - 1.0,
+                sampled.y * 2.0 - 1.0,
+                sampled.z * 2.0 - 1.0,
+            )
+                .normalize();
+
+        let (
+            tangent,
+            bitangent,
+        ) =
+            tangent_basis(
+                object,
+                &hit_point,
+                &geometric_normal,
+            );
+
+        normal =
+            (
+                tangent
+                    * tangent_normal.x
+                    + bitangent
+                        * tangent_normal.y
+                    + geometric_normal
+                        * tangent_normal.z
+            )
+                .normalize();
+    }
 
     let ao =
-        get_ao_factor(
-            &material,
-            u,
-            v,
-        );
+        if let Some(ao_map) =
+            material.ao_texture
+        {
+            ao_map
+                .sample_scalar(
+                    u,
+                    v,
+                )
+                .clamp(
+                    0.0,
+                    1.0,
+                )
+        } else {
+            1.0
+        };
 
-    let specular_strength =
-        get_specular_strength(
-            &material,
-            u,
-            v,
-        );
+    let roughness =
+        if let Some(roughness_map) =
+            material.roughness_texture
+        {
+            roughness_map
+                .sample_scalar(
+                    u,
+                    v,
+                )
+                .clamp(
+                    0.0,
+                    1.0,
+                )
+        } else {
+            0.5
+        };
 
     let light_direction =
         (
@@ -230,217 +395,202 @@ fn cast_ray(
         )
             .normalize();
 
-    let diffuse =
-        shading_normal
-            .dot(
-                &light_direction,
-            )
-            .max(0.0);
-
-    let view_direction =
+    let light_distance =
         (
-            *origin
+            light.position
                 - hit_point
         )
+            .length();
+
+    let shadow_origin =
+        hit_point
+            + normal
+                * 0.002;
+
+    let mut in_shadow =
+        false;
+
+    for shadow_object in objects {
+        if let Some(distance) =
+            shadow_object.intersect(
+                &shadow_origin,
+                &light_direction,
+            )
+        {
+            if distance
+                < light_distance
+            {
+                in_shadow =
+                    true;
+
+                break;
+            }
+        }
+    }
+
+    let ambient =
+        0.12 * ao;
+
+    let diffuse_factor =
+        if in_shadow {
+            0.0
+        } else {
+            normal
+                .dot(
+                    &light_direction,
+                )
+                .max(
+                    0.0,
+                )
+        };
+
+    let diffuse =
+        diffuse_factor
+            * material.albedo
+            * light.intensity
+            * ao;
+
+    let view_direction =
+        (-*direction)
             .normalize();
 
     let reflected_light =
         reflect(
             -light_direction,
-            shading_normal,
+            normal,
         )
             .normalize();
 
-    let specular_intensity =
-        view_direction
-            .dot(
-                &reflected_light,
-            )
-            .max(0.0)
-            .powf(32.0);
-
-    let ambient =
-        0.12_f32
-            * (
-                0.45_f32
-                    + ao
-                        * 0.55_f32
+    let gloss =
+        (
+            1.0
+                - roughness
+        )
+            .clamp(
+                0.05,
+                1.0,
             );
 
-    let diffuse_component =
-        diffuse
-            * material.albedo
-            * light.intensity
-            * (
-                0.65_f32
-                    + ao
-                        * 0.35_f32
-            );
+    let shininess =
+        8.0
+            + gloss
+                * 120.0;
 
-    let specular_component =
-        specular_intensity
-            * specular_strength
+    let specular_factor =
+        if in_shadow {
+            0.0
+        } else {
+            view_direction
+                .dot(
+                    &reflected_light,
+                )
+                .max(
+                    0.0,
+                )
+                .powf(
+                    shininess,
+                )
+        };
+
+    let specular =
+        specular_factor
+            * material.specular
+            * gloss
             * light.intensity;
 
-    let red =
-        (
-            surface_color.x
-                * light.color.x
-                * (
-                    ambient
-                        + diffuse_component
-                )
-                + specular_component
-        )
-            .clamp(
-                0.0_f32,
-                1.0_f32,
-            );
+    let lighting =
+        ambient
+            + diffuse;
 
-    let green =
-        (
-            surface_color.y
-                * light.color.y
-                * (
-                    ambient
-                        + diffuse_component
-                )
-                + specular_component
-        )
-            .clamp(
-                0.0_f32,
-                1.0_f32,
-            );
+    let mut final_color =
+        surface_color
+            * lighting;
 
-    let blue =
-        (
-            surface_color.z
-                * light.color.z
-                * (
-                    ambient
-                        + diffuse_component
-                )
-                + specular_component
-        )
-            .clamp(
-                0.0_f32,
-                1.0_f32,
-            );
+    final_color =
+        final_color
+            + light.color
+                * specular;
 
-    let rendered_color =
-        Color::new(
-            (red * 255.0) as u8,
-            (green * 255.0) as u8,
-            (blue * 255.0) as u8,
-            255,
-        );
-
-    if material.transparency > 0.0 {
-        let epsilon =
-            0.002_f32;
+    if material.transparency
+        > 0.0
+    {
+        let transparency =
+            material.transparency
+                .clamp(
+                    0.0,
+                    1.0,
+                );
 
         let transparent_origin =
             hit_point
                 + *direction
-                    * epsilon;
+                    * 0.01;
 
-        let (
-            behind_color,
-            _,
-        ) = cast_ray(
-            &transparent_origin,
-            direction,
-            objects,
-            light,
-            depth + 1,
-        );
+        let behind =
+            cast_ray(
+                &transparent_origin,
+                direction,
+                objects,
+                light,
+                depth + 1,
+            );
 
-        let transparency =
-            material
-                .transparency
-                .clamp(
-                    0.0_f32,
-                    1.0_f32,
-                );
-
-        let opacity =
-            1.0_f32
-                - transparency;
-
-        let final_red =
-            rendered_color.r as f32
-                * opacity
-                + behind_color.r as f32
+        final_color =
+            final_color
+                * (
+                    1.0
+                        - transparency
+                )
+                + behind
                     * transparency;
-
-        let final_green =
-            rendered_color.g as f32
-                * opacity
-                + behind_color.g as f32
-                    * transparency;
-
-        let final_blue =
-            rendered_color.b as f32
-                * opacity
-                + behind_color.b as f32
-                    * transparency;
-
-        return (
-            Color::new(
-                final_red
-                    .clamp(
-                        0.0,
-                        255.0,
-                    ) as u8,
-
-                final_green
-                    .clamp(
-                        0.0,
-                        255.0,
-                    ) as u8,
-
-                final_blue
-                    .clamp(
-                        0.0,
-                        255.0,
-                    ) as u8,
-
-                255,
-            ),
-            closest_distance,
-        );
     }
 
-    (
-        rendered_color,
-        closest_distance,
-    )
+    final_color
 }
 
-fn get_material_color(
-    material: &Material,
+fn object_uv(
+    object: &Object,
     point: &Vec3,
     normal: &Vec3,
-    u: f32,
-    v: f32,
-) -> Vec3 {
-    if let Some(texture) =
-        material.albedo_texture
-    {
-        return texture.sample(
-            u,
-            v,
-        );
-    }
-
-    match material.pattern {
-        MaterialPattern::Solid => {
-            material.color
+) -> (f32, f32) {
+    match object {
+        Object::Sphere(
+            sphere,
+        ) => {
+            sphere_uv(
+                point,
+                &sphere.center,
+            )
         }
 
-        MaterialPattern::Grass => {
-            grass_color(
-                material.color,
+        Object::Cylinder(
+            cylinder,
+        ) => {
+            cylinder_uv(
+                point,
+                &cylinder.center,
+                &cylinder.axis,
+                cylinder.radius,
+                cylinder.height,
+            )
+        }
+
+        Object::Cone(
+            cone,
+        ) => {
+            cone_uv(
+                point,
+                &cone.center,
+                &cone.axis,
+                cone.radius,
+                cone.height,
+            )
+        }
+
+        Object::Plane(
+            _plane,
+        ) => {
+            planar_uv(
                 point,
                 normal,
             )
@@ -448,34 +598,448 @@ fn get_material_color(
     }
 }
 
-fn get_shading_normal(
-    material: &Material,
-    geometric_normal: &Vec3,
-    u: f32,
-    v: f32,
-) -> Vec3 {
-    let Some(normal_texture) =
-        material.normal_texture
-    else {
-        return *geometric_normal;
-    };
-
-    let sampled =
-        normal_texture.sample(
-            u,
-            v,
-        );
-
-    let tangent_space_normal =
-        Vec3::new(
-            sampled.x * 2.0 - 1.0,
-            sampled.y * 2.0 - 1.0,
-            sampled.z * 2.0 - 1.0,
-        )
+fn sphere_uv(
+    point: &Vec3,
+    center: &Vec3,
+) -> (f32, f32) {
+    let n =
+        (*point - *center)
             .normalize();
 
+    let u =
+        0.5
+            + n.z
+                .atan2(
+                    n.x,
+                )
+                / (
+                    2.0
+                        * PI
+                );
+
+    let v =
+        0.5
+            - n.y
+                .clamp(
+                    -1.0,
+                    1.0,
+                )
+                .asin()
+                / PI;
+
+    (
+        u.rem_euclid(
+            1.0,
+        ),
+        v.rem_euclid(
+            1.0,
+        ),
+    )
+}
+
+fn cylinder_uv(
+    point: &Vec3,
+    center: &Vec3,
+    axis: &Vec3,
+    radius: f32,
+    height: f32,
+) -> (f32, f32) {
+    let axis =
+        axis.normalize();
+
+    let local =
+        *point - *center;
+
+    let axial =
+        local.dot(
+            &axis,
+        );
+
+    let radial =
+        local
+            - axis
+                * axial;
+
+    let (
+        tangent,
+        bitangent,
+    ) =
+        axis_basis(
+            &axis,
+        );
+
+    let x =
+        radial.dot(
+            &tangent,
+        );
+
+    let z =
+        radial.dot(
+            &bitangent,
+        );
+
+    let half_height =
+        height * 0.5;
+
+    let cap_epsilon =
+        0.002;
+
+    if (
+        axial.abs()
+            - half_height
+    )
+        .abs()
+        < cap_epsilon
+    {
+        let u =
+            0.5
+                + x
+                    / (
+                        radius
+                            * 2.0
+                    );
+
+        let v =
+            0.5
+                + z
+                    / (
+                        radius
+                            * 2.0
+                    );
+
+        return (
+            u.rem_euclid(
+                1.0,
+            ),
+            v.rem_euclid(
+                1.0,
+            ),
+        );
+    }
+
+    let angle =
+        z.atan2(
+            x,
+        );
+
+    let u =
+        0.5
+            + angle
+                / (
+                    2.0
+                        * PI
+                );
+
+    let v =
+        (
+            axial
+                + half_height
+        )
+            / height;
+
+    let u_scale =
+        2.0;
+
+    let v_scale =
+        1.5;
+
+    (
+        (
+            u * u_scale
+        )
+            .rem_euclid(
+                1.0,
+            ),
+        (
+            v * v_scale
+        )
+            .rem_euclid(
+                1.0,
+            ),
+    )
+}
+
+fn cone_uv(
+    point: &Vec3,
+    center: &Vec3,
+    axis: &Vec3,
+    radius: f32,
+    height: f32,
+) -> (f32, f32) {
+    let axis =
+        axis.normalize();
+
+    let local =
+        *point - *center;
+
+    let axial =
+        local.dot(
+            &axis,
+        );
+
+    let radial =
+        local
+            - axis
+                * axial;
+
+    let (
+        tangent,
+        bitangent,
+    ) =
+        axis_basis(
+            &axis,
+        );
+
+    let x =
+        radial.dot(
+            &tangent,
+        );
+
+    let z =
+        radial.dot(
+            &bitangent,
+        );
+
+    let half_height =
+        height * 0.5;
+
+    let base_distance =
+        (
+            axial
+                + half_height
+        )
+            .abs();
+
+    if base_distance
+        < 0.002
+    {
+        let u =
+            0.5
+                + x
+                    / (
+                        radius
+                            * 2.0
+                    );
+
+        let v =
+            0.5
+                + z
+                    / (
+                        radius
+                            * 2.0
+                    );
+
+        return (
+            u.rem_euclid(
+                1.0,
+            ),
+            v.rem_euclid(
+                1.0,
+            ),
+        );
+    }
+
+    let angle =
+        z.atan2(
+            x,
+        );
+
+    let u =
+        0.5
+            + angle
+                / (
+                    2.0
+                        * PI
+                );
+
+    let v =
+        (
+            axial
+                + half_height
+        )
+            / height;
+
+    let u_scale =
+        2.0;
+
+    let v_scale =
+        1.0;
+
+    (
+        (
+            u * u_scale
+        )
+            .rem_euclid(
+                1.0,
+            ),
+        (
+            v * v_scale
+        )
+            .rem_euclid(
+                1.0,
+            ),
+    )
+}
+
+fn planar_uv(
+    point: &Vec3,
+    normal: &Vec3,
+) -> (f32, f32) {
+    let (
+        tangent,
+        bitangent,
+    ) =
+        axis_basis(
+            normal,
+        );
+
+    let scale =
+        0.5;
+
+    let u =
+        point.dot(
+            &tangent,
+        )
+            * scale;
+
+    let v =
+        point.dot(
+            &bitangent,
+        )
+            * scale;
+
+    (
+        u.rem_euclid(
+            1.0,
+        ),
+        v.rem_euclid(
+            1.0,
+        ),
+    )
+}
+
+fn tangent_basis(
+    object: &Object,
+    point: &Vec3,
+    normal: &Vec3,
+) -> (Vec3, Vec3) {
+    match object {
+        Object::Cylinder(
+            cylinder,
+        ) => {
+            let axis =
+                cylinder
+                    .axis
+                    .normalize();
+
+            let local =
+                *point
+                    - cylinder.center;
+
+            let axial =
+                local.dot(
+                    &axis,
+                );
+
+            let radial =
+                local
+                    - axis
+                        * axial;
+
+            if radial.length()
+                > 0.001
+            {
+                let tangent =
+                    axis
+                        .cross(
+                            &radial,
+                        )
+                        .normalize();
+
+                let bitangent =
+                    normal
+                        .cross(
+                            &tangent,
+                        )
+                        .normalize();
+
+                (
+                    tangent,
+                    bitangent,
+                )
+            } else {
+                axis_basis(
+                    normal,
+                )
+            }
+        }
+
+        Object::Cone(
+            cone,
+        ) => {
+            let axis =
+                cone
+                    .axis
+                    .normalize();
+
+            let local =
+                *point
+                    - cone.center;
+
+            let axial =
+                local.dot(
+                    &axis,
+                );
+
+            let radial =
+                local
+                    - axis
+                        * axial;
+
+            if radial.length()
+                > 0.001
+            {
+                let tangent =
+                    axis
+                        .cross(
+                            &radial,
+                        )
+                        .normalize();
+
+                let bitangent =
+                    normal
+                        .cross(
+                            &tangent,
+                        )
+                        .normalize();
+
+                (
+                    tangent,
+                    bitangent,
+                )
+            } else {
+                axis_basis(
+                    normal,
+                )
+            }
+        }
+
+        _ => {
+            axis_basis(
+                normal,
+            )
+        }
+    }
+}
+
+fn axis_basis(
+    axis: &Vec3,
+) -> (Vec3, Vec3) {
+    let axis =
+        axis.normalize();
+
     let helper =
-        if geometric_normal.y.abs()
+        if axis.y.abs()
             < 0.999
         {
             Vec3::new(
@@ -494,184 +1058,44 @@ fn get_shading_normal(
     let tangent =
         helper
             .cross(
-                geometric_normal,
+                &axis,
             )
             .normalize();
 
     let bitangent =
-        geometric_normal
+        axis
             .cross(
                 &tangent,
             )
             .normalize();
 
     (
-        tangent
-            * tangent_space_normal.x
-
-            + bitangent
-                * tangent_space_normal.y
-
-            + *geometric_normal
-                * tangent_space_normal.z
-    )
-        .normalize()
-}
-
-fn get_ao_factor(
-    material: &Material,
-    u: f32,
-    v: f32,
-) -> f32 {
-    let Some(texture) =
-        material.ao_texture
-    else {
-        return 1.0;
-    };
-
-    let ao =
-        texture
-            .sample_scalar(
-                u,
-                v,
-            )
-            .clamp(
-                0.0_f32,
-                1.0_f32,
-            );
-
-    (
-        0.40_f32
-            + ao * 0.60_f32
-    )
-        .clamp(
-            0.0_f32,
-            1.0_f32,
-        )
-}
-
-fn get_specular_strength(
-    material: &Material,
-    u: f32,
-    v: f32,
-) -> f32 {
-    let Some(texture) =
-        material.roughness_texture
-    else {
-        return material.specular;
-    };
-
-    let roughness =
-        texture
-            .sample_scalar(
-                u,
-                v,
-            )
-            .clamp(
-                0.0_f32,
-                1.0_f32,
-            );
-
-    let gloss =
-        (
-            1.0_f32
-                - roughness
-        )
-            .clamp(
-                0.05_f32,
-                1.0_f32,
-            );
-
-    material.specular
-        * gloss
-}
-
-fn spherical_uv(
-    normal: &Vec3,
-) -> (f32, f32) {
-    let n =
-        normal.normalize();
-
-    let u =
-        0.5_f32
-            + n.z.atan2(
-                n.x,
-            )
-                / (
-                    2.0_f32
-                        * PI
-                );
-
-    let v =
-        0.5_f32
-            - n.y
-                .clamp(
-                    -1.0_f32,
-                    1.0_f32,
-                )
-                .asin()
-                / PI;
-
-    let texture_scale =
-        1.25_f32;
-
-    (
-        (
-            u
-                * texture_scale
-        )
-            .rem_euclid(
-                1.0_f32,
-            ),
-
-        (
-            v
-                * texture_scale
-        )
-            .rem_euclid(
-                1.0_f32,
-            ),
+        tangent,
+        bitangent,
     )
 }
 
-fn grass_color(
-    base: Vec3,
+fn procedural_grass(
     point: &Vec3,
-    normal: &Vec3,
+    base_color: &Vec3,
 ) -> Vec3 {
-    let large_pattern =
+    let noise =
         (
-            (point.x * 8.0).sin()
-                * (point.z * 9.0).cos()
-                + (point.y * 7.0).sin()
+            (
+                point.x * 18.0
+                    + point.z * 13.0
+                    + point.y * 9.0
+            )
+                .sin()
+                * 0.5
+                + 0.5
         )
-            * 0.035;
-
-    let small_pattern =
-        (
-            (point.x * 31.0).sin()
-                * (point.y * 27.0).cos()
-                * (point.z * 29.0).sin()
-        )
-            * 0.025;
-
-    let normal_pattern =
-        (
-            (normal.x * 15.0).sin()
-                + (normal.y * 17.0).cos()
-                + (normal.z * 19.0).sin()
-        )
-            * 0.015;
-
-    let variation =
-        large_pattern
-            + small_pattern
-            + normal_pattern;
+            * 0.15;
 
     Vec3::new(
         (
-            base.x
-                + variation * 0.45
+            base_color.x
+                + noise * 0.30
         )
             .clamp(
                 0.0,
@@ -679,8 +1103,8 @@ fn grass_color(
             ),
 
         (
-            base.y
-                + variation
+            base_color.y
+                + noise
         )
             .clamp(
                 0.0,
@@ -688,141 +1112,176 @@ fn grass_color(
             ),
 
         (
-            base.z
-                + variation * 0.35
+            base_color.z
+                + noise * 0.20
         )
             .clamp(
                 0.0,
                 1.0,
             ),
     )
+}
+
+fn multiply_vec3(
+    a: Vec3,
+    b: Vec3,
+) -> Vec3 {
+    Vec3::new(
+        a.x * b.x,
+        a.y * b.y,
+        a.z * b.z,
+    )
+}
+
+fn reflect(
+    direction: Vec3,
+    normal: Vec3,
+) -> Vec3 {
+    direction
+        - normal
+            * (
+                2.0
+                    * direction.dot(
+                        &normal,
+                    )
+            )
 }
 
 fn skybox_color(
     direction: &Vec3,
-) -> Color {
+) -> Vec3 {
     let d =
         direction.normalize();
 
-    let vertical =
-        (
-            d.y
-                + 1.0
-        )
-            * 0.5;
+    let mut color =
+        Vec3::new(
+            0.003,
+            0.006,
+            0.018,
+        );
 
     let nebula =
         (
-            (d.x * 4.0).sin()
-                * (d.y * 5.0).cos()
-                * (d.z * 3.0).sin()
+            d.x * 4.0
+                + d.y * 2.5
+                + d.z * 3.0
         )
-            .abs();
+            .sin()
+            * 0.5
+            + 0.5;
 
-    let secondary_nebula =
+    color =
+        color
+            + Vec3::new(
+                0.012,
+                0.008,
+                0.025,
+            )
+                * nebula
+                * 0.35;
+
+    let sx =
         (
-            (
-                d.x * 9.0
-                    + d.z * 5.0
-            )
-                .sin()
-                * (d.y * 7.0).cos()
+            d.x
+                * 900.0
         )
-            .abs();
+            .floor() as i32;
 
-    let mut red =
-        0.008
-            + vertical * 0.008;
+    let sy =
+        (
+            d.y
+                * 900.0
+        )
+            .floor() as i32;
 
-    let mut green =
-        0.008
-            + vertical * 0.010;
+    let sz =
+        (
+            d.z
+                * 900.0
+        )
+            .floor() as i32;
 
-    let mut blue =
-        0.035
-            + vertical * 0.030;
-
-    if nebula > 0.72 {
-        let intensity =
-            (
-                nebula - 0.72
-            )
-                / 0.28;
-
-        red +=
-            0.05 * intensity;
-
-        green +=
-            0.015 * intensity;
-
-        blue +=
-            0.10 * intensity;
-    }
-
-    if secondary_nebula > 0.82 {
-        let intensity =
-            (
-                secondary_nebula
-                    - 0.82
-            )
-                / 0.18;
-
-        red +=
-            0.025 * intensity;
-
-        green +=
-            0.035 * intensity;
-
-        blue +=
-            0.09 * intensity;
-    }
-
-    let star_value =
+    let star =
         procedural_hash(
-            d.x,
-            d.y,
-            d.z,
+            sx,
+            sy,
+            sz,
         );
 
-    if star_value > 0.994 {
-        let star =
-            (
-                (
-                    star_value
-                        - 0.994
-                )
-                    / 0.006
-            )
-                .clamp(
-                    0.0,
-                    1.0,
-                );
-
+    if star
+        > 0.9975
+    {
         let brightness =
-            0.55
-                + star * 0.45;
+            (
+                star
+                    - 0.9975
+            )
+                / 0.0025;
 
-        red += brightness;
-        green += brightness;
-        blue += brightness;
+        color =
+            color
+                + Vec3::new(
+                    1.0,
+                    1.0,
+                    1.0,
+                )
+                    * brightness;
     }
 
-    let bright_star =
-        procedural_hash(
-            d.x * 3.7 + 10.0,
-            d.y * 3.1 + 4.0,
-            d.z * 4.3 + 8.0,
-        );
+    color
+}
 
-    if bright_star > 0.9992 {
-        red = 1.0;
-        green = 0.95;
-        blue = 0.78;
-    }
+fn procedural_hash(
+    x: i32,
+    y: i32,
+    z: i32,
+) -> f32 {
+    let mut n =
+        x
+            .wrapping_mul(
+                374761393,
+            )
+            .wrapping_add(
+                y.wrapping_mul(
+                    668265263,
+                ),
+            )
+            .wrapping_add(
+                z.wrapping_mul(
+                    2147483647,
+                ),
+            );
 
+    n =
+        (
+            n
+                ^ (
+                    n >> 13
+                )
+        )
+            .wrapping_mul(
+                1274126177,
+            );
+
+    let value =
+        n
+            ^ (
+                n >> 16
+            );
+
+    (
+        value as u32
+            & 0x00FF_FFFF
+    ) as f32
+        / 0x00FF_FFFF as f32
+}
+
+fn to_color(
+    color: Vec3,
+) -> Color {
     Color::new(
         (
-            red
+            color.x
                 .clamp(
                     0.0,
                     1.0,
@@ -831,7 +1290,7 @@ fn skybox_color(
         ) as u8,
 
         (
-            green
+            color.y
                 .clamp(
                     0.0,
                     1.0,
@@ -840,7 +1299,7 @@ fn skybox_color(
         ) as u8,
 
         (
-            blue
+            color.z
                 .clamp(
                     0.0,
                     1.0,
@@ -850,33 +1309,4 @@ fn skybox_color(
 
         255,
     )
-}
-
-fn procedural_hash(
-    x: f32,
-    y: f32,
-    z: f32,
-) -> f32 {
-    let value =
-        (
-            x * 127.1
-                + y * 311.7
-                + z * 74.7
-        )
-            .sin()
-            * 43758.5453;
-
-    value - value.floor()
-}
-
-fn reflect(
-    direction: Vec3,
-    normal: Vec3,
-) -> Vec3 {
-    direction
-        - normal
-            * 2.0
-            * direction.dot(
-                &normal,
-            )
 }

@@ -29,22 +29,77 @@ use scene::state::{
 use worlds::forest::create_forest_diorama;
 
 fn main() {
-    const WIDTH: i32 = 800;
-    const HEIGHT: i32 = 600;
+    const RENDER_WIDTH: i32 = 1600;
+    const RENDER_HEIGHT: i32 = 900;
 
-    let (mut rl, thread) =
+    let (
+        mut rl,
+        thread,
+    ) =
         raylib::init()
-            .size(WIDTH, HEIGHT)
-            .title("Galaxy Diorama")
+            .size(
+                800,
+                600,
+            )
+            .title(
+                "Galaxy Diorama",
+            )
             .build();
 
-    rl.set_target_fps(60);
+    let monitor =
+        raylib::core::window::get_current_monitor();
+
+    let screen_width =
+        raylib::core::window::get_monitor_width(
+            monitor,
+        );
+
+    let screen_height =
+        raylib::core::window::get_monitor_height(
+            monitor,
+        );
+
+    rl.set_window_size(
+        screen_width,
+        screen_height,
+    );
+
+    rl.toggle_fullscreen();
+
+    rl.set_target_fps(
+        60,
+    );
 
     let mut framebuffer =
         Framebuffer::new(
-            WIDTH,
-            HEIGHT,
+            RENDER_WIDTH,
+            RENDER_HEIGHT,
         );
+
+    let render_image =
+        unsafe {
+            Image::from_raw(
+                raylib::ffi::GenImageColor(
+                    RENDER_WIDTH,
+                    RENDER_HEIGHT,
+                    Color::BLACK.into(),
+                ),
+            )
+        };
+
+    let mut render_texture =
+        rl.load_texture_from_image(
+            &thread,
+            &render_image,
+        )
+        .expect(
+            "No se pudo crear la textura del framebuffer",
+        );
+
+    render_texture.set_texture_filter(
+        &thread,
+        TextureFilter::TEXTURE_FILTER_BILINEAR,
+    );
 
     let forest_material =
         Material::new(
@@ -210,6 +265,12 @@ fn main() {
         None;
 
     while !rl.window_should_close() {
+        let current_screen_width =
+            rl.get_screen_width();
+
+        let current_screen_height =
+            rl.get_screen_height();
+
         match state {
             SceneState::Galaxy => {
                 if rl.is_mouse_button_pressed(
@@ -218,12 +279,28 @@ fn main() {
                     let mouse =
                         rl.get_mouse_position();
 
+                    let ray_x =
+                        mouse.x
+                            / current_screen_width
+                                as f32
+                            * RENDER_WIDTH
+                                as f32;
+
+                    let ray_y =
+                        mouse.y
+                            / current_screen_height
+                                as f32
+                            * RENDER_HEIGHT
+                                as f32;
+
                     let ray =
                         camera.get_ray(
-                            mouse.x,
-                            mouse.y,
-                            WIDTH as f32,
-                            HEIGHT as f32,
+                            ray_x,
+                            ray_y,
+                            RENDER_WIDTH
+                                as f32,
+                            RENDER_HEIGHT
+                                as f32,
                         );
 
                     let mut closest =
@@ -233,54 +310,64 @@ fn main() {
                         Option<usize> =
                         None;
 
-                    for (index, object) in
-                        galaxy_hit_objects
-                            .iter()
-                            .enumerate()
+                    for (
+                        index,
+                        object,
+                    ) in galaxy_hit_objects
+                        .iter()
+                        .enumerate()
                     {
-                        if let Some(distance) =
+                        if let Some(
+                            distance,
+                        ) =
                             object.intersect(
                                 &ray.origin,
                                 &ray.direction,
                             )
                         {
-                            if distance < closest {
+                            if distance
+                                < closest
+                            {
                                 closest =
                                     distance;
 
                                 selected_index =
-                                    Some(index);
+                                    Some(
+                                        index,
+                                    );
                             }
                         }
                     }
 
-                    if let Some(index) =
+                    if let Some(
+                        index,
+                    ) =
                         selected_index
                     {
-                        match index {
-                            0 => {
-                                selected_planet =
+                        selected_planet =
+                            match index {
+                                0 => {
                                     Some(
                                         PlanetType::Forest,
-                                    );
-                            }
+                                    )
+                                }
 
-                            1 => {
-                                selected_planet =
+                                1 => {
                                     Some(
                                         PlanetType::Volcanic,
-                                    );
-                            }
+                                    )
+                                }
 
-                            2 => {
-                                selected_planet =
+                                2 => {
                                     Some(
                                         PlanetType::Crystal,
-                                    );
-                            }
+                                    )
+                                }
 
-                            _ => {}
-                        }
+                                _ => {
+                                    None
+                                }
+                            };
 
                         camera =
                             Camera::new(
@@ -384,6 +471,29 @@ fn main() {
             }
         }
 
+        let pixel_bytes =
+            unsafe {
+                std::slice::from_raw_parts(
+                    framebuffer
+                        .pixels()
+                        .as_ptr()
+                        as *const u8,
+
+                    framebuffer
+                        .pixels()
+                        .len()
+                        * std::mem::size_of::<Color>(),
+                )
+            };
+
+        render_texture
+            .update_texture(
+                pixel_bytes,
+            )
+            .expect(
+                "No se pudo actualizar la textura",
+            );
+
         let mut d =
             rl.begin_drawing(
                 &thread,
@@ -393,41 +503,119 @@ fn main() {
             Color::BLACK,
         );
 
-        framebuffer.draw(
-            &mut d,
+        let actual_screen_width =
+            d.get_screen_width()
+                as f32;
+
+        let actual_screen_height =
+            d.get_screen_height()
+                as f32;
+
+        let render_aspect =
+            RENDER_WIDTH as f32
+                / RENDER_HEIGHT as f32;
+
+        let screen_aspect =
+            actual_screen_width
+                / actual_screen_height;
+
+        let (
+            destination_width,
+            destination_height,
+        ) =
+            if screen_aspect
+                > render_aspect
+            {
+                (
+                    actual_screen_height
+                        * render_aspect,
+
+                    actual_screen_height,
+                )
+            } else {
+                (
+                    actual_screen_width,
+
+                    actual_screen_width
+                        / render_aspect,
+                )
+            };
+
+        let offset_x =
+            (
+                actual_screen_width
+                    - destination_width
+            )
+                * 0.5;
+
+        let offset_y =
+            (
+                actual_screen_height
+                    - destination_height
+            )
+                * 0.5;
+
+        let source =
+            Rectangle::new(
+                0.0,
+                0.0,
+                RENDER_WIDTH
+                    as f32,
+                RENDER_HEIGHT
+                    as f32,
+            );
+
+        let destination =
+            Rectangle::new(
+                offset_x,
+                offset_y,
+                destination_width,
+                destination_height,
+            );
+
+        d.draw_texture_pro(
+            &render_texture,
+            source,
+            destination,
+            Vector2::new(
+                0.0,
+                0.0,
+            ),
+            0.0,
+            Color::WHITE,
         );
 
         match state {
             SceneState::Galaxy => {
                 d.draw_text(
                     "Selecciona un planeta",
-                    20,
-                    20,
-                    24,
+                    30,
+                    30,
+                    30,
                     Color::WHITE,
                 );
 
                 d.draw_text(
                     "Click izquierdo - Seleccionar",
+                    30,
+                    70,
                     20,
-                    55,
-                    18,
                     Color::LIGHTGRAY,
                 );
 
                 d.draw_text(
                     "Click derecho - Rotar",
+                    30,
+                    100,
                     20,
-                    80,
-                    18,
                     Color::LIGHTGRAY,
                 );
 
                 d.draw_text(
                     "Rueda - Zoom",
+                    30,
+                    130,
                     20,
-                    105,
-                    18,
                     Color::LIGHTGRAY,
                 );
             }
@@ -437,37 +625,43 @@ fn main() {
                     planet_name(
                         selected_planet,
                     ),
-                    20,
-                    20,
-                    28,
+                    30,
+                    30,
+                    32,
                     Color::WHITE,
                 );
 
                 d.draw_text(
                     "Click izquierdo - Rotar",
+                    30,
+                    75,
                     20,
-                    55,
-                    18,
                     Color::LIGHTGRAY,
                 );
 
                 d.draw_text(
                     "Rueda - Zoom",
+                    30,
+                    105,
                     20,
-                    80,
-                    18,
                     Color::LIGHTGRAY,
                 );
 
                 d.draw_text(
                     "BACKSPACE - Regresar",
+                    30,
+                    135,
                     20,
-                    105,
-                    18,
                     Color::LIGHTGRAY,
                 );
             }
         }
+
+        d.draw_fps(
+            current_screen_width
+                - 110,
+            20,
+        );
     }
 }
 
@@ -566,8 +760,10 @@ fn transform_objects(
                                 sphere.center
                                     * scale
                                     + offset,
+
                                 sphere.radius
                                     * scale,
+
                                 sphere.material,
                             ),
                         )
@@ -581,11 +777,15 @@ fn transform_objects(
                                 cylinder.center
                                     * scale
                                     + offset,
+
                                 cylinder.axis,
+
                                 cylinder.radius
                                     * scale,
+
                                 cylinder.height
                                     * scale,
+
                                 cylinder.material,
                             ),
                         )
@@ -599,11 +799,15 @@ fn transform_objects(
                                 cone.center
                                     * scale
                                     + offset,
+
                                 cone.axis,
+
                                 cone.radius
                                     * scale,
+
                                 cone.height
                                     * scale,
+
                                 cone.material,
                             ),
                         )
@@ -617,7 +821,9 @@ fn transform_objects(
                                 plane.point
                                     * scale
                                     + offset,
+
                                 plane.normal,
+
                                 plane.material,
                             ),
                         )
