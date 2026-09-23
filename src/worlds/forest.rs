@@ -22,6 +22,11 @@ static ROCK_COLOR_MAP: OnceLock<TextureMap> = OnceLock::new();
 static ROCK_NORMAL_MAP: OnceLock<TextureMap> = OnceLock::new();
 static ROCK_ROUGHNESS_MAP: OnceLock<TextureMap> = OnceLock::new();
 
+static FLOWER_COLOR_MAP: OnceLock<TextureMap> = OnceLock::new();
+static FLOWER_NORMAL_MAP: OnceLock<TextureMap> = OnceLock::new();
+static FLOWER_ROUGHNESS_MAP: OnceLock<TextureMap> = OnceLock::new();
+static FLOWER_AO_MAP: OnceLock<TextureMap> = OnceLock::new();
+
 fn grass_color_map() -> &'static TextureMap {
     GRASS_COLOR_MAP.get_or_init(|| {
         TextureMap::from_file(
@@ -109,6 +114,39 @@ fn rock_roughness_map() -> &'static TextureMap {
         )
     })
 }
+
+fn flower_color_map() -> &'static TextureMap {
+    FLOWER_COLOR_MAP.get_or_init(|| {
+        TextureMap::from_file(
+            "assets/textures/leaves/ScatteredLeaves008_1K-PNG_Color.png",
+        )
+    })
+}
+
+fn flower_normal_map() -> &'static TextureMap {
+    FLOWER_NORMAL_MAP.get_or_init(|| {
+        TextureMap::from_file(
+            "assets/textures/leaves/ScatteredLeaves008_1K-PNG_NormalGL.png",
+        )
+    })
+}
+
+fn flower_roughness_map() -> &'static TextureMap {
+    FLOWER_ROUGHNESS_MAP.get_or_init(|| {
+        TextureMap::from_file(
+            "assets/textures/leaves/ScatteredLeaves008_1K-PNG_Roughness.png",
+        )
+    })
+}
+
+fn flower_ao_map() -> &'static TextureMap {
+    FLOWER_AO_MAP.get_or_init(|| {
+        TextureMap::from_file(
+            "assets/textures/leaves/ScatteredLeaves008_1K-PNG_AmbientOcclusion.png",
+        )
+    })
+}
+
 
 pub fn create_forest_diorama() -> Vec<Object> {
     let mut objects = Vec::new();
@@ -221,36 +259,68 @@ pub fn create_forest_diorama() -> Vec<Object> {
         None,
     );
 
-    let yellow = Material::new(
-        Vec3::new(1.0, 0.82, 0.05),
+    let yellow = Material::textured(
+        Vec3::new(
+            1.0,
+            0.82,
+            0.05,
+        ),
         0.85,
-        0.30,
+        0.25,
         0.0,
-        0.0,
+        0.02,
+        Some(flower_color_map()),
+        Some(flower_normal_map()),
+        Some(flower_roughness_map()),
+        Some(flower_ao_map()),
     );
 
-    let purple = Material::new(
-        Vec3::new(0.60, 0.18, 0.80),
+    let purple = Material::textured(
+        Vec3::new(
+            0.60,
+            0.18,
+            0.80,
+        ),
         0.82,
-        0.30,
+        0.25,
         0.0,
-        0.0,
+        0.02,
+        Some(flower_color_map()),
+        Some(flower_normal_map()),
+        Some(flower_roughness_map()),
+        Some(flower_ao_map()),
     );
 
-    let pink = Material::new(
-        Vec3::new(1.0, 0.30, 0.55),
+    let pink = Material::textured(
+        Vec3::new(
+            1.0,
+            0.30,
+            0.55,
+        ),
         0.82,
-        0.30,
+        0.25,
         0.0,
-        0.0,
+        0.02,
+        Some(flower_color_map()),
+        Some(flower_normal_map()),
+        Some(flower_roughness_map()),
+        Some(flower_ao_map()),
     );
 
-    let white = Material::new(
-        Vec3::new(0.95, 0.95, 0.95),
+    let white = Material::textured(
+        Vec3::new(
+            0.95,
+            0.95,
+            0.95,
+        ),
         0.85,
-        0.40,
+        0.25,
         0.0,
-        0.0,
+        0.02,
+        Some(flower_color_map()),
+        Some(flower_normal_map()),
+        Some(flower_roughness_map()),
+        Some(flower_ao_map()),
     );
 
     let wall = Material::new(
