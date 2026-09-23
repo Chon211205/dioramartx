@@ -13,6 +13,11 @@ static GRASS_NORMAL_MAP: OnceLock<TextureMap> = OnceLock::new();
 static GRASS_ROUGHNESS_MAP: OnceLock<TextureMap> = OnceLock::new();
 static GRASS_AO_MAP: OnceLock<TextureMap> = OnceLock::new();
 
+static BARK_COLOR_MAP: OnceLock<TextureMap> = OnceLock::new();
+static BARK_NORMAL_MAP: OnceLock<TextureMap> = OnceLock::new();
+static BARK_ROUGHNESS_MAP: OnceLock<TextureMap> = OnceLock::new();
+static BARK_AO_MAP: OnceLock<TextureMap> = OnceLock::new();
+
 fn grass_color_map() -> &'static TextureMap {
     GRASS_COLOR_MAP.get_or_init(|| {
         TextureMap::from_file(
@@ -41,6 +46,38 @@ fn grass_ao_map() -> &'static TextureMap {
     GRASS_AO_MAP.get_or_init(|| {
         TextureMap::from_file(
             "assets/textures/grass/Grass005_1K-PNG_AmbientOcclusion.png",
+        )
+    })
+}
+
+fn bark_color_map() -> &'static TextureMap {
+    BARK_COLOR_MAP.get_or_init(|| {
+        TextureMap::from_file(
+            "assets/textures/bark/Bark014_1K-PNG_Color.png",
+        )
+    })
+}
+
+fn bark_normal_map() -> &'static TextureMap {
+    BARK_NORMAL_MAP.get_or_init(|| {
+        TextureMap::from_file(
+            "assets/textures/bark/Bark014_1K-PNG_NormalGL.png",
+        )
+    })
+}
+
+fn bark_roughness_map() -> &'static TextureMap {
+    BARK_ROUGHNESS_MAP.get_or_init(|| {
+        TextureMap::from_file(
+            "assets/textures/bark/Bark014_1K-PNG_Roughness.png",
+        )
+    })
+}
+
+fn bark_ao_map() -> &'static TextureMap {
+    BARK_AO_MAP.get_or_init(|| {
+        TextureMap::from_file(
+            "assets/textures/bark/Bark014_1K-PNG_AmbientOcclusion.png",
         )
     })
 }
@@ -88,16 +125,20 @@ pub fn create_forest_diorama() -> Vec<Object> {
         0.0,
     );
 
-    let wood = Material::new(
+    let wood = Material::textured(
         Vec3::new(
             0.30,
             0.12,
             0.035,
         ),
         0.78,
-        0.10,
+        0.12,
         0.0,
-        0.0,
+        0.02,
+        Some(bark_color_map()),
+        Some(bark_normal_map()),
+        Some(bark_roughness_map()),
+        Some(bark_ao_map()),
     );
 
     let leaves_dark = Material::textured(
