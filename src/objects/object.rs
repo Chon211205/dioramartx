@@ -1,21 +1,30 @@
-use crate::vec3::Vec3;
+use crate::core::vec3::Vec3;
+use crate::materials::material::Material;
 
 pub struct Object {
     pub center: Vec3,
     pub radius: f32,
-    pub color: Vec3,
+    pub material: Material,
 }
 
 impl Object {
-    pub fn new(center: Vec3, radius: f32, color: Vec3) -> Self {
+    pub fn new(
+        center: Vec3,
+        radius: f32,
+        material: Material,
+    ) -> Self {
         Self {
             center,
             radius,
-            color,
+            material,
         }
     }
 
-    pub fn intersect(&self, origin: &Vec3, direction: &Vec3) -> Option<f32> {
+    pub fn intersect(
+        &self,
+        origin: &Vec3,
+        direction: &Vec3,
+    ) -> Option<f32> {
         let oc = *origin - self.center;
 
         let a = direction.dot(direction);

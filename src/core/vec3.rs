@@ -1,4 +1,4 @@
-use std::ops::{Add, Sub, Mul, Div, Neg};
+use std::ops::{Add, Div, Mul, Neg, Sub};
 
 #[derive(Clone, Copy, Debug)]
 pub struct Vec3 {
@@ -13,7 +13,12 @@ impl Vec3 {
     }
 
     pub fn length(&self) -> f32 {
-        (self.x * self.x + self.y * self.y + self.z * self.z).sqrt()
+        (
+            self.x * self.x
+            + self.y * self.y
+            + self.z * self.z
+        )
+        .sqrt()
     }
 
     pub fn normalize(&self) -> Self {

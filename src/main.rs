@@ -1,14 +1,16 @@
-mod framebuffer;
-mod vec3;
-mod ray;
-mod object;
-mod raytracer;
+mod core;
+mod materials;
+mod objects;
+mod renderer;
+mod scene;
 
 use raylib::prelude::*;
 
-use framebuffer::Framebuffer;
-use object::Object;
-use vec3::Vec3;
+use core::framebuffer::Framebuffer;
+use core::vec3::Vec3;
+use materials::material::Material;
+use objects::object::Object;
+use scene::light::Light;
 
 fn main() {
     const WIDTH: i32 = 800;
@@ -21,22 +23,34 @@ fn main() {
 
     rl.set_target_fps(60);
 
-    let mut framebuffer = Framebuffer::new(
-        WIDTH,
-        HEIGHT,
+    let mut framebuffer = Framebuffer::new(WIDTH, HEIGHT);
+
+    let planet_material = Material::new(
+        Vec3::new(0.2, 0.8, 0.3),
+        0.8,
+        0.5,
+        0.0,
+        0.0,
     );
 
     let objects = vec![
         Object::new(
             Vec3::new(0.0, 0.0, -5.0),
             1.5,
-            Vec3::new(0.2, 0.8, 0.3),
+            planet_material,
         ),
     ];
 
-    raytracer::render(
+    let light = Light::new(
+        Vec3::new(-4.0, 4.0, 0.0),
+        Vec3::new(1.0, 1.0, 1.0),
+        1.0,
+    );
+
+    renderer::raytracer::render(
         &mut framebuffer,
         &objects,
+        &light,
     );
 
     while !rl.window_should_close() {
