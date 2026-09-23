@@ -16,209 +16,384 @@ use objects::object::Object;
 use objects::sphere::Sphere;
 
 use scene::light::Light;
-use scene::state::{PlanetType, SceneState};
+use scene::state::{
+    PlanetType,
+    SceneState,
+};
 
 fn main() {
     const WIDTH: i32 = 800;
     const HEIGHT: i32 = 600;
 
-    let (mut rl, thread) = raylib::init()
-        .size(WIDTH, HEIGHT)
-        .title("Galaxy Diorama")
-        .build();
+    let (mut rl, thread) =
+        raylib::init()
+            .size(WIDTH, HEIGHT)
+            .title("Galaxy Diorama")
+            .build();
 
     rl.set_target_fps(60);
 
     let mut framebuffer =
-        Framebuffer::new(WIDTH, HEIGHT);
+        Framebuffer::new(
+            WIDTH,
+            HEIGHT,
+        );
 
-    let forest_material = Material::new(
-        Vec3::new(0.15, 0.75, 0.25),
-        0.8,
-        0.4,
-        0.0,
-        0.05,
-    );
+    let forest_material =
+        Material::new(
+            Vec3::new(
+                0.15,
+                0.75,
+                0.25,
+            ),
+            0.8,
+            0.4,
+            0.0,
+            0.05,
+        );
 
-    let volcanic_material = Material::new(
-        Vec3::new(0.9, 0.2, 0.05),
-        0.75,
-        0.5,
-        0.0,
-        0.1,
-    );
+    let volcanic_material =
+        Material::new(
+            Vec3::new(
+                0.9,
+                0.2,
+                0.05,
+            ),
+            0.75,
+            0.5,
+            0.0,
+            0.1,
+        );
 
-    let crystal_material = Material::new(
-        Vec3::new(0.25, 0.65, 1.0),
-        0.6,
-        0.9,
-        0.25,
-        0.3,
-    );
-
-    let galaxy_objects = vec![
-        Object::Sphere(
-            Sphere::new(
-                Vec3::new(-2.7, 0.8, 0.0),
+    let crystal_material =
+        Material::new(
+            Vec3::new(
+                0.25,
+                0.65,
                 1.0,
-                forest_material,
             ),
-        ),
+            0.6,
+            0.9,
+            0.25,
+            0.3,
+        );
 
-        Object::Sphere(
-            Sphere::new(
-                Vec3::new(0.0, -0.8, -0.6),
-                1.15,
-                volcanic_material,
+    let forest_position =
+        Vec3::new(
+            -2.7,
+            0.8,
+            0.0,
+        );
+
+    let volcanic_position =
+        Vec3::new(
+            0.0,
+            -0.8,
+            -0.6,
+        );
+
+    let crystal_position =
+        Vec3::new(
+            2.7,
+            0.9,
+            0.2,
+        );
+
+    let galaxy_objects =
+        vec![
+            Object::Sphere(
+                Sphere::new(
+                    forest_position,
+                    1.0,
+                    forest_material,
+                ),
             ),
-        ),
 
-        Object::Sphere(
-            Sphere::new(
-                Vec3::new(2.7, 0.9, 0.2),
+            Object::Sphere(
+                Sphere::new(
+                    volcanic_position,
+                    1.15,
+                    volcanic_material,
+                ),
+            ),
+
+            Object::Sphere(
+                Sphere::new(
+                    crystal_position,
+                    1.0,
+                    crystal_material,
+                ),
+            ),
+        ];
+
+    let light =
+        Light::new(
+            Vec3::new(
+                -3.0,
+                5.0,
+                5.0,
+            ),
+            Vec3::new(
                 1.0,
-                crystal_material,
+                1.0,
+                1.0,
             ),
-        ),
-    ];
+            1.0,
+        );
 
-    let light = Light::new(
-        Vec3::new(-3.0, 5.0, 5.0),
-        Vec3::new(1.0, 1.0, 1.0),
-        1.0,
-    );
+    let mut camera =
+        Camera::new(
+            Vec3::new(
+                0.0,
+                0.0,
+                0.0,
+            ),
+            8.0,
+            60.0,
+        );
 
-    let mut camera = Camera::new(
-        Vec3::new(0.0, 0.0, 0.0),
-        8.0,
-        60.0,
-    );
+    let mut state =
+        SceneState::Galaxy;
 
-    let mut state = SceneState::Galaxy;
-
-    let mut selected_planet: Option<PlanetType> =
+    let mut selected_planet:
+        Option<PlanetType> =
         None;
 
     while !rl.window_should_close() {
-        if state == SceneState::Galaxy {
-            if rl.is_mouse_button_pressed(
-                MouseButton::MOUSE_BUTTON_LEFT,
-            ) {
-                let mouse = rl.get_mouse_position();
+        match state {
+            SceneState::Galaxy => {
+                if rl.is_mouse_button_pressed(
+                    MouseButton::MOUSE_BUTTON_LEFT,
+                ) {
+                    let mouse =
+                        rl.get_mouse_position();
 
-                let ray = camera.get_ray(
-                    mouse.x,
-                    mouse.y,
-                    WIDTH as f32,
-                    HEIGHT as f32,
-                );
+                    let ray =
+                        camera.get_ray(
+                            mouse.x,
+                            mouse.y,
+                            WIDTH as f32,
+                            HEIGHT as f32,
+                        );
 
-                let mut closest_distance =
-                    f32::INFINITY;
+                    let mut closest =
+                        f32::INFINITY;
 
-                let mut selected_index:
-                    Option<usize> = None;
+                    let mut selected_index:
+                        Option<usize> = None;
 
-                for (index, object) in
-                    galaxy_objects.iter().enumerate()
-                {
-                    if let Some(distance) =
-                        object.intersect(
-                            &ray.origin,
-                            &ray.direction,
+                    for (
+                        index,
+                        object,
+                    ) in galaxy_objects
+                        .iter()
+                        .enumerate()
+                    {
+                        if let Some(distance) =
+                            object.intersect(
+                                &ray.origin,
+                                &ray.direction,
+                            )
+                        {
+                            if distance < closest {
+                                closest =
+                                    distance;
+
+                                selected_index =
+                                    Some(index);
+                            }
+                        }
+                    }
+
+                    if let Some(index) =
+                        selected_index
+                    {
+                        match index {
+                            0 => {
+                                selected_planet =
+                                    Some(
+                                        PlanetType::Forest,
+                                    );
+
+                                camera.focus_on(
+                                    forest_position,
+                                    3.2,
+                                );
+                            }
+
+                            1 => {
+                                selected_planet =
+                                    Some(
+                                        PlanetType::Volcanic,
+                                    );
+
+                                camera.focus_on(
+                                    volcanic_position,
+                                    3.5,
+                                );
+                            }
+
+                            2 => {
+                                selected_planet =
+                                    Some(
+                                        PlanetType::Crystal,
+                                    );
+
+                                camera.focus_on(
+                                    crystal_position,
+                                    3.2,
+                                );
+                            }
+
+                            _ => {}
+                        }
+
+                        state =
+                            SceneState::Focused;
+                    }
+                }
+
+                if rl.is_mouse_button_down(
+                    MouseButton::MOUSE_BUTTON_RIGHT,
+                ) {
+                    let delta =
+                        rl.get_mouse_delta();
+
+                    camera.rotate(
+                        delta.x,
+                        delta.y,
+                    );
+                }
+            }
+
+            SceneState::Focused => {
+                if rl.is_key_pressed(
+                    KeyboardKey::KEY_BACKSPACE,
+                ) {
+                    state =
+                        SceneState::Galaxy;
+
+                    selected_planet =
+                        None;
+
+                    camera =
+                        Camera::new(
+                            Vec3::new(
+                                0.0,
+                                0.0,
+                                0.0,
+                            ),
+                            8.0,
+                            60.0,
+                        );
+                }
+
+                if rl.is_mouse_button_pressed(
+                    MouseButton::MOUSE_BUTTON_LEFT,
+                ) {
+                    let mouse =
+                        rl.get_mouse_position();
+
+                    let ray =
+                        camera.get_ray(
+                            mouse.x,
+                            mouse.y,
+                            WIDTH as f32,
+                            HEIGHT as f32,
+                        );
+
+                    if let Some(index) =
+                        selected_planet_index(
+                            selected_planet,
                         )
                     {
-                        if distance < closest_distance {
-                            closest_distance =
-                                distance;
+                        if galaxy_objects[index]
+                            .intersect(
+                                &ray.origin,
+                                &ray.direction,
+                            )
+                            .is_some()
+                        {
+                            state =
+                                SceneState::Diorama;
 
-                            selected_index =
-                                Some(index);
+                            camera =
+                                Camera::new(
+                                    Vec3::new(
+                                        0.0,
+                                        0.0,
+                                        0.0,
+                                    ),
+                                    5.0,
+                                    60.0,
+                                );
                         }
                     }
                 }
 
-                if let Some(index) =
-                    selected_index
-                {
-                    selected_planet =
-                        match index {
-                            0 => Some(
-                                PlanetType::Forest,
-                            ),
+                if rl.is_mouse_button_down(
+                    MouseButton::MOUSE_BUTTON_RIGHT,
+                ) {
+                    let delta =
+                        rl.get_mouse_delta();
 
-                            1 => Some(
-                                PlanetType::Volcanic,
-                            ),
-
-                            2 => Some(
-                                PlanetType::Crystal,
-                            ),
-
-                            _ => None,
-                        };
-
-                    if selected_planet.is_some() {
-                        state =
-                            SceneState::Diorama;
-
-                        camera =
-                            Camera::new(
-                                Vec3::new(
-                                    0.0,
-                                    0.0,
-                                    0.0,
-                                ),
-                                5.0,
-                                60.0,
-                            );
-                    }
+                    camera.rotate(
+                        delta.x,
+                        delta.y,
+                    );
                 }
             }
 
-            if rl.is_mouse_button_down(
-                MouseButton::MOUSE_BUTTON_RIGHT,
-            ) {
-                let mouse_delta =
-                    rl.get_mouse_delta();
+            SceneState::Diorama => {
+                if rl.is_key_pressed(
+                    KeyboardKey::KEY_BACKSPACE,
+                ) {
+                    state =
+                        SceneState::Focused;
 
-                camera.rotate(
-                    mouse_delta.x,
-                    mouse_delta.y,
-                );
-            }
-        } else {
-            if rl.is_key_pressed(
-                KeyboardKey::KEY_ESCAPE,
-            ) {
-                state =
-                    SceneState::Galaxy;
+                    match selected_planet {
+                        Some(
+                            PlanetType::Forest,
+                        ) => {
+                            camera.focus_on(
+                                forest_position,
+                                3.2,
+                            );
+                        }
 
-                selected_planet =
-                    None;
+                        Some(
+                            PlanetType::Volcanic,
+                        ) => {
+                            camera.focus_on(
+                                volcanic_position,
+                                3.5,
+                            );
+                        }
 
-                camera =
-                    Camera::new(
-                        Vec3::new(
-                            0.0,
-                            0.0,
-                            0.0,
-                        ),
-                        8.0,
-                        60.0,
+                        Some(
+                            PlanetType::Crystal,
+                        ) => {
+                            camera.focus_on(
+                                crystal_position,
+                                3.2,
+                            );
+                        }
+
+                        None => {}
+                    }
+                }
+
+                if rl.is_mouse_button_down(
+                    MouseButton::MOUSE_BUTTON_LEFT,
+                ) {
+                    let delta =
+                        rl.get_mouse_delta();
+
+                    camera.rotate(
+                        delta.x,
+                        delta.y,
                     );
-            }
-
-            if rl.is_mouse_button_down(
-                MouseButton::MOUSE_BUTTON_LEFT,
-            ) {
-                let mouse_delta =
-                    rl.get_mouse_delta();
-
-                camera.rotate(
-                    mouse_delta.x,
-                    mouse_delta.y,
-                );
+                }
             }
         }
 
@@ -230,7 +405,8 @@ fn main() {
         }
 
         match state {
-            SceneState::Galaxy => {
+            SceneState::Galaxy
+            | SceneState::Focused => {
                 renderer::raytracer::render(
                     &mut framebuffer,
                     &galaxy_objects,
@@ -258,7 +434,9 @@ fn main() {
         }
 
         let mut d =
-            rl.begin_drawing(&thread);
+            rl.begin_drawing(
+                &thread,
+            );
 
         d.clear_background(
             Color::BLACK,
@@ -279,40 +457,90 @@ fn main() {
                 );
             }
 
-            SceneState::Diorama => {
+            SceneState::Focused => {
                 d.draw_text(
-                    "ESC - Regresar",
+                    planet_name(
+                        selected_planet,
+                    ),
                     20,
                     20,
+                    28,
+                    Color::WHITE,
+                );
+
+                d.draw_text(
+                    "Click en el planeta para ingresar",
+                    20,
+                    55,
                     20,
                     Color::WHITE,
                 );
 
-                if let Some(planet) =
-                    selected_planet
-                {
-                    let name =
-                        match planet {
-                            PlanetType::Forest =>
-                                "Forest Planet",
+                d.draw_text(
+                    "BACKSPACE - Regresar",
+                    20,
+                    85,
+                    18,
+                    Color::LIGHTGRAY,
+                );
+            }
 
-                            PlanetType::Volcanic =>
-                                "Volcanic Planet",
+            SceneState::Diorama => {
+                d.draw_text(
+                    planet_name(
+                        selected_planet,
+                    ),
+                    20,
+                    20,
+                    28,
+                    Color::WHITE,
+                );
 
-                            PlanetType::Crystal =>
-                                "Crystal Planet",
-                        };
-
-                    d.draw_text(
-                        name,
-                        20,
-                        50,
-                        24,
-                        Color::WHITE,
-                    );
-                }
+                d.draw_text(
+                    "BACKSPACE - Regresar",
+                    20,
+                    55,
+                    18,
+                    Color::LIGHTGRAY,
+                );
             }
         }
+    }
+}
+
+fn selected_planet_index(
+    planet: Option<PlanetType>,
+) -> Option<usize> {
+    match planet {
+        Some(PlanetType::Forest) =>
+            Some(0),
+
+        Some(PlanetType::Volcanic) =>
+            Some(1),
+
+        Some(PlanetType::Crystal) =>
+            Some(2),
+
+        None =>
+            None,
+    }
+}
+
+fn planet_name(
+    planet: Option<PlanetType>,
+) -> &'static str {
+    match planet {
+        Some(PlanetType::Forest) =>
+            "Forest Planet",
+
+        Some(PlanetType::Volcanic) =>
+            "Volcanic Planet",
+
+        Some(PlanetType::Crystal) =>
+            "Crystal Planet",
+
+        None =>
+            "",
     }
 }
 
@@ -324,13 +552,19 @@ fn create_test_diorama(
 ) -> Vec<Object> {
     let material =
         match planet {
-            Some(PlanetType::Forest) =>
+            Some(
+                PlanetType::Forest,
+            ) =>
                 forest_material,
 
-            Some(PlanetType::Volcanic) =>
+            Some(
+                PlanetType::Volcanic,
+            ) =>
                 volcanic_material,
 
-            Some(PlanetType::Crystal) =>
+            Some(
+                PlanetType::Crystal,
+            ) =>
                 crystal_material,
 
             None =>

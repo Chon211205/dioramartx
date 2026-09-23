@@ -70,6 +70,19 @@ impl Camera {
         self.update_position();
     }
 
+    pub fn focus_on(
+        &mut self,
+        target: Vec3,
+        distance: f32,
+    ) {
+        self.target = target;
+        self.distance = distance;
+        self.yaw = 0.0;
+        self.pitch = 0.0;
+
+        self.update_position();
+    }
+
     pub fn get_ray(
         &self,
         screen_x: f32,
@@ -80,8 +93,7 @@ impl Camera {
         let aspect_ratio = width / height;
 
         let forward =
-            (self.target - self.position)
-                .normalize();
+            (self.target - self.position).normalize();
 
         let world_up =
             Vec3::new(0.0, 1.0, 0.0);
@@ -97,8 +109,7 @@ impl Camera {
                 .normalize();
 
         let scale =
-            (self.fov.to_radians() * 0.5)
-                .tan();
+            (self.fov.to_radians() * 0.5).tan();
 
         let px =
             (
@@ -133,8 +144,7 @@ impl Camera {
 
     fn update_position(&mut self) {
         let horizontal_distance =
-            self.distance
-                * self.pitch.cos();
+            self.distance * self.pitch.cos();
 
         self.position.x =
             self.target.x
