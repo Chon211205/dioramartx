@@ -27,7 +27,7 @@ static GRASS_AO_MAP: OnceLock<TextureMap> =
 fn grass_color_map() -> &'static TextureMap {
     GRASS_COLOR_MAP.get_or_init(|| {
         TextureMap::from_file(
-            "assets/textures/grass/Grass005_4K-PNG_Color.png",
+            "assets/textures/grass/Grass005_1K-PNG_Color.png",
         )
     })
 }
@@ -35,7 +35,7 @@ fn grass_color_map() -> &'static TextureMap {
 fn grass_normal_map() -> &'static TextureMap {
     GRASS_NORMAL_MAP.get_or_init(|| {
         TextureMap::from_file(
-            "assets/textures/grass/Grass005_4K-PNG_NormalGL.png",
+            "assets/textures/grass/Grass005_1K-PNG_NormalGL.png",
         )
     })
 }
@@ -43,7 +43,7 @@ fn grass_normal_map() -> &'static TextureMap {
 fn grass_roughness_map() -> &'static TextureMap {
     GRASS_ROUGHNESS_MAP.get_or_init(|| {
         TextureMap::from_file(
-            "assets/textures/grass/Grass005_4K-PNG_Roughness.png",
+            "assets/textures/grass/Grass005_1K-PNG_Roughness.png",
         )
     })
 }
@@ -51,7 +51,7 @@ fn grass_roughness_map() -> &'static TextureMap {
 fn grass_ao_map() -> &'static TextureMap {
     GRASS_AO_MAP.get_or_init(|| {
         TextureMap::from_file(
-            "assets/textures/grass/Grass005_4K-PNG_AmbientOcclusion.png",
+            "assets/textures/grass/Grass005_1K-PNG_AmbientOcclusion.png",
         )
     })
 }
