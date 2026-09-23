@@ -1,3 +1,5 @@
+use std::sync::OnceLock;
+
 use crate::core::vec3::Vec3;
 use crate::materials::material::Material;
 
@@ -6,15 +8,65 @@ use crate::objects::cylinder::Cylinder;
 use crate::objects::object::Object;
 use crate::objects::sphere::Sphere;
 
+use crate::textures::texture::TextureMap;
+
 const PLANET_RADIUS: f32 = 1.8;
 
+static GRASS_COLOR_MAP: OnceLock<TextureMap> =
+    OnceLock::new();
+
+static GRASS_NORMAL_MAP: OnceLock<TextureMap> =
+    OnceLock::new();
+
+static GRASS_ROUGHNESS_MAP: OnceLock<TextureMap> =
+    OnceLock::new();
+
+static GRASS_AO_MAP: OnceLock<TextureMap> =
+    OnceLock::new();
+
+fn grass_color_map() -> &'static TextureMap {
+    GRASS_COLOR_MAP.get_or_init(|| {
+        TextureMap::from_file(
+            "assets/textures/grass/Grass005_4K-PNG_Color.png",
+        )
+    })
+}
+
+fn grass_normal_map() -> &'static TextureMap {
+    GRASS_NORMAL_MAP.get_or_init(|| {
+        TextureMap::from_file(
+            "assets/textures/grass/Grass005_4K-PNG_NormalGL.png",
+        )
+    })
+}
+
+fn grass_roughness_map() -> &'static TextureMap {
+    GRASS_ROUGHNESS_MAP.get_or_init(|| {
+        TextureMap::from_file(
+            "assets/textures/grass/Grass005_4K-PNG_Roughness.png",
+        )
+    })
+}
+
+fn grass_ao_map() -> &'static TextureMap {
+    GRASS_AO_MAP.get_or_init(|| {
+        TextureMap::from_file(
+            "assets/textures/grass/Grass005_4K-PNG_AmbientOcclusion.png",
+        )
+    })
+}
+
 pub fn create_forest_diorama() -> Vec<Object> {
-    let grass = Material::grass(
+    let grass = Material::grass_textured(
         Vec3::new(0.08, 0.55, 0.12),
         0.80,
         0.20,
         0.0,
         0.03,
+        Some(grass_color_map()),
+        Some(grass_normal_map()),
+        Some(grass_roughness_map()),
+        Some(grass_ao_map()),
     );
 
     let grass_detail = Material::new(
@@ -422,33 +474,18 @@ fn add_grass_field(
         Vec3::new(-0.30, 0.90, 0.25),
         Vec3::new(0.55, 0.78, 0.20),
         Vec3::new(-0.58, 0.75, 0.30),
-        Vec3::new(0.72, 0.60, 0.35),
-        Vec3::new(-0.75, 0.55, 0.28),
 
         Vec3::new(0.15, 0.72, 0.68),
         Vec3::new(-0.20, 0.68, 0.70),
-        Vec3::new(0.48, 0.58, 0.66),
-        Vec3::new(-0.48, 0.55, 0.68),
 
         Vec3::new(0.88, 0.28, 0.38),
         Vec3::new(-0.88, 0.30, 0.35),
-        Vec3::new(0.78, 0.18, -0.58),
-        Vec3::new(-0.76, 0.20, -0.60),
 
         Vec3::new(0.30, 0.42, -0.86),
         Vec3::new(-0.30, 0.45, -0.84),
 
         Vec3::new(0.55, -0.20, 0.82),
         Vec3::new(-0.55, -0.18, 0.82),
-
-        Vec3::new(0.82, -0.18, -0.52),
-        Vec3::new(-0.82, -0.15, -0.54),
-
-        Vec3::new(0.25, -0.48, 0.84),
-        Vec3::new(-0.28, -0.45, 0.85),
-
-        Vec3::new(0.20, -0.55, -0.82),
-        Vec3::new(-0.25, -0.52, -0.82),
     ];
 
     for direction in directions {
@@ -471,8 +508,8 @@ fn add_grass_tuft(
     let surface =
         normal * PLANET_RADIUS;
 
-    let height = 0.11;
-    let radius = 0.028;
+    let height = 0.075;
+    let radius = 0.018;
 
     objects.push(
         Object::Cone(
@@ -585,8 +622,7 @@ fn add_bush_on_planet(
         Object::Sphere(
             Sphere::new(
                 surface
-                    + normal
-                        * radius * 0.50,
+                    + normal * radius * 0.50,
                 radius,
                 material,
             ),
@@ -597,10 +633,8 @@ fn add_bush_on_planet(
         Object::Sphere(
             Sphere::new(
                 surface
-                    + normal
-                        * radius * 0.40
-                    + tangent
-                        * radius * 0.85,
+                    + normal * radius * 0.40
+                    + tangent * radius * 0.85,
                 radius * 0.82,
                 material,
             ),
@@ -611,10 +645,8 @@ fn add_bush_on_planet(
         Object::Sphere(
             Sphere::new(
                 surface
-                    + normal
-                        * radius * 0.40
-                    - tangent
-                        * radius * 0.85,
+                    + normal * radius * 0.40
+                    - tangent * radius * 0.85,
                 radius * 0.82,
                 material,
             ),
@@ -635,8 +667,7 @@ fn add_rock_on_planet(
         Object::Sphere(
             Sphere::new(
                 surface
-                    + normal
-                        * radius * 0.35,
+                    + normal * radius * 0.35,
                 radius,
                 material,
             ),
@@ -657,8 +688,7 @@ fn add_patch(
         Object::Sphere(
             Sphere::new(
                 surface
-                    - normal
-                        * radius * 0.65,
+                    - normal * radius * 0.65,
                 radius,
                 material,
             ),
@@ -876,7 +906,10 @@ fn add_mushroom_on_planet(
     let cap_center =
         surface
             + normal
-                * (stem_height + scale * 0.18);
+                * (
+                    stem_height
+                        + scale * 0.18
+                );
 
     objects.push(
         Object::Sphere(

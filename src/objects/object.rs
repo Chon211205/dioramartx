@@ -21,31 +21,19 @@ impl Object {
     ) -> Option<f32> {
         match self {
             Object::Sphere(sphere) => {
-                sphere.intersect(
-                    origin,
-                    direction,
-                )
+                sphere.intersect(origin, direction)
             }
 
             Object::Plane(plane) => {
-                plane.intersect(
-                    origin,
-                    direction,
-                )
+                plane.intersect(origin, direction)
             }
 
             Object::Cylinder(cylinder) => {
-                cylinder.intersect(
-                    origin,
-                    direction,
-                )
+                cylinder.intersect(origin, direction)
             }
 
             Object::Cone(cone) => {
-                cone.intersect(
-                    origin,
-                    direction,
-                )
+                cone.intersect(origin, direction)
             }
         }
     }

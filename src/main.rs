@@ -4,6 +4,7 @@ mod objects;
 mod renderer;
 mod scene;
 mod worlds;
+mod textures;
 
 use raylib::prelude::*;
 
