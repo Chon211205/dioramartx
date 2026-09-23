@@ -21,7 +21,10 @@ fn main() {
 
     rl.set_target_fps(60);
 
-    let mut framebuffer = Framebuffer::new(WIDTH, HEIGHT);
+    let mut framebuffer = Framebuffer::new(
+        WIDTH,
+        HEIGHT,
+    );
 
     let objects = vec![
         Object::new(
@@ -40,6 +43,7 @@ fn main() {
         let mut d = rl.begin_drawing(&thread);
 
         d.clear_background(Color::BLACK);
+
         framebuffer.draw(&mut d);
     }
 }

@@ -45,15 +45,42 @@ fn cast_ray(
     let mut closest_distance = f32::INFINITY;
     let mut final_color = Color::new(5, 5, 20, 255);
 
+    let light_position = Vec3::new(-4.0, 4.0, 0.0);
+
     for object in objects {
         if let Some(distance) = object.intersect(origin, direction) {
             if distance < closest_distance {
                 closest_distance = distance;
 
+                let hit_point = *origin + *direction * distance;
+
+                let normal = (hit_point - object.center).normalize();
+
+                let light_direction =
+                    (light_position - hit_point).normalize();
+
+                let diffuse = normal
+                    .dot(&light_direction)
+                    .max(0.0);
+
+                let ambient = 0.15;
+
+                let intensity =
+                    (ambient + diffuse * 0.85).min(1.0);
+
+                let r =
+                    (object.color.x * intensity * 255.0) as u8;
+
+                let g =
+                    (object.color.y * intensity * 255.0) as u8;
+
+                let b =
+                    (object.color.z * intensity * 255.0) as u8;
+
                 final_color = Color::new(
-                    (object.color.x * 255.0) as u8,
-                    (object.color.y * 255.0) as u8,
-                    (object.color.z * 255.0) as u8,
+                    r,
+                    g,
+                    b,
                     255,
                 );
             }
