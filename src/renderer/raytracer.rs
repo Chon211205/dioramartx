@@ -20,14 +20,10 @@ pub fn render(
 ) {
     framebuffer.clear_zbuffer();
 
-    let width =
-        framebuffer.width as f32;
+    let width = framebuffer.width as f32;
+    let height = framebuffer.height as f32;
 
-    let height =
-        framebuffer.height as f32;
-
-    let aspect_ratio =
-        width / height;
+    let aspect_ratio = width / height;
 
     let forward =
         (camera.target - camera.position)
@@ -126,7 +122,7 @@ fn cast_ray(
 ) -> (Color, f32) {
     if depth > 4 {
         return (
-            Color::new(5, 5, 20, 255),
+            skybox_color(direction),
             f32::INFINITY,
         );
     }
@@ -147,17 +143,14 @@ fn cast_ray(
         {
             if distance < zbuffer {
                 zbuffer = distance;
-                closest_object =
-                    Some(object);
+                closest_object = Some(object);
             }
         }
     }
 
-    let Some(object) =
-        closest_object
-    else {
+    let Some(object) = closest_object else {
         return (
-            Color::new(5, 5, 20, 255),
+            skybox_color(direction),
             f32::INFINITY,
         );
     };
@@ -212,8 +205,7 @@ fn cast_ray(
             .max(0.0)
             .powf(32.0);
 
-    let ambient =
-        0.12;
+    let ambient = 0.12;
 
     let diffuse_component =
         diffuse
@@ -270,8 +262,7 @@ fn cast_ray(
         );
 
     if material.transparency > 0.0 {
-        let epsilon =
-            0.002;
+        let epsilon = 0.002;
 
         let new_origin =
             hit_point
@@ -401,6 +392,147 @@ fn grass_color(
         )
             .clamp(0.0, 1.0),
     )
+}
+
+fn skybox_color(
+    direction: &Vec3,
+) -> Color {
+    let d =
+        direction.normalize();
+
+    let vertical =
+        (d.y + 1.0) * 0.5;
+
+    let nebula =
+        (
+            (d.x * 4.0).sin()
+                * (d.y * 5.0).cos()
+                * (d.z * 3.0).sin()
+        )
+            .abs();
+
+    let secondary_nebula =
+        (
+            (d.x * 9.0 + d.z * 5.0).sin()
+                * (d.y * 7.0).cos()
+        )
+            .abs();
+
+    let mut r =
+        0.008
+            + vertical * 0.008;
+
+    let mut g =
+        0.008
+            + vertical * 0.010;
+
+    let mut b =
+        0.035
+            + vertical * 0.030;
+
+    if nebula > 0.72 {
+        let intensity =
+            (nebula - 0.72)
+                / 0.28;
+
+        r +=
+            0.05 * intensity;
+
+        g +=
+            0.015 * intensity;
+
+        b +=
+            0.10 * intensity;
+    }
+
+    if secondary_nebula > 0.82 {
+        let intensity =
+            (secondary_nebula - 0.82)
+                / 0.18;
+
+        r +=
+            0.025 * intensity;
+
+        g +=
+            0.035 * intensity;
+
+        b +=
+            0.09 * intensity;
+    }
+
+    let star_value =
+        procedural_hash(
+            d.x,
+            d.y,
+            d.z,
+        );
+
+    if star_value > 0.994 {
+        let star =
+            (
+                (star_value - 0.994)
+                    / 0.006
+            )
+                .clamp(0.0, 1.0);
+
+        let brightness =
+            0.55
+                + star * 0.45;
+
+        r += brightness;
+        g += brightness;
+        b += brightness;
+    }
+
+    let bright_star_value =
+        procedural_hash(
+            d.x * 3.7 + 10.0,
+            d.y * 3.1 + 4.0,
+            d.z * 4.3 + 8.0,
+        );
+
+    if bright_star_value > 0.9992 {
+        r = 1.0;
+        g = 0.95;
+        b = 0.78;
+    }
+
+    Color::new(
+        (
+            r.clamp(0.0, 1.0)
+                * 255.0
+        ) as u8,
+
+        (
+            g.clamp(0.0, 1.0)
+                * 255.0
+        ) as u8,
+
+        (
+            b.clamp(0.0, 1.0)
+                * 255.0
+        ) as u8,
+
+        255,
+    )
+}
+
+fn procedural_hash(
+    x: f32,
+    y: f32,
+    z: f32,
+) -> f32 {
+    let value =
+        (
+            x * 127.1
+                + y * 311.7
+                + z * 74.7
+        )
+            .sin()
+            * 43758.5453;
+
+    value
+        - value.floor()
 }
 
 fn reflect(
