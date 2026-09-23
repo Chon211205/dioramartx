@@ -469,14 +469,6 @@ pub fn create_forest_diorama() -> Vec<Object> {
         0.22,
     );
 
-    let mushroom_red = Material::new(
-        Vec3::new(0.85, 0.05, 0.04),
-        0.80,
-        0.30,
-        0.0,
-        0.02,
-    );
-
     objects.push(
         Object::Sphere(
             Sphere::new(
@@ -698,33 +690,6 @@ pub fn create_forest_diorama() -> Vec<Object> {
         wood,
     );
 
-    add_mushroom_on_planet(
-        &mut objects,
-        Vec3::new(0.45, 0.90, 0.35),
-        white,
-        mushroom_red,
-    );
-
-    add_mushroom_on_planet(
-        &mut objects,
-        Vec3::new(-0.35, 0.90, 0.55),
-        white,
-        mushroom_red,
-    );
-
-    add_mushroom_on_planet(
-        &mut objects,
-        Vec3::new(0.35, -0.90, 0.45),
-        white,
-        mushroom_red,
-    );
-
-    add_mushroom_on_planet(
-        &mut objects,
-        Vec3::new(-0.40, -0.85, -0.45),
-        white,
-        mushroom_red,
-    );
 
     objects
 }
@@ -1171,61 +1136,3 @@ fn add_stump_on_planet(
     );
 }
 
-fn add_mushroom_on_planet(
-    objects: &mut Vec<Object>,
-    direction: Vec3,
-    stem_material: Material,
-    cap_material: Material,
-) {
-    let (surface, normal) =
-        surface_point(
-            direction,
-            0.0,
-        );
-
-    let stem_height =
-        0.17;
-
-    let stem_center =
-        surface
-            + normal
-                * (stem_height * 0.5);
-
-    objects.push(
-        Object::Cylinder(
-            Cylinder::new_oriented(
-                stem_center,
-                normal,
-                0.045,
-                stem_height,
-                stem_material,
-            ),
-        ),
-    );
-
-    let cap_center =
-        surface
-            + normal
-                * (stem_height + 0.035);
-
-    objects.push(
-        Object::Sphere(
-            Sphere::new(
-                cap_center,
-                0.12,
-                cap_material,
-            ),
-        ),
-    );
-
-    objects.push(
-        Object::Sphere(
-            Sphere::new(
-                cap_center
-                    + normal * 0.105,
-                0.025,
-                stem_material,
-            ),
-        ),
-    );
-}
