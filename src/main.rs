@@ -21,31 +21,41 @@ fn main() {
     const WIDTH: i32 = 800;
     const HEIGHT: i32 = 600;
 
-    let (mut rl, thread) =
-        raylib::init()
-            .size(WIDTH, HEIGHT)
-            .title("Raytracer - Galaxy Diorama")
-            .build();
+    let (mut rl, thread) = raylib::init()
+        .size(WIDTH, HEIGHT)
+        .title("Galaxy Diorama")
+        .build();
 
     rl.set_target_fps(60);
 
     let mut framebuffer =
-        Framebuffer::new(
-            WIDTH,
-            HEIGHT,
+        Framebuffer::new(WIDTH, HEIGHT);
+
+    let forest_material =
+        Material::new(
+            Vec3::new(0.15, 0.75, 0.25),
+            0.8,
+            0.4,
+            0.0,
+            0.05,
         );
 
-    let planet_material =
+    let crystal_material =
         Material::new(
-            Vec3::new(
-                0.2,
-                0.8,
-                0.3,
-            ),
-            0.8,
+            Vec3::new(0.25, 0.65, 1.0),
+            0.6,
+            0.9,
+            0.25,
+            0.3,
+        );
+
+    let volcanic_material =
+        Material::new(
+            Vec3::new(0.9, 0.2, 0.05),
+            0.75,
             0.5,
             0.0,
-            0.0,
+            0.1,
         );
 
     let objects =
@@ -53,12 +63,36 @@ fn main() {
             Object::Sphere(
                 Sphere::new(
                     Vec3::new(
-                        0.0,
-                        0.0,
+                        -2.7,
+                        0.8,
                         0.0,
                     ),
-                    1.5,
-                    planet_material,
+                    1.0,
+                    forest_material,
+                ),
+            ),
+
+            Object::Sphere(
+                Sphere::new(
+                    Vec3::new(
+                        0.0,
+                        -0.8,
+                        -0.6,
+                    ),
+                    1.15,
+                    volcanic_material,
+                ),
+            ),
+
+            Object::Sphere(
+                Sphere::new(
+                    Vec3::new(
+                        2.7,
+                        0.9,
+                        0.2,
+                    ),
+                    1.0,
+                    crystal_material,
                 ),
             ),
         ];
@@ -66,9 +100,9 @@ fn main() {
     let light =
         Light::new(
             Vec3::new(
-                -4.0,
-                4.0,
-                4.0,
+                -3.0,
+                5.0,
+                5.0,
             ),
             Vec3::new(
                 1.0,
@@ -85,7 +119,7 @@ fn main() {
                 0.0,
                 0.0,
             ),
-            5.0,
+            8.0,
             60.0,
         );
 
@@ -117,9 +151,7 @@ fn main() {
         );
 
         let mut d =
-            rl.begin_drawing(
-                &thread,
-            );
+            rl.begin_drawing(&thread);
 
         d.clear_background(
             Color::BLACK,
