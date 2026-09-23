@@ -18,6 +18,10 @@ static BARK_NORMAL_MAP: OnceLock<TextureMap> = OnceLock::new();
 static BARK_ROUGHNESS_MAP: OnceLock<TextureMap> = OnceLock::new();
 static BARK_AO_MAP: OnceLock<TextureMap> = OnceLock::new();
 
+static ROCK_COLOR_MAP: OnceLock<TextureMap> = OnceLock::new();
+static ROCK_NORMAL_MAP: OnceLock<TextureMap> = OnceLock::new();
+static ROCK_ROUGHNESS_MAP: OnceLock<TextureMap> = OnceLock::new();
+
 fn grass_color_map() -> &'static TextureMap {
     GRASS_COLOR_MAP.get_or_init(|| {
         TextureMap::from_file(
@@ -78,6 +82,30 @@ fn bark_ao_map() -> &'static TextureMap {
     BARK_AO_MAP.get_or_init(|| {
         TextureMap::from_file(
             "assets/textures/bark/Bark014_1K-PNG_AmbientOcclusion.png",
+        )
+    })
+}
+
+fn rock_color_map() -> &'static TextureMap {
+    ROCK_COLOR_MAP.get_or_init(|| {
+        TextureMap::from_file(
+            "assets/textures/rock/Rock041_1K-PNG_Color.png",
+        )
+    })
+}
+
+fn rock_normal_map() -> &'static TextureMap {
+    ROCK_NORMAL_MAP.get_or_init(|| {
+        TextureMap::from_file(
+            "assets/textures/rock/Rock041_1K-PNG_NormalGL.png",
+        )
+    })
+}
+
+fn rock_roughness_map() -> &'static TextureMap {
+    ROCK_ROUGHNESS_MAP.get_or_init(|| {
+        TextureMap::from_file(
+            "assets/textures/rock/Rock041_1K-PNG_Roughness.png",
         )
     })
 }
@@ -161,20 +189,36 @@ pub fn create_forest_diorama() -> Vec<Object> {
         Some(grass_ao_map()),
     );
 
-    let rock = Material::new(
-        Vec3::new(0.33, 0.34, 0.32),
-        0.70,
-        0.25,
-        0.0,
-        0.08,
-    );
-
-    let rock_light = Material::new(
-        Vec3::new(0.48, 0.49, 0.46),
-        0.72,
-        0.22,
+    let rock = Material::textured(
+        Vec3::new(
+            0.40,
+            0.40,
+            0.38,
+        ),
+        0.78,
+        0.18,
         0.0,
         0.06,
+        Some(rock_color_map()),
+        Some(rock_normal_map()),
+        Some(rock_roughness_map()),
+        None,
+    );
+
+    let rock_light = Material::textured(
+        Vec3::new(
+            0.55,
+            0.55,
+            0.52,
+        ),
+        0.82,
+        0.16,
+        0.0,
+        0.05,
+        Some(rock_color_map()),
+        Some(rock_normal_map()),
+        Some(rock_roughness_map()),
+        None,
     );
 
     let yellow = Material::new(
