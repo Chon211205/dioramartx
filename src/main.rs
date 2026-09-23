@@ -3,8 +3,8 @@ mod materials;
 mod objects;
 mod renderer;
 mod scene;
-mod worlds;
 mod textures;
+mod worlds;
 
 use raylib::prelude::*;
 
@@ -14,7 +14,10 @@ use core::vec3::Vec3;
 
 use materials::material::Material;
 
+use objects::cone::Cone;
+use objects::cylinder::Cylinder;
 use objects::object::Object;
+use objects::plane::Plane;
 use objects::sphere::Sphere;
 
 use scene::light::Light;
@@ -103,7 +106,7 @@ fn main() {
             0.2,
         );
 
-    let galaxy_objects =
+    let galaxy_hit_objects =
         vec![
             Object::Sphere(
                 Sphere::new(
@@ -129,6 +132,49 @@ fn main() {
                 ),
             ),
         ];
+
+    let forest_diorama =
+        create_forest_diorama();
+
+    let forest_preview =
+        transform_objects(
+            create_forest_diorama(),
+            forest_position,
+            0.56,
+        );
+
+    let volcanic_diorama =
+        create_test_diorama(
+            volcanic_material,
+        );
+
+    let crystal_diorama =
+        create_test_diorama(
+            crystal_material,
+        );
+
+    let mut galaxy_render_objects =
+        forest_preview;
+
+    galaxy_render_objects.push(
+        Object::Sphere(
+            Sphere::new(
+                volcanic_position,
+                1.15,
+                volcanic_material,
+            ),
+        ),
+    );
+
+    galaxy_render_objects.push(
+        Object::Sphere(
+            Sphere::new(
+                crystal_position,
+                1.0,
+                crystal_material,
+            ),
+        ),
+    );
 
     let light =
         Light::new(
@@ -164,8 +210,6 @@ fn main() {
         None;
 
     while !rl.window_should_close() {
-        camera.update_transition();
-
         match state {
             SceneState::Galaxy => {
                 if rl.is_mouse_button_pressed(
@@ -190,7 +234,7 @@ fn main() {
                         None;
 
                     for (index, object) in
-                        galaxy_objects
+                        galaxy_hit_objects
                             .iter()
                             .enumerate()
                     {
@@ -219,11 +263,6 @@ fn main() {
                                     Some(
                                         PlanetType::Forest,
                                     );
-
-                                camera.start_focus(
-                                    forest_position,
-                                    3.2,
-                                );
                             }
 
                             1 => {
@@ -231,11 +270,6 @@ fn main() {
                                     Some(
                                         PlanetType::Volcanic,
                                     );
-
-                                camera.start_focus(
-                                    volcanic_position,
-                                    3.5,
-                                );
                             }
 
                             2 => {
@@ -243,15 +277,21 @@ fn main() {
                                     Some(
                                         PlanetType::Crystal,
                                     );
-
-                                camera.start_focus(
-                                    crystal_position,
-                                    3.2,
-                                );
                             }
 
                             _ => {}
                         }
+
+                        camera =
+                            Camera::new(
+                                Vec3::new(
+                                    0.0,
+                                    0.0,
+                                    0.0,
+                                ),
+                                5.2,
+                                60.0,
+                            );
 
                         state =
                             SceneState::Focused;
@@ -293,105 +333,6 @@ fn main() {
                         );
                 }
 
-                if !camera.is_transitioning()
-                    && rl.is_mouse_button_pressed(
-                        MouseButton::MOUSE_BUTTON_LEFT,
-                    )
-                {
-                    let mouse =
-                        rl.get_mouse_position();
-
-                    let ray =
-                        camera.get_ray(
-                            mouse.x,
-                            mouse.y,
-                            WIDTH as f32,
-                            HEIGHT as f32,
-                        );
-
-                    if let Some(index) =
-                        selected_planet_index(
-                            selected_planet,
-                        )
-                    {
-                        if galaxy_objects[index]
-                            .intersect(
-                                &ray.origin,
-                                &ray.direction,
-                            )
-                            .is_some()
-                        {
-                            state =
-                                SceneState::Diorama;
-
-                            camera =
-                                Camera::new(
-                                    Vec3::new(
-                                        0.0,
-                                        0.0,
-                                        0.0,
-                                    ),
-                                    5.0,
-                                    60.0,
-                                );
-                        }
-                    }
-                }
-
-                if !camera.is_transitioning()
-                    && rl.is_mouse_button_down(
-                        MouseButton::MOUSE_BUTTON_RIGHT,
-                    )
-                {
-                    let delta =
-                        rl.get_mouse_delta();
-
-                    camera.rotate(
-                        delta.x,
-                        delta.y,
-                    );
-                }
-            }
-
-            SceneState::Diorama => {
-                if rl.is_key_pressed(
-                    KeyboardKey::KEY_BACKSPACE,
-                ) {
-                    state =
-                        SceneState::Focused;
-
-                    match selected_planet {
-                        Some(
-                            PlanetType::Forest,
-                        ) => {
-                            camera.focus_on(
-                                forest_position,
-                                3.2,
-                            );
-                        }
-
-                        Some(
-                            PlanetType::Volcanic,
-                        ) => {
-                            camera.focus_on(
-                                volcanic_position,
-                                3.5,
-                            );
-                        }
-
-                        Some(
-                            PlanetType::Crystal,
-                        ) => {
-                            camera.focus_on(
-                                crystal_position,
-                                3.2,
-                            );
-                        }
-
-                        None => {}
-                    }
-                }
-
                 if rl.is_mouse_button_down(
                     MouseButton::MOUSE_BUTTON_LEFT,
                 ) {
@@ -410,53 +351,33 @@ fn main() {
             rl.get_mouse_wheel_move();
 
         if wheel != 0.0 {
-            camera.zoom(wheel);
+            camera.zoom(
+                wheel,
+            );
         }
 
         match state {
-            SceneState::Galaxy
-            | SceneState::Focused => {
+            SceneState::Galaxy => {
                 renderer::raytracer::render(
                     &mut framebuffer,
-                    &galaxy_objects,
+                    &galaxy_render_objects,
                     &light,
                     &camera,
                 );
             }
 
-            SceneState::Diorama => {
-                let diorama_objects =
-                    match selected_planet {
-                        Some(
-                            PlanetType::Forest,
-                        ) => {
-                            create_forest_diorama()
-                        }
-
-                        Some(
-                            PlanetType::Volcanic,
-                        ) => {
-                            create_test_diorama(
-                                volcanic_material,
-                            )
-                        }
-
-                        Some(
-                            PlanetType::Crystal,
-                        ) => {
-                            create_test_diorama(
-                                crystal_material,
-                            )
-                        }
-
-                        None => {
-                            create_forest_diorama()
-                        }
-                    };
+            SceneState::Focused => {
+                let objects =
+                    get_selected_objects(
+                        selected_planet,
+                        &forest_diorama,
+                        &volcanic_diorama,
+                        &crystal_diorama,
+                    );
 
                 renderer::raytracer::render(
                     &mut framebuffer,
-                    &diorama_objects,
+                    objects,
                     &light,
                     &camera,
                 );
@@ -485,6 +406,30 @@ fn main() {
                     24,
                     Color::WHITE,
                 );
+
+                d.draw_text(
+                    "Click izquierdo - Seleccionar",
+                    20,
+                    55,
+                    18,
+                    Color::LIGHTGRAY,
+                );
+
+                d.draw_text(
+                    "Click derecho - Rotar",
+                    20,
+                    80,
+                    18,
+                    Color::LIGHTGRAY,
+                );
+
+                d.draw_text(
+                    "Rueda - Zoom",
+                    20,
+                    105,
+                    18,
+                    Color::LIGHTGRAY,
+                );
             }
 
             SceneState::Focused => {
@@ -498,48 +443,26 @@ fn main() {
                     Color::WHITE,
                 );
 
-                if camera.is_transitioning() {
-                    d.draw_text(
-                        "Acercando...",
-                        20,
-                        55,
-                        20,
-                        Color::LIGHTGRAY,
-                    );
-                } else {
-                    d.draw_text(
-                        "Click en el planeta para ingresar",
-                        20,
-                        55,
-                        20,
-                        Color::WHITE,
-                    );
-                }
-
                 d.draw_text(
-                    "BACKSPACE - Regresar",
+                    "Click izquierdo - Rotar",
                     20,
-                    85,
+                    55,
                     18,
                     Color::LIGHTGRAY,
                 );
-            }
 
-            SceneState::Diorama => {
                 d.draw_text(
-                    planet_name(
-                        selected_planet,
-                    ),
+                    "Rueda - Zoom",
                     20,
-                    20,
-                    28,
-                    Color::WHITE,
+                    80,
+                    18,
+                    Color::LIGHTGRAY,
                 );
 
                 d.draw_text(
                     "BACKSPACE - Regresar",
                     20,
-                    55,
+                    105,
                     18,
                     Color::LIGHTGRAY,
                 );
@@ -548,21 +471,34 @@ fn main() {
     }
 }
 
-fn selected_planet_index(
+fn get_selected_objects<'a>(
     planet: Option<PlanetType>,
-) -> Option<usize> {
+    forest: &'a [Object],
+    volcanic: &'a [Object],
+    crystal: &'a [Object],
+) -> &'a [Object] {
     match planet {
-        Some(PlanetType::Forest) =>
-            Some(0),
+        Some(
+            PlanetType::Forest,
+        ) => {
+            forest
+        }
 
-        Some(PlanetType::Volcanic) =>
-            Some(1),
+        Some(
+            PlanetType::Volcanic,
+        ) => {
+            volcanic
+        }
 
-        Some(PlanetType::Crystal) =>
-            Some(2),
+        Some(
+            PlanetType::Crystal,
+        ) => {
+            crystal
+        }
 
-        None =>
-            None,
+        None => {
+            forest
+        }
     }
 }
 
@@ -570,17 +506,27 @@ fn planet_name(
     planet: Option<PlanetType>,
 ) -> &'static str {
     match planet {
-        Some(PlanetType::Forest) =>
-            "Forest Planet",
+        Some(
+            PlanetType::Forest,
+        ) => {
+            "Forest Planet"
+        }
 
-        Some(PlanetType::Volcanic) =>
-            "Volcanic Planet",
+        Some(
+            PlanetType::Volcanic,
+        ) => {
+            "Volcanic Planet"
+        }
 
-        Some(PlanetType::Crystal) =>
-            "Crystal Planet",
+        Some(
+            PlanetType::Crystal,
+        ) => {
+            "Crystal Planet"
+        }
 
-        None =>
-            "",
+        None => {
+            ""
+        }
     }
 }
 
@@ -600,4 +546,84 @@ fn create_test_diorama(
             ),
         ),
     ]
+}
+
+fn transform_objects(
+    objects: Vec<Object>,
+    offset: Vec3,
+    scale: f32,
+) -> Vec<Object> {
+    objects
+        .into_iter()
+        .map(
+            |object| {
+                match object {
+                    Object::Sphere(
+                        sphere,
+                    ) => {
+                        Object::Sphere(
+                            Sphere::new(
+                                sphere.center
+                                    * scale
+                                    + offset,
+                                sphere.radius
+                                    * scale,
+                                sphere.material,
+                            ),
+                        )
+                    }
+
+                    Object::Cylinder(
+                        cylinder,
+                    ) => {
+                        Object::Cylinder(
+                            Cylinder::new_oriented(
+                                cylinder.center
+                                    * scale
+                                    + offset,
+                                cylinder.axis,
+                                cylinder.radius
+                                    * scale,
+                                cylinder.height
+                                    * scale,
+                                cylinder.material,
+                            ),
+                        )
+                    }
+
+                    Object::Cone(
+                        cone,
+                    ) => {
+                        Object::Cone(
+                            Cone::new_oriented(
+                                cone.center
+                                    * scale
+                                    + offset,
+                                cone.axis,
+                                cone.radius
+                                    * scale,
+                                cone.height
+                                    * scale,
+                                cone.material,
+                            ),
+                        )
+                    }
+
+                    Object::Plane(
+                        plane,
+                    ) => {
+                        Object::Plane(
+                            Plane::new(
+                                plane.point
+                                    * scale
+                                    + offset,
+                                plane.normal,
+                                plane.material,
+                            ),
+                        )
+                    }
+                }
+            },
+        )
+        .collect()
 }

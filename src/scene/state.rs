@@ -2,7 +2,6 @@
 pub enum SceneState {
     Galaxy,
     Focused,
-    Diorama,
 }
 
 #[derive(Clone, Copy, PartialEq)]
