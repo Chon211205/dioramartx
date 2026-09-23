@@ -237,14 +237,6 @@ pub fn create_forest_diorama() -> Vec<Object> {
         Some(grass_ao_map()),
     );
 
-    let grass_detail = Material::new(
-        Vec3::new(0.08, 0.42, 0.06),
-        0.85,
-        0.10,
-        0.0,
-        0.0,
-    );
-
     let soil = Material::textured(
         Vec3::new(
             0.55,
@@ -455,10 +447,6 @@ pub fn create_forest_diorama() -> Vec<Object> {
         ),
     );
 
-    add_grass_field(
-        &mut objects,
-        grass_detail,
-    );
 
     let patches = [
         (Vec3::new(0.20, 1.0, 0.20), 0.28),
@@ -717,92 +705,6 @@ fn surface_point(
     )
 }
 
-fn add_grass_field(
-    objects: &mut Vec<Object>,
-    material: Material,
-) {
-    let directions = [
-        Vec3::new(0.15, 1.00, 0.20),
-        Vec3::new(-0.20, 1.00, 0.10),
-        Vec3::new(0.40, 0.90, 0.25),
-        Vec3::new(-0.45, 0.85, 0.15),
-
-        Vec3::new(0.20, 0.55, 0.90),
-        Vec3::new(-0.35, 0.50, 0.85),
-        Vec3::new(0.65, 0.30, 0.70),
-        Vec3::new(-0.70, 0.25, 0.65),
-
-        Vec3::new(0.25, 0.50, -0.90),
-        Vec3::new(-0.30, 0.55, -0.85),
-        Vec3::new(0.65, 0.25, -0.70),
-        Vec3::new(-0.65, 0.30, -0.75),
-
-        Vec3::new(1.00, 0.15, 0.15),
-        Vec3::new(0.95, -0.15, 0.25),
-        Vec3::new(0.90, 0.10, -0.35),
-        Vec3::new(0.85, -0.30, -0.20),
-
-        Vec3::new(-1.00, 0.15, 0.15),
-        Vec3::new(-0.95, -0.15, 0.30),
-        Vec3::new(-0.90, 0.10, -0.35),
-        Vec3::new(-0.85, -0.30, -0.20),
-
-        Vec3::new(0.15, -1.00, 0.20),
-        Vec3::new(-0.20, -1.00, 0.10),
-        Vec3::new(0.40, -0.90, 0.25),
-        Vec3::new(-0.45, -0.85, 0.15),
-
-        Vec3::new(0.55, -0.75, -0.30),
-        Vec3::new(-0.55, -0.75, -0.35),
-        Vec3::new(0.25, -0.80, 0.65),
-        Vec3::new(-0.30, -0.80, 0.60),
-
-        Vec3::new(0.65, -0.55, 0.45),
-        Vec3::new(-0.65, -0.55, 0.45),
-        Vec3::new(0.60, -0.55, -0.50),
-        Vec3::new(-0.60, -0.55, -0.50),
-    ];
-
-    for direction in directions {
-        add_grass_tuft(
-            objects,
-            direction,
-            material,
-        );
-    }
-}
-
-fn add_grass_tuft(
-    objects: &mut Vec<Object>,
-    direction: Vec3,
-    material: Material,
-) {
-    let (point, normal) =
-        surface_point(
-            direction,
-            0.035,
-        );
-
-    let height =
-        0.075;
-
-    let center =
-        point
-            + normal
-                * (height * 0.5);
-
-    objects.push(
-        Object::Cone(
-            Cone::new_oriented(
-                center,
-                normal,
-                0.018,
-                height,
-                material,
-            ),
-        ),
-    );
-}
 
 fn add_tree_on_planet(
     objects: &mut Vec<Object>,
