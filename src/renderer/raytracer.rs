@@ -1,5 +1,6 @@
 use raylib::prelude::*;
 
+use crate::core::camera::Camera;
 use crate::core::framebuffer::Framebuffer;
 use crate::core::vec3::Vec3;
 use crate::objects::object::Object;
@@ -9,36 +10,55 @@ pub fn render(
     framebuffer: &mut Framebuffer,
     objects: &[Object],
     light: &Light,
+    camera: &Camera,
 ) {
     let width = framebuffer.width as f32;
     let height = framebuffer.height as f32;
     let aspect_ratio = width / height;
 
+    let forward = (camera.target - camera.position).normalize();
+
+    let world_up = Vec3::new(0.0, 1.0, 0.0);
+
+    let right = forward
+        .cross(&world_up)
+        .normalize();
+
+    let up = right
+        .cross(&forward)
+        .normalize();
+
+    let scale =
+        (camera.fov.to_radians() * 0.5).tan();
+
     for y in 0..framebuffer.height {
         for x in 0..framebuffer.width {
-            let screen_x = (2.0 * x as f32) / width - 1.0;
-            let screen_y = -(2.0 * y as f32) / height + 1.0;
+            let px =
+                (
+                    2.0 * ((x as f32 + 0.5) / width)
+                    - 1.0
+                )
+                * aspect_ratio
+                * scale;
 
-            let screen_x = screen_x * aspect_ratio;
+            let py =
+                (
+                    1.0
+                    - 2.0 * ((y as f32 + 0.5) / height)
+                )
+                * scale;
 
             let ray_direction =
-                Vec3::new(
-                    screen_x,
-                    screen_y,
-                    -1.0,
+                (
+                    forward
+                    + right * px
+                    + up * py
                 )
                 .normalize();
 
-            let ray_origin =
-                Vec3::new(
-                    0.0,
-                    0.0,
-                    0.0,
-                );
-
             let pixel_color =
                 cast_ray(
-                    &ray_origin,
+                    &camera.position,
                     &ray_direction,
                     objects,
                     light,
@@ -56,7 +76,8 @@ fn cast_ray(
     objects: &[Object],
     light: &Light,
 ) -> Color {
-    let mut closest_distance = f32::INFINITY;
+    let mut closest_distance =
+        f32::INFINITY;
 
     let mut final_color =
         Color::new(
@@ -74,7 +95,8 @@ fn cast_ray(
             )
         {
             if distance < closest_distance {
-                closest_distance = distance;
+                closest_distance =
+                    distance;
 
                 let hit_point =
                     *origin
@@ -96,9 +118,7 @@ fn cast_ray(
 
                 let diffuse =
                     normal
-                        .dot(
-                            &light_direction
-                        )
+                        .dot(&light_direction)
                         .max(0.0);
 
                 let view_direction =
