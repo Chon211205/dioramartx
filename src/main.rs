@@ -3,6 +3,7 @@ mod materials;
 mod objects;
 mod renderer;
 mod scene;
+mod worlds;
 
 use raylib::prelude::*;
 
@@ -20,6 +21,8 @@ use scene::state::{
     PlanetType,
     SceneState,
 };
+
+use worlds::forest::create_forest_diorama;
 
 fn main() {
     const WIDTH: i32 = 800;
@@ -182,14 +185,13 @@ fn main() {
                         f32::INFINITY;
 
                     let mut selected_index:
-                        Option<usize> = None;
+                        Option<usize> =
+                        None;
 
-                    for (
-                        index,
-                        object,
-                    ) in galaxy_objects
-                        .iter()
-                        .enumerate()
+                    for (index, object) in
+                        galaxy_objects
+                            .iter()
+                            .enumerate()
                     {
                         if let Some(distance) =
                             object.intersect(
@@ -423,12 +425,33 @@ fn main() {
 
             SceneState::Diorama => {
                 let diorama_objects =
-                    create_test_diorama(
-                        selected_planet,
-                        forest_material,
-                        volcanic_material,
-                        crystal_material,
-                    );
+                    match selected_planet {
+                        Some(
+                            PlanetType::Forest,
+                        ) => {
+                            create_forest_diorama()
+                        }
+
+                        Some(
+                            PlanetType::Volcanic,
+                        ) => {
+                            create_test_diorama(
+                                volcanic_material,
+                            )
+                        }
+
+                        Some(
+                            PlanetType::Crystal,
+                        ) => {
+                            create_test_diorama(
+                                crystal_material,
+                            )
+                        }
+
+                        None => {
+                            create_forest_diorama()
+                        }
+                    };
 
                 renderer::raytracer::render(
                     &mut framebuffer,
@@ -561,32 +584,8 @@ fn planet_name(
 }
 
 fn create_test_diorama(
-    planet: Option<PlanetType>,
-    forest_material: Material,
-    volcanic_material: Material,
-    crystal_material: Material,
+    material: Material,
 ) -> Vec<Object> {
-    let material =
-        match planet {
-            Some(
-                PlanetType::Forest,
-            ) =>
-                forest_material,
-
-            Some(
-                PlanetType::Volcanic,
-            ) =>
-                volcanic_material,
-
-            Some(
-                PlanetType::Crystal,
-            ) =>
-                crystal_material,
-
-            None =>
-                forest_material,
-        };
-
     vec![
         Object::Sphere(
             Sphere::new(

@@ -1,12 +1,16 @@
 use crate::core::vec3::Vec3;
 use crate::materials::material::Material;
 
-use crate::objects::sphere::Sphere;
+use crate::objects::cone::Cone;
+use crate::objects::cylinder::Cylinder;
 use crate::objects::plane::Plane;
+use crate::objects::sphere::Sphere;
 
 pub enum Object {
     Sphere(Sphere),
     Plane(Plane),
+    Cylinder(Cylinder),
+    Cone(Cone),
 }
 
 impl Object {
@@ -17,11 +21,31 @@ impl Object {
     ) -> Option<f32> {
         match self {
             Object::Sphere(sphere) => {
-                sphere.intersect(origin, direction)
+                sphere.intersect(
+                    origin,
+                    direction,
+                )
             }
 
             Object::Plane(plane) => {
-                plane.intersect(origin, direction)
+                plane.intersect(
+                    origin,
+                    direction,
+                )
+            }
+
+            Object::Cylinder(cylinder) => {
+                cylinder.intersect(
+                    origin,
+                    direction,
+                )
+            }
+
+            Object::Cone(cone) => {
+                cone.intersect(
+                    origin,
+                    direction,
+                )
             }
         }
     }
@@ -38,6 +62,14 @@ impl Object {
             Object::Plane(plane) => {
                 plane.normal_at()
             }
+
+            Object::Cylinder(cylinder) => {
+                cylinder.normal_at(point)
+            }
+
+            Object::Cone(cone) => {
+                cone.normal_at(point)
+            }
         }
     }
 
@@ -49,6 +81,14 @@ impl Object {
 
             Object::Plane(plane) => {
                 plane.material
+            }
+
+            Object::Cylinder(cylinder) => {
+                cylinder.material
+            }
+
+            Object::Cone(cone) => {
+                cone.material
             }
         }
     }
