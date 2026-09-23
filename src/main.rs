@@ -1,3 +1,4 @@
+mod acceleration;
 mod core;
 mod materials;
 mod objects;
@@ -21,6 +22,7 @@ use objects::plane::Plane;
 use objects::sphere::Sphere;
 
 use scene::light::Light;
+use scene::scene::Scene;
 use scene::state::{
     PlanetType,
     SceneState,
@@ -29,8 +31,8 @@ use scene::state::{
 use worlds::forest::create_forest_diorama;
 
 fn main() {
-    const RENDER_WIDTH: i32 = 1600;
-    const RENDER_HEIGHT: i32 = 900;
+    const RENDER_WIDTH: i32 = 1280;
+    const RENDER_HEIGHT: i32 = 720;
 
     let (
         mut rl,
@@ -188,30 +190,45 @@ fn main() {
             ),
         ];
 
-    let forest_diorama =
+    let forest_objects =
         create_forest_diorama();
 
-    let forest_preview =
+    let forest_preview_objects =
         transform_objects(
             create_forest_diorama(),
             forest_position,
             0.56,
         );
 
-    let volcanic_diorama =
+    let volcanic_objects =
         create_test_diorama(
             volcanic_material,
         );
 
-    let crystal_diorama =
+    let crystal_objects =
         create_test_diorama(
             crystal_material,
         );
 
-    let mut galaxy_render_objects =
-        forest_preview;
+    let forest_scene =
+        Scene::new(
+            forest_objects,
+        );
 
-    galaxy_render_objects.push(
+    let volcanic_scene =
+        Scene::new(
+            volcanic_objects,
+        );
+
+    let crystal_scene =
+        Scene::new(
+            crystal_objects,
+        );
+
+    let mut galaxy_objects =
+        forest_preview_objects;
+
+    galaxy_objects.push(
         Object::Sphere(
             Sphere::new(
                 volcanic_position,
@@ -221,7 +238,7 @@ fn main() {
         ),
     );
 
-    galaxy_render_objects.push(
+    galaxy_objects.push(
         Object::Sphere(
             Sphere::new(
                 crystal_position,
@@ -230,6 +247,11 @@ fn main() {
             ),
         ),
     );
+
+    let galaxy_scene =
+        Scene::new(
+            galaxy_objects,
+        );
 
     let light =
         Light::new(
@@ -447,24 +469,24 @@ fn main() {
             SceneState::Galaxy => {
                 renderer::raytracer::render(
                     &mut framebuffer,
-                    &galaxy_render_objects,
+                    &galaxy_scene,
                     &light,
                     &camera,
                 );
             }
 
             SceneState::Focused => {
-                let objects =
-                    get_selected_objects(
+                let selected_scene =
+                    get_selected_scene(
                         selected_planet,
-                        &forest_diorama,
-                        &volcanic_diorama,
-                        &crystal_diorama,
+                        &forest_scene,
+                        &volcanic_scene,
+                        &crystal_scene,
                     );
 
                 renderer::raytracer::render(
                     &mut framebuffer,
-                    objects,
+                    selected_scene,
                     &light,
                     &camera,
                 );
@@ -665,12 +687,12 @@ fn main() {
     }
 }
 
-fn get_selected_objects<'a>(
+fn get_selected_scene<'a>(
     planet: Option<PlanetType>,
-    forest: &'a [Object],
-    volcanic: &'a [Object],
-    crystal: &'a [Object],
-) -> &'a [Object] {
+    forest: &'a Scene,
+    volcanic: &'a Scene,
+    crystal: &'a Scene,
+) -> &'a Scene {
     match planet {
         Some(
             PlanetType::Forest,

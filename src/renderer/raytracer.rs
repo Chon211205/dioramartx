@@ -7,12 +7,15 @@ use crate::core::framebuffer::Framebuffer;
 use crate::core::vec3::Vec3;
 
 use crate::materials::material::MaterialPattern;
+
 use crate::objects::object::Object;
+
 use crate::scene::light::Light;
+use crate::scene::scene::Scene;
 
 pub fn render(
     framebuffer: &mut Framebuffer,
-    objects: &[Object],
+    scene: &Scene,
     light: &Light,
     camera: &Camera,
 ) {
@@ -175,7 +178,7 @@ pub fn render(
                                     cast_ray(
                                         &camera_position,
                                         &direction,
-                                        objects,
+                                        scene,
                                         light,
                                         0,
                                     );
@@ -203,7 +206,7 @@ pub fn render(
 fn cast_ray(
     origin: &Vec3,
     direction: &Vec3,
-    objects: &[Object],
+    scene: &Scene,
     light: &Light,
     depth: u32,
 ) -> Vec3 {
@@ -213,39 +216,22 @@ fn cast_ray(
         );
     }
 
-    let mut closest_distance =
-        f32::INFINITY;
-
-    let mut closest_index:
-        Option<usize> =
-        None;
-
-    for (index, object) in
-        objects
-            .iter()
-            .enumerate()
-    {
-        if let Some(distance) =
-            object.intersect(
+    let (
+        object_index,
+        closest_distance,
+    ) =
+        match scene
+            .bvh
+            .intersect(
                 origin,
                 direction,
+                &scene.objects,
             )
         {
-            if distance
-                < closest_distance
-            {
-                closest_distance =
-                    distance;
-
-                closest_index =
-                    Some(index);
+            Some(hit) => {
+                hit
             }
-        }
-    }
 
-    let object_index =
-        match closest_index {
-            Some(index) => index,
             None => {
                 return skybox_color(
                     direction,
@@ -254,7 +240,9 @@ fn cast_ray(
         };
 
     let object =
-        &objects[object_index];
+        &scene.objects[
+            object_index
+        ];
 
     let hit_point =
         *origin
@@ -271,7 +259,10 @@ fn cast_ray(
     let material =
         object.material();
 
-    let (u, v) =
+    let (
+        u,
+        v,
+    ) =
         object_uv(
             object,
             &hit_point,
@@ -279,7 +270,9 @@ fn cast_ray(
         );
 
     let mut surface_color =
-        if let Some(texture) =
+        if let Some(
+            texture,
+        ) =
             material.albedo_texture
         {
             texture.sample(
@@ -315,7 +308,9 @@ fn cast_ray(
     let mut normal =
         geometric_normal;
 
-    if let Some(normal_map) =
+    if let Some(
+        normal_map,
+    ) =
         material.normal_texture
     {
         let sampled =
@@ -326,9 +321,17 @@ fn cast_ray(
 
         let tangent_normal =
             Vec3::new(
-                sampled.x * 2.0 - 1.0,
-                sampled.y * 2.0 - 1.0,
-                sampled.z * 2.0 - 1.0,
+                sampled.x
+                    * 2.0
+                    - 1.0,
+
+                sampled.y
+                    * 2.0
+                    - 1.0,
+
+                sampled.z
+                    * 2.0
+                    - 1.0,
             )
                 .normalize();
 
@@ -346,8 +349,10 @@ fn cast_ray(
             (
                 tangent
                     * tangent_normal.x
+
                     + bitangent
                         * tangent_normal.y
+
                     + geometric_normal
                         * tangent_normal.z
             )
@@ -355,81 +360,79 @@ fn cast_ray(
     }
 
     let ao =
-        if let Some(ao_map) =
-            material.ao_texture
-        {
-            ao_map
-                .sample_scalar(
-                    u,
-                    v,
-                )
-                .clamp(
-                    0.0,
-                    1.0,
-                )
-        } else {
-            1.0
+        match material.ao_texture {
+            Some(
+                ao_map,
+            ) => {
+                ao_map
+                    .sample_scalar(
+                        u,
+                        v,
+                    )
+                    .clamp(
+                        0.0,
+                        1.0,
+                    )
+            }
+
+            None => {
+                1.0
+            }
         };
 
     let roughness =
-        if let Some(roughness_map) =
-            material.roughness_texture
+        match material
+            .roughness_texture
         {
-            roughness_map
-                .sample_scalar(
-                    u,
-                    v,
-                )
-                .clamp(
-                    0.0,
-                    1.0,
-                )
-        } else {
-            0.5
+            Some(
+                roughness_map,
+            ) => {
+                roughness_map
+                    .sample_scalar(
+                        u,
+                        v,
+                    )
+                    .clamp(
+                        0.0,
+                        1.0,
+                    )
+            }
+
+            None => {
+                0.5
+            }
         };
 
-    let light_direction =
-        (
-            light.position
-                - hit_point
-        )
-            .normalize();
+    let to_light =
+        light.position
+            - hit_point;
 
     let light_distance =
-        (
-            light.position
-                - hit_point
-        )
-            .length();
+        to_light.length();
+
+    let light_direction =
+        to_light
+            / light_distance;
 
     let shadow_origin =
         hit_point
             + normal
-                * 0.002;
+                * 0.003;
 
-    let mut in_shadow =
-        false;
-
-    for shadow_object in objects {
-        if let Some(distance) =
-            shadow_object.intersect(
+    let in_shadow =
+        scene
+            .bvh
+            .any_hit(
                 &shadow_origin,
                 &light_direction,
-            )
-        {
-            if distance
-                < light_distance
-            {
-                in_shadow =
-                    true;
-
-                break;
-            }
-        }
-    }
+                light_distance
+                    - 0.005,
+                &scene.objects,
+            );
 
     let ambient =
-        0.12 * ao;
+        0.12
+            * ao;
 
     let diffuse_factor =
         if in_shadow {
@@ -511,16 +514,17 @@ fn cast_ray(
             + light.color
                 * specular;
 
-    if material.transparency
-        > 0.0
-    {
-        let transparency =
-            material.transparency
-                .clamp(
-                    0.0,
-                    1.0,
-                );
+    let transparency =
+        material
+            .transparency
+            .clamp(
+                0.0,
+                1.0,
+            );
 
+    if transparency
+        > 0.001
+    {
         let transparent_origin =
             hit_point
                 + *direction
@@ -530,7 +534,7 @@ fn cast_ray(
             cast_ray(
                 &transparent_origin,
                 direction,
-                objects,
+                scene,
                 light,
                 depth + 1,
             );
@@ -603,7 +607,10 @@ fn sphere_uv(
     center: &Vec3,
 ) -> (f32, f32) {
     let n =
-        (*point - *center)
+        (
+            *point
+                - *center
+        )
             .normalize();
 
     let u =
@@ -631,6 +638,7 @@ fn sphere_uv(
         u.rem_euclid(
             1.0,
         ),
+
         v.rem_euclid(
             1.0,
         ),
@@ -648,7 +656,8 @@ fn cylinder_uv(
         axis.normalize();
 
     let local =
-        *point - *center;
+        *point
+            - *center;
 
     let axial =
         local.dot(
@@ -679,10 +688,11 @@ fn cylinder_uv(
         );
 
     let half_height =
-        height * 0.5;
+        height
+            * 0.5;
 
     let cap_epsilon =
-        0.002;
+        0.003;
 
     if (
         axial.abs()
@@ -708,10 +718,13 @@ fn cylinder_uv(
                     );
 
         return (
-            u.rem_euclid(
+            u.clamp(
+                0.0,
                 1.0,
             ),
-            v.rem_euclid(
+
+            v.clamp(
+                0.0,
                 1.0,
             ),
         );
@@ -745,13 +758,16 @@ fn cylinder_uv(
 
     (
         (
-            u * u_scale
+            u
+                * u_scale
         )
             .rem_euclid(
                 1.0,
             ),
+
         (
-            v * v_scale
+            v
+                * v_scale
         )
             .rem_euclid(
                 1.0,
@@ -770,7 +786,8 @@ fn cone_uv(
         axis.normalize();
 
     let local =
-        *point - *center;
+        *point
+            - *center;
 
     let axial =
         local.dot(
@@ -801,7 +818,8 @@ fn cone_uv(
         );
 
     let half_height =
-        height * 0.5;
+        height
+            * 0.5;
 
     let base_distance =
         (
@@ -811,7 +829,7 @@ fn cone_uv(
             .abs();
 
     if base_distance
-        < 0.002
+        < 0.003
     {
         let u =
             0.5
@@ -830,10 +848,13 @@ fn cone_uv(
                     );
 
         return (
-            u.rem_euclid(
+            u.clamp(
+                0.0,
                 1.0,
             ),
-            v.rem_euclid(
+
+            v.clamp(
+                0.0,
                 1.0,
             ),
         );
@@ -867,13 +888,16 @@ fn cone_uv(
 
     (
         (
-            u * u_scale
+            u
+                * u_scale
         )
             .rem_euclid(
                 1.0,
             ),
+
         (
-            v * v_scale
+            v
+                * v_scale
         )
             .rem_euclid(
                 1.0,
@@ -912,6 +936,7 @@ fn planar_uv(
         u.rem_euclid(
             1.0,
         ),
+
         v.rem_euclid(
             1.0,
         ),
@@ -1024,7 +1049,17 @@ fn tangent_basis(
             }
         }
 
-        _ => {
+        Object::Sphere(
+            _sphere,
+        ) => {
+            axis_basis(
+                normal,
+            )
+        }
+
+        Object::Plane(
+            _plane,
+        ) => {
             axis_basis(
                 normal,
             )
@@ -1082,9 +1117,14 @@ fn procedural_grass(
     let noise =
         (
             (
-                point.x * 18.0
-                    + point.z * 13.0
-                    + point.y * 9.0
+                point.x
+                    * 18.0
+
+                    + point.z
+                        * 13.0
+
+                    + point.y
+                        * 9.0
             )
                 .sin()
                 * 0.5
@@ -1095,7 +1135,8 @@ fn procedural_grass(
     Vec3::new(
         (
             base_color.x
-                + noise * 0.30
+                + noise
+                    * 0.30
         )
             .clamp(
                 0.0,
@@ -1113,7 +1154,8 @@ fn procedural_grass(
 
         (
             base_color.z
-                + noise * 0.20
+                + noise
+                    * 0.20
         )
             .clamp(
                 0.0,
@@ -1127,9 +1169,14 @@ fn multiply_vec3(
     b: Vec3,
 ) -> Vec3 {
     Vec3::new(
-        a.x * b.x,
-        a.y * b.y,
-        a.z * b.z,
+        a.x
+            * b.x,
+
+        a.y
+            * b.y,
+
+        a.z
+            * b.z,
     )
 }
 
@@ -1162,9 +1209,14 @@ fn skybox_color(
 
     let nebula =
         (
-            d.x * 4.0
-                + d.y * 2.5
-                + d.z * 3.0
+            d.x
+                * 4.0
+
+                + d.y
+                    * 2.5
+
+                + d.z
+                    * 3.0
         )
             .sin()
             * 0.5
@@ -1185,21 +1237,24 @@ fn skybox_color(
             d.x
                 * 900.0
         )
-            .floor() as i32;
+            .floor()
+            as i32;
 
     let sy =
         (
             d.y
                 * 900.0
         )
-            .floor() as i32;
+            .floor()
+            as i32;
 
     let sz =
         (
             d.z
                 * 900.0
         )
-            .floor() as i32;
+            .floor()
+            as i32;
 
     let star =
         procedural_hash(
@@ -1242,14 +1297,16 @@ fn procedural_hash(
                 374761393,
             )
             .wrapping_add(
-                y.wrapping_mul(
-                    668265263,
-                ),
+                y
+                    .wrapping_mul(
+                        668265263,
+                    ),
             )
             .wrapping_add(
-                z.wrapping_mul(
-                    2147483647,
-                ),
+                z
+                    .wrapping_mul(
+                        2147483647,
+                    ),
             );
 
     n =
@@ -1273,7 +1330,8 @@ fn procedural_hash(
         value as u32
             & 0x00FF_FFFF
     ) as f32
-        / 0x00FF_FFFF as f32
+        / 0x00FF_FFFF
+            as f32
 }
 
 fn to_color(
