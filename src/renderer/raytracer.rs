@@ -3,7 +3,9 @@ use raylib::prelude::*;
 use crate::core::camera::Camera;
 use crate::core::framebuffer::Framebuffer;
 use crate::core::vec3::Vec3;
+
 use crate::objects::object::Object;
+
 use crate::scene::light::Light;
 
 pub fn render(
@@ -12,16 +14,27 @@ pub fn render(
     light: &Light,
     camera: &Camera,
 ) {
-    let width = framebuffer.width as f32;
-    let height = framebuffer.height as f32;
+    framebuffer.clear_zbuffer();
 
-    let aspect_ratio = width / height;
+    let width =
+        framebuffer.width as f32;
+
+    let height =
+        framebuffer.height as f32;
+
+    let aspect_ratio =
+        width / height;
 
     let forward =
-        (camera.target - camera.position).normalize();
+        (camera.target - camera.position)
+            .normalize();
 
     let world_up =
-        Vec3::new(0.0, 1.0, 0.0);
+        Vec3::new(
+            0.0,
+            1.0,
+            0.0,
+        );
 
     let right =
         forward
@@ -34,14 +47,23 @@ pub fn render(
             .normalize();
 
     let scale =
-        (camera.fov.to_radians() * 0.5).tan();
+        (
+            camera
+                .fov
+                .to_radians()
+                * 0.5
+        )
+            .tan();
 
     for y in 0..framebuffer.height {
         for x in 0..framebuffer.width {
             let px =
                 (
                     2.0
-                        * ((x as f32 + 0.5) / width)
+                        * (
+                            (x as f32 + 0.5)
+                                / width
+                        )
                         - 1.0
                 )
                     * aspect_ratio
@@ -51,7 +73,10 @@ pub fn render(
                 (
                     1.0
                         - 2.0
-                            * ((y as f32 + 0.5) / height)
+                            * (
+                                (y as f32 + 0.5)
+                                    / height
+                            )
                 )
                     * scale;
 
@@ -63,16 +88,30 @@ pub fn render(
                 )
                     .normalize();
 
-            let pixel_color =
-                cast_ray(
-                    &camera.position,
-                    &ray_direction,
-                    objects,
-                    light,
-                );
+            let (
+                pixel_color,
+                depth,
+            ) = cast_ray(
+                &camera.position,
+                &ray_direction,
+                objects,
+                light,
+            );
 
-            framebuffer.set_current_color(pixel_color);
-            framebuffer.point(x, y);
+            framebuffer.set_depth(
+                x,
+                y,
+                depth,
+            );
+
+            framebuffer.set_current_color(
+                pixel_color,
+            );
+
+            framebuffer.point(
+                x,
+                y,
+            );
         }
     }
 }
@@ -82,8 +121,8 @@ fn cast_ray(
     direction: &Vec3,
     objects: &[Object],
     light: &Light,
-) -> Color {
-    let mut closest_distance =
+) -> (Color, f32) {
+    let mut zbuffer =
         f32::INFINITY;
 
     let mut final_color =
@@ -101,13 +140,14 @@ fn cast_ray(
                 direction,
             )
         {
-            if distance < closest_distance {
-                closest_distance =
+            if distance < zbuffer {
+                zbuffer =
                     distance;
 
                 let hit_point =
                     *origin
-                        + *direction * distance;
+                        + *direction
+                            * distance;
 
                 let normal =
                     object.normal_at(
@@ -152,7 +192,8 @@ fn cast_ray(
                         .max(0.0)
                         .powf(32.0);
 
-                let ambient = 0.12;
+                let ambient =
+                    0.12;
 
                 let diffuse_component =
                     diffuse
@@ -211,7 +252,10 @@ fn cast_ray(
         }
     }
 
-    final_color
+    (
+        final_color,
+        zbuffer,
+    )
 }
 
 fn reflect(
@@ -221,5 +265,7 @@ fn reflect(
     direction
         - normal
             * 2.0
-            * direction.dot(&normal)
+            * direction.dot(
+                &normal,
+            )
 }
