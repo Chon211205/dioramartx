@@ -160,6 +160,8 @@ fn main() {
         None;
 
     while !rl.window_should_close() {
+        camera.update_transition();
+
         match state {
             SceneState::Galaxy => {
                 if rl.is_mouse_button_pressed(
@@ -215,7 +217,7 @@ fn main() {
                                         PlanetType::Forest,
                                     );
 
-                                camera.focus_on(
+                                camera.start_focus(
                                     forest_position,
                                     3.2,
                                 );
@@ -227,7 +229,7 @@ fn main() {
                                         PlanetType::Volcanic,
                                     );
 
-                                camera.focus_on(
+                                camera.start_focus(
                                     volcanic_position,
                                     3.5,
                                 );
@@ -239,7 +241,7 @@ fn main() {
                                         PlanetType::Crystal,
                                     );
 
-                                camera.focus_on(
+                                camera.start_focus(
                                     crystal_position,
                                     3.2,
                                 );
@@ -288,9 +290,11 @@ fn main() {
                         );
                 }
 
-                if rl.is_mouse_button_pressed(
-                    MouseButton::MOUSE_BUTTON_LEFT,
-                ) {
+                if !camera.is_transitioning()
+                    && rl.is_mouse_button_pressed(
+                        MouseButton::MOUSE_BUTTON_LEFT,
+                    )
+                {
                     let mouse =
                         rl.get_mouse_position();
 
@@ -331,9 +335,11 @@ fn main() {
                     }
                 }
 
-                if rl.is_mouse_button_down(
-                    MouseButton::MOUSE_BUTTON_RIGHT,
-                ) {
+                if !camera.is_transitioning()
+                    && rl.is_mouse_button_down(
+                        MouseButton::MOUSE_BUTTON_RIGHT,
+                    )
+                {
                     let delta =
                         rl.get_mouse_delta();
 
@@ -468,13 +474,23 @@ fn main() {
                     Color::WHITE,
                 );
 
-                d.draw_text(
-                    "Click en el planeta para ingresar",
-                    20,
-                    55,
-                    20,
-                    Color::WHITE,
-                );
+                if camera.is_transitioning() {
+                    d.draw_text(
+                        "Acercando...",
+                        20,
+                        55,
+                        20,
+                        Color::LIGHTGRAY,
+                    );
+                } else {
+                    d.draw_text(
+                        "Click en el planeta para ingresar",
+                        20,
+                        55,
+                        20,
+                        Color::WHITE,
+                    );
+                }
 
                 d.draw_text(
                     "BACKSPACE - Regresar",
