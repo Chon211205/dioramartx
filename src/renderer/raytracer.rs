@@ -1200,87 +1200,203 @@ fn skybox_color(
     let d =
         direction.normalize();
 
-    let mut color =
+    let t =
+        (d.y * 0.5 + 0.5)
+            .clamp(0.0, 1.0);
+
+    let top_color =
         Vec3::new(
-            0.003,
-            0.006,
-            0.018,
+            0.04,
+            0.18,
+            0.30,
         );
 
-    let nebula =
+    let bottom_color =
+        Vec3::new(
+            0.005,
+            0.02,
+            0.08,
+        );
+
+    let mut color =
+        bottom_color
+            * (1.0 - t)
+            + top_color * t;
+
+    let nebula_1 =
         (
-            d.x
-                * 4.0
-
-                + d.y
-                    * 2.5
-
-                + d.z
-                    * 3.0
+            d.x * 4.5
+                + d.y * 2.8
+                + d.z * 3.7
         )
             .sin()
             * 0.5
             + 0.5;
 
+    let nebula_2 =
+        (
+            d.x * 9.0
+                - d.y * 5.5
+                + d.z * 6.2
+        )
+            .cos()
+            * 0.5
+            + 0.5;
+
+    let nebula_3 =
+        (
+            d.x * 14.0
+                + d.y * 11.0
+                - d.z * 8.0
+        )
+            .sin()
+            * 0.5
+            + 0.5;
+
+    let cloud_mix =
+        nebula_1 * 0.45
+            + nebula_2 * 0.35
+            + nebula_3 * 0.20;
+
+    let teal_nebula =
+        Vec3::new(
+            0.05,
+            0.30,
+            0.28,
+        ) * (nebula_1 * 0.35);
+
+    let cyan_nebula =
+        Vec3::new(
+            0.08,
+            0.45,
+            0.55,
+        ) * (nebula_2 * 0.28);
+
+    let green_nebula =
+        Vec3::new(
+            0.08,
+            0.35,
+            0.18,
+        ) * (nebula_3 * 0.18);
+
+    color =
+        color
+            + teal_nebula
+            + cyan_nebula
+            + green_nebula;
+
+    let left_glow_dir =
+        Vec3::new(
+            -1.0,
+            0.1,
+            0.15,
+        )
+            .normalize();
+
+    let left_glow =
+        d.dot(&left_glow_dir)
+            .max(0.0)
+            .powf(10.0);
+
+    let left_core =
+        d.dot(&left_glow_dir)
+            .max(0.0)
+            .powf(38.0);
+
     color =
         color
             + Vec3::new(
-                0.012,
-                0.008,
-                0.025,
-            )
-                * nebula
-                * 0.35;
+                0.20,
+                0.55,
+                0.28,
+            ) * left_glow * 0.9
+            + Vec3::new(
+                0.65,
+                1.00,
+                0.55,
+            ) * left_core * 1.4;
+
+    let center_glow_dir =
+        Vec3::new(
+            0.15,
+            0.05,
+            1.0,
+        )
+            .normalize();
+
+    let center_glow =
+        d.dot(&center_glow_dir)
+            .max(0.0)
+            .powf(8.0);
+
+    color =
+        color
+            + Vec3::new(
+                0.08,
+                0.30,
+                0.35,
+            ) * center_glow * 0.35;
+
+    let vignette =
+        0.82 + cloud_mix * 0.18;
+
+    color =
+        color * vignette;
 
     let sx =
-        (
-            d.x
-                * 900.0
-        )
-            .floor()
+        (d.x * 1200.0).floor()
             as i32;
-
     let sy =
-        (
-            d.y
-                * 900.0
-        )
-            .floor()
+        (d.y * 1200.0).floor()
             as i32;
-
     let sz =
-        (
-            d.z
-                * 900.0
-        )
-            .floor()
+        (d.z * 1200.0).floor()
             as i32;
 
     let star =
         procedural_hash(
-            sx,
-            sy,
-            sz,
+            sx, sy, sz,
         );
 
-    if star
-        > 0.9975
-    {
+    if star > 0.9965 {
         let brightness =
-            (
-                star
-                    - 0.9975
-            )
-                / 0.0025;
+            ((star - 0.9965)
+                / 0.0035)
+                .clamp(0.0, 1.0);
 
-        color =
-            color
-                + Vec3::new(
-                    1.0,
+        let tint =
+            procedural_hash(
+                sx + 17,
+                sy + 31,
+                sz + 47,
+            );
+
+        let star_color =
+            if tint > 0.7 {
+                Vec3::new(
+                    0.9,
                     1.0,
                     1.0,
                 )
-                    * brightness;
+            } else if tint > 0.35 {
+                Vec3::new(
+                    0.8,
+                    0.95,
+                    1.0,
+                )
+            } else {
+                Vec3::new(
+                    1.0,
+                    0.95,
+                    0.85,
+                )
+            };
+
+        color =
+            color
+                + star_color
+                    * brightness
+                    * 1.25;
     }
 
     color
@@ -1292,47 +1408,25 @@ fn procedural_hash(
     z: i32,
 ) -> f32 {
     let mut n =
-        x
-            .wrapping_mul(
-                374761393,
+        x.wrapping_mul(374761393)
+            .wrapping_add(
+                y.wrapping_mul(668265263),
             )
             .wrapping_add(
-                y
-                    .wrapping_mul(
-                        668265263,
-                    ),
-            )
-            .wrapping_add(
-                z
-                    .wrapping_mul(
-                        2147483647,
-                    ),
+                z.wrapping_mul(2147483647),
             );
 
     n =
-        (
-            n
-                ^ (
-                    n >> 13
-                )
-        )
-            .wrapping_mul(
-                1274126177,
-            );
+        (n ^ (n >> 13))
+            .wrapping_mul(1274126177);
 
     let value =
-        n
-            ^ (
-                n >> 16
-            );
+        n ^ (n >> 16);
 
-    (
-        value as u32
-            & 0x00FF_FFFF
-    ) as f32
-        / 0x00FF_FFFF
-            as f32
+    ((value as u32 & 0x00FF_FFFF) as f32)
+        / 0x00FF_FFFF as f32
 }
+
 
 fn to_color(
     color: Vec3,
