@@ -1,10 +1,14 @@
 mod framebuffer;
+mod vec3;
 mod ray;
 mod object;
 mod raytracer;
 
 use raylib::prelude::*;
+
 use framebuffer::Framebuffer;
+use object::Object;
+use vec3::Vec3;
 
 fn main() {
     const WIDTH: i32 = 800;
@@ -19,9 +23,20 @@ fn main() {
 
     let mut framebuffer = Framebuffer::new(WIDTH, HEIGHT);
 
-    while !rl.window_should_close() {
-        framebuffer.clear(Color::BLACK);
+    let objects = vec![
+        Object::new(
+            Vec3::new(0.0, 0.0, -5.0),
+            1.5,
+            Vec3::new(0.2, 0.8, 0.3),
+        ),
+    ];
 
+    raytracer::render(
+        &mut framebuffer,
+        &objects,
+    );
+
+    while !rl.window_should_close() {
         let mut d = rl.begin_drawing(&thread);
 
         d.clear_background(Color::BLACK);
