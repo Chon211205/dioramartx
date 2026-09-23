@@ -13,6 +13,7 @@ use core::vec3::Vec3;
 use materials::material::Material;
 
 use objects::object::Object;
+use objects::sphere::Sphere;
 
 use scene::light::Light;
 
@@ -20,15 +21,19 @@ fn main() {
     const WIDTH: i32 = 800;
     const HEIGHT: i32 = 600;
 
-    let (mut rl, thread) = raylib::init()
-        .size(WIDTH, HEIGHT)
-        .title("Raytracer - Galaxy Diorama")
-        .build();
+    let (mut rl, thread) =
+        raylib::init()
+            .size(WIDTH, HEIGHT)
+            .title("Raytracer - Galaxy Diorama")
+            .build();
 
     rl.set_target_fps(60);
 
     let mut framebuffer =
-        Framebuffer::new(WIDTH, HEIGHT);
+        Framebuffer::new(
+            WIDTH,
+            HEIGHT,
+        );
 
     let planet_material =
         Material::new(
@@ -45,14 +50,16 @@ fn main() {
 
     let objects =
         vec![
-            Object::new(
-                Vec3::new(
-                    0.0,
-                    0.0,
-                    0.0,
+            Object::Sphere(
+                Sphere::new(
+                    Vec3::new(
+                        0.0,
+                        0.0,
+                        0.0,
+                    ),
+                    1.5,
+                    planet_material,
                 ),
-                1.5,
-                planet_material,
             ),
         ];
 
@@ -110,7 +117,9 @@ fn main() {
         );
 
         let mut d =
-            rl.begin_drawing(&thread);
+            rl.begin_drawing(
+                &thread,
+            );
 
         d.clear_background(
             Color::BLACK,

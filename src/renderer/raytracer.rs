@@ -14,19 +14,24 @@ pub fn render(
 ) {
     let width = framebuffer.width as f32;
     let height = framebuffer.height as f32;
+
     let aspect_ratio = width / height;
 
-    let forward = (camera.target - camera.position).normalize();
+    let forward =
+        (camera.target - camera.position).normalize();
 
-    let world_up = Vec3::new(0.0, 1.0, 0.0);
+    let world_up =
+        Vec3::new(0.0, 1.0, 0.0);
 
-    let right = forward
-        .cross(&world_up)
-        .normalize();
+    let right =
+        forward
+            .cross(&world_up)
+            .normalize();
 
-    let up = right
-        .cross(&forward)
-        .normalize();
+    let up =
+        right
+            .cross(&forward)
+            .normalize();
 
     let scale =
         (camera.fov.to_radians() * 0.5).tan();
@@ -35,26 +40,28 @@ pub fn render(
         for x in 0..framebuffer.width {
             let px =
                 (
-                    2.0 * ((x as f32 + 0.5) / width)
-                    - 1.0
+                    2.0
+                        * ((x as f32 + 0.5) / width)
+                        - 1.0
                 )
-                * aspect_ratio
-                * scale;
+                    * aspect_ratio
+                    * scale;
 
             let py =
                 (
                     1.0
-                    - 2.0 * ((y as f32 + 0.5) / height)
+                        - 2.0
+                            * ((y as f32 + 0.5) / height)
                 )
-                * scale;
+                    * scale;
 
             let ray_direction =
                 (
                     forward
-                    + right * px
-                    + up * py
+                        + right * px
+                        + up * py
                 )
-                .normalize();
+                    .normalize();
 
             let pixel_color =
                 cast_ray(
@@ -100,33 +107,36 @@ fn cast_ray(
 
                 let hit_point =
                     *origin
-                    + *direction * distance;
+                        + *direction * distance;
 
                 let normal =
-                    (
-                        hit_point
-                        - object.center
-                    )
-                    .normalize();
+                    object.normal_at(
+                        &hit_point,
+                    );
+
+                let material =
+                    object.material();
 
                 let light_direction =
                     (
                         light.position
-                        - hit_point
+                            - hit_point
                     )
-                    .normalize();
+                        .normalize();
 
                 let diffuse =
                     normal
-                        .dot(&light_direction)
+                        .dot(
+                            &light_direction,
+                        )
                         .max(0.0);
 
                 let view_direction =
                     (
                         *origin
-                        - hit_point
+                            - hit_point
                     )
-                    .normalize();
+                        .normalize();
 
                 let reflect_direction =
                     reflect(
@@ -137,7 +147,7 @@ fn cast_ray(
                 let specular_intensity =
                     view_direction
                         .dot(
-                            &reflect_direction
+                            &reflect_direction,
                         )
                         .max(0.0)
                         .powf(32.0);
@@ -146,49 +156,49 @@ fn cast_ray(
 
                 let diffuse_component =
                     diffuse
-                        * object.material.albedo
+                        * material.albedo
                         * light.intensity;
 
                 let specular_component =
                     specular_intensity
-                        * object.material.specular
+                        * material.specular
                         * light.intensity;
 
                 let r =
                     (
-                        object.material.color.x
-                        * light.color.x
-                        * (
-                            ambient
-                            + diffuse_component
-                        )
-                        + specular_component
+                        material.color.x
+                            * light.color.x
+                            * (
+                                ambient
+                                    + diffuse_component
+                            )
+                            + specular_component
                     )
-                    .min(1.0);
+                        .min(1.0);
 
                 let g =
                     (
-                        object.material.color.y
-                        * light.color.y
-                        * (
-                            ambient
-                            + diffuse_component
-                        )
-                        + specular_component
+                        material.color.y
+                            * light.color.y
+                            * (
+                                ambient
+                                    + diffuse_component
+                            )
+                            + specular_component
                     )
-                    .min(1.0);
+                        .min(1.0);
 
                 let b =
                     (
-                        object.material.color.z
-                        * light.color.z
-                        * (
-                            ambient
-                            + diffuse_component
-                        )
-                        + specular_component
+                        material.color.z
+                            * light.color.z
+                            * (
+                                ambient
+                                    + diffuse_component
+                            )
+                            + specular_component
                     )
-                    .min(1.0);
+                        .min(1.0);
 
                 final_color =
                     Color::new(
