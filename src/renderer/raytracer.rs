@@ -510,6 +510,48 @@ fn cast_ray(
             + light.color
                 * specular;
 
+    let reflectivity =
+        material
+            .reflectivity
+            .clamp(
+                0.0,
+                1.0,
+            );
+
+    if reflectivity > 0.001
+        && depth < 4
+    {
+        let reflection_direction =
+            reflect(
+                *direction,
+                normal,
+            )
+                .normalize();
+
+        let reflection_origin =
+            hit_point
+                + normal
+                    * 0.005;
+
+        let reflection_color =
+            cast_ray(
+                &reflection_origin,
+                &reflection_direction,
+                scene,
+                light,
+                depth + 1,
+            );
+
+        final_color =
+            final_color
+                * (
+                    1.0
+                        - reflectivity
+                )
+                + reflection_color
+                    * reflectivity;
+    }
+
     let transparency =
         material
             .transparency

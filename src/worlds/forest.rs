@@ -422,11 +422,15 @@ pub fn create_forest_diorama() -> Vec<Object> {
     );
 
     let pipe = Material::new(
-        Vec3::new(0.12, 0.55, 0.16),
-        0.75,
-        0.35,
+        Vec3::new(
+            0.10,
+            0.45,
+            0.14,
+        ),
+        0.60,
+        0.85,
         0.0,
-        0.05,
+        0.22,
     );
 
     let mushroom_red = Material::new(
