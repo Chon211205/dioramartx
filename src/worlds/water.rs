@@ -22,6 +22,12 @@ static GROUND_AO_MAP: OnceLock<TextureMap> = OnceLock::new();
 static SAND_COLOR_MAP: OnceLock<TextureMap> = OnceLock::new();
 static SAND_NORMAL_MAP: OnceLock<TextureMap> = OnceLock::new();
 static SAND_ROUGHNESS_MAP: OnceLock<TextureMap> = OnceLock::new();
+static PALM_COLOR_MAP: OnceLock<TextureMap> = OnceLock::new();
+static PALM_NORMAL_MAP: OnceLock<TextureMap> = OnceLock::new();
+static PALM_ROUGHNESS_MAP: OnceLock<TextureMap> = OnceLock::new();
+static ROCK_COLOR_MAP: OnceLock<TextureMap> = OnceLock::new();
+static ROCK_NORMAL_MAP: OnceLock<TextureMap> = OnceLock::new();
+static ROCK_ROUGHNESS_MAP: OnceLock<TextureMap> = OnceLock::new();
 
 fn grass_color_map() -> &'static TextureMap {
     GRASS_COLOR_MAP.get_or_init(|| {
@@ -111,6 +117,54 @@ fn sand_roughness_map() -> &'static TextureMap {
     })
 }
 
+fn palm_color_map() -> &'static TextureMap {
+    PALM_COLOR_MAP.get_or_init(|| {
+        TextureMap::from_file(
+            "assets/textures/palm/Plastic017A_1K-PNG_Color.png",
+        )
+    })
+}
+
+fn palm_normal_map() -> &'static TextureMap {
+    PALM_NORMAL_MAP.get_or_init(|| {
+        TextureMap::from_file(
+            "assets/textures/palm/Plastic017A_1K-PNG_NormalGL.png",
+        )
+    })
+}
+
+fn palm_roughness_map() -> &'static TextureMap {
+    PALM_ROUGHNESS_MAP.get_or_init(|| {
+        TextureMap::from_file(
+            "assets/textures/palm/Plastic017A_1K-PNG_Roughness.png",
+        )
+    })
+}
+
+fn rock_color_map() -> &'static TextureMap {
+    ROCK_COLOR_MAP.get_or_init(|| {
+        TextureMap::from_file(
+            "assets/textures/rock/Rock041_1K-PNG_Color.png",
+        )
+    })
+}
+
+fn rock_normal_map() -> &'static TextureMap {
+    ROCK_NORMAL_MAP.get_or_init(|| {
+        TextureMap::from_file(
+            "assets/textures/rock/Rock041_1K-PNG_NormalGL.png",
+        )
+    })
+}
+
+fn rock_roughness_map() -> &'static TextureMap {
+    ROCK_ROUGHNESS_MAP.get_or_init(|| {
+        TextureMap::from_file(
+            "assets/textures/rock/Rock041_1K-PNG_Roughness.png",
+        )
+    })
+}
+
 pub fn create_water_diorama() -> Vec<Object> {
     let mut objects = Vec::new();
 
@@ -170,6 +224,22 @@ pub fn create_water_diorama() -> Vec<Object> {
         Some(grass_ao_map()),
     );
 
+    let rock = Material::textured(
+        Vec3::new(
+            0.65,
+            0.62,
+            0.58,
+        ),
+        0.78,
+        0.16,
+        0.0,
+        0.04,
+        Some(rock_color_map()),
+        Some(rock_normal_map()),
+        Some(rock_roughness_map()),
+        None,
+    );
+
     let sand = Material::textured(
         Vec3::new(
             0.95,
@@ -198,16 +268,20 @@ pub fn create_water_diorama() -> Vec<Object> {
         0.02,
     );
 
-    let palm_leaf = Material::new(
+    let palm_leaf = Material::textured(
         Vec3::new(
-            0.08,
-            0.48,
-            0.10,
+            0.70,
+            1.00,
+            0.70,
         ),
         0.85,
         0.18,
         0.0,
         0.01,
+        Some(palm_color_map()),
+        Some(palm_normal_map()),
+        Some(palm_roughness_map()),
+        None,
     );
 
     let dark_rock = Material::new(
@@ -389,6 +463,19 @@ pub fn create_water_diorama() -> Vec<Object> {
         0.24,
         0.28,
         ground,
+        grass,
+    );
+
+    add_rock_column(
+        &mut objects,
+        Vec3::new(
+            -0.20,
+            0.35,
+            0.95,
+        ),
+        0.12,
+        0.30,
+        rock,
         grass,
     );
 
