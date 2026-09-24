@@ -29,6 +29,7 @@ use scene::state::{
 };
 
 use worlds::forest::create_forest_diorama;
+use worlds::water::create_water_diorama;
 
 fn main() {
     const RENDER_WIDTH: i32 = 1280;
@@ -116,17 +117,17 @@ fn main() {
             0.05,
         );
 
-    let volcanic_material =
+    let water_material =
         Material::new(
             Vec3::new(
-                0.9,
-                0.2,
-                0.05,
+                0.04,
+                0.42,
+                0.78,
             ),
-            0.75,
-            0.5,
-            0.0,
-            0.1,
+            0.48,
+            0.90,
+            0.16,
+            0.12,
         );
 
     let crystal_material =
@@ -149,7 +150,7 @@ fn main() {
             0.0,
         );
 
-    let volcanic_position =
+    let water_position =
         Vec3::new(
             0.0,
             -0.8,
@@ -175,9 +176,9 @@ fn main() {
 
             Object::Sphere(
                 Sphere::new(
-                    volcanic_position,
+                    water_position,
                     1.15,
-                    volcanic_material,
+                    water_material,
                 ),
             ),
 
@@ -193,21 +194,26 @@ fn main() {
     let forest_objects =
         create_forest_diorama();
 
-    let forest_preview_objects =
+    let water_objects =
+        create_water_diorama();
+
+    let crystal_objects =
+        create_test_diorama(
+            crystal_material,
+        );
+
+    let forest_preview =
         transform_objects(
             create_forest_diorama(),
             forest_position,
             0.56,
         );
 
-    let volcanic_objects =
-        create_test_diorama(
-            volcanic_material,
-        );
-
-    let crystal_objects =
-        create_test_diorama(
-            crystal_material,
+    let water_preview =
+        transform_objects(
+            create_water_diorama(),
+            water_position,
+            0.56,
         );
 
     let forest_scene =
@@ -215,9 +221,9 @@ fn main() {
             forest_objects,
         );
 
-    let volcanic_scene =
+    let water_scene =
         Scene::new(
-            volcanic_objects,
+            water_objects,
         );
 
     let crystal_scene =
@@ -226,16 +232,14 @@ fn main() {
         );
 
     let mut galaxy_objects =
-        forest_preview_objects;
+        Vec::new();
 
-    galaxy_objects.push(
-        Object::Sphere(
-            Sphere::new(
-                volcanic_position,
-                1.15,
-                volcanic_material,
-            ),
-        ),
+    galaxy_objects.extend(
+        forest_preview,
+    );
+
+    galaxy_objects.extend(
+        water_preview,
     );
 
     galaxy_objects.push(
@@ -376,7 +380,7 @@ fn main() {
 
                                 1 => {
                                     Some(
-                                        PlanetType::Volcanic,
+                                        PlanetType::Water,
                                     )
                                 }
 
@@ -480,7 +484,7 @@ fn main() {
                     get_selected_scene(
                         selected_planet,
                         &forest_scene,
-                        &volcanic_scene,
+                        &water_scene,
                         &crystal_scene,
                     );
 
@@ -690,7 +694,7 @@ fn main() {
 fn get_selected_scene<'a>(
     planet: Option<PlanetType>,
     forest: &'a Scene,
-    volcanic: &'a Scene,
+    water: &'a Scene,
     crystal: &'a Scene,
 ) -> &'a Scene {
     match planet {
@@ -701,9 +705,9 @@ fn get_selected_scene<'a>(
         }
 
         Some(
-            PlanetType::Volcanic,
+            PlanetType::Water,
         ) => {
-            volcanic
+            water
         }
 
         Some(
@@ -729,9 +733,9 @@ fn planet_name(
         }
 
         Some(
-            PlanetType::Volcanic,
+            PlanetType::Water,
         ) => {
-            "Volcanic Planet"
+            "Water Planet"
         }
 
         Some(

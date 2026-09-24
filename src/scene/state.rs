@@ -7,6 +7,6 @@ pub enum SceneState {
 #[derive(Clone, Copy, PartialEq)]
 pub enum PlanetType {
     Forest,
-    Volcanic,
+    Water,
     Crystal,
 }
