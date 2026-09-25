@@ -16,6 +16,7 @@ use core::vec3::Vec3;
 use materials::material::Material;
 
 use objects::cone::Cone;
+use objects::cube::Cube;
 use objects::cylinder::Cylinder;
 use objects::object::Object;
 use objects::plane::Plane;
@@ -307,26 +308,20 @@ fn main() {
 
                     let ray_x =
                         mouse.x
-                            / current_screen_width
-                                as f32
-                            * RENDER_WIDTH
-                                as f32;
+                            / current_screen_width as f32
+                            * RENDER_WIDTH as f32;
 
                     let ray_y =
                         mouse.y
-                            / current_screen_height
-                                as f32
-                            * RENDER_HEIGHT
-                                as f32;
+                            / current_screen_height as f32
+                            * RENDER_HEIGHT as f32;
 
                     let ray =
                         camera.get_ray(
                             ray_x,
                             ray_y,
-                            RENDER_WIDTH
-                                as f32,
-                            RENDER_HEIGHT
-                                as f32,
+                            RENDER_WIDTH as f32,
+                            RENDER_HEIGHT as f32,
                         );
 
                     let mut closest =
@@ -351,23 +346,17 @@ fn main() {
                                 &ray.direction,
                             )
                         {
-                            if distance
-                                < closest
-                            {
+                            if distance < closest {
                                 closest =
                                     distance;
 
                                 selected_index =
-                                    Some(
-                                        index,
-                                    );
+                                    Some(index);
                             }
                         }
                     }
 
-                    if let Some(
-                        index,
-                    ) =
+                    if let Some(index) =
                         selected_index
                     {
                         selected_planet =
@@ -390,9 +379,7 @@ fn main() {
                                     )
                                 }
 
-                                _ => {
-                                    None
-                                }
+                                _ => None,
                             };
 
                         camera =
@@ -585,10 +572,8 @@ fn main() {
             Rectangle::new(
                 0.0,
                 0.0,
-                RENDER_WIDTH
-                    as f32,
-                RENDER_HEIGHT
-                    as f32,
+                RENDER_WIDTH as f32,
+                RENDER_HEIGHT as f32,
             );
 
         let destination =
@@ -851,6 +836,24 @@ fn transform_objects(
                                 plane.normal,
 
                                 plane.material,
+                            ),
+                        )
+                    }
+
+                    Object::Cube(
+                        cube,
+                    ) => {
+                        Object::Cube(
+                            Cube::new(
+                                cube.center
+                                    * scale
+                                    + offset,
+
+                                cube.half_size
+                                    * 2.0
+                                    * scale,
+
+                                cube.material,
                             ),
                         )
                     }
