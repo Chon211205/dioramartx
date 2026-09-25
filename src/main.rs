@@ -31,6 +31,7 @@ use scene::state::{
 
 use worlds::forest::create_forest_diorama;
 use worlds::water::create_water_diorama;
+use worlds::ice_lava::create_ice_lava_diorama;
 
 fn main() {
     const RENDER_WIDTH: i32 = 1280;
@@ -200,9 +201,7 @@ fn main() {
         create_water_diorama();
 
     let crystal_objects =
-        create_test_diorama(
-            crystal_material,
-        );
+        create_ice_lava_diorama();
 
     let forest_preview =
         transform_objects(
@@ -217,6 +216,13 @@ fn main() {
             water_position,
             0.56,
         );
+
+    let crystal_preview =
+    transform_objects(
+        create_ice_lava_diorama(),
+        crystal_position,
+        0.56,
+    );
 
     let forest_scene =
         Scene::new(
@@ -244,14 +250,8 @@ fn main() {
         water_preview,
     );
 
-    galaxy_objects.push(
-        Object::Sphere(
-            Sphere::new(
-                crystal_position,
-                1.0,
-                crystal_material,
-            ),
-        ),
+    galaxy_objects.extend(
+        crystal_preview,
     );
 
     let galaxy_scene =
