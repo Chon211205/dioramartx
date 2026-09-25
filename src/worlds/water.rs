@@ -595,51 +595,33 @@ pub fn create_water_diorama() -> Vec<Object> {
     );
 
 
-    let block_yellow = Material::new(
-
-        Vec3::new(
-
+    let block_yellow =
+        Material::new(
+            Vec3::new(
+                1.0,
+                0.82,
+                0.08,
+            ),
             1.0,
+            1.0,
+            0.0,
+            0.08,
+        );
 
-            0.78,
 
+
+    let block_white =
+        Material::new(
+            Vec3::new(
+                1.0,
+                1.0,
+                0.82,
+            ),
+            1.0,
+            1.0,
+            0.0,
             0.05,
-
-        ),
-
-        0.82,
-
-        0.35,
-
-        0.0,
-
-        0.03,
-
-    );
-
-
-
-    let block_white = Material::new(
-
-        Vec3::new(
-
-            0.98,
-
-            0.98,
-
-            0.98,
-
-        ),
-
-        0.88,
-
-        0.20,
-
-        0.0,
-
-        0.01,
-
-    );
+        );
 
 
 

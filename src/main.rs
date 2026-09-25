@@ -105,6 +105,7 @@ fn main() {
         TextureFilter::TEXTURE_FILTER_BILINEAR,
     );
 
+
     let forest_material =
         Material::new(
             Vec3::new(
@@ -272,6 +273,21 @@ fn main() {
             ),
             1.35,
         );
+
+    let mistery_block_light =
+        Light::new(
+            Vec3::new(
+                2.02,
+                1.71,
+                -0.78,
+            ),
+            Vec3::new(
+                1.0,
+                0.82,
+                0.22,
+            ),
+            3.0
+        );        
 
     let mut camera =
         Camera::new(
@@ -489,12 +505,23 @@ fn main() {
                         &crystal_scene,
                     );
 
-                renderer::raytracer::render(
-                    &mut framebuffer,
-                    selected_scene,
-                    &light,
-                    &camera,
-                );
+            let active_light =
+                match selected_planet {
+                    Some(PlanetType::Water) => {
+                        &mistery_block_light
+                    }
+
+                    _ => {
+                        &light
+                    }
+                };
+
+            renderer::raytracer::render(
+                &mut framebuffer,
+                selected_scene,
+                active_light,
+                &camera,
+            );
             }
         }
 
