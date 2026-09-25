@@ -12,9 +12,11 @@ use crate::materials::material::MaterialPattern;
 use crate::objects::cone::Cone;
 use crate::objects::cube::Cube;
 use crate::objects::cylinder::Cylinder;
+use crate::objects::hemisphere::Hemisphere;
 use crate::objects::object::Object;
 use crate::objects::plane::Plane;
 use crate::objects::sphere::Sphere;
+use crate::objects::torus::Torus;
 
 use crate::scene::light::Light;
 use crate::scene::scene::Scene;
@@ -200,7 +202,9 @@ fn cast_ray(
         };
 
     let material =
-        object.material();
+        object.material_at(
+            &hit_point,
+        );
 
     let (
         u,
@@ -619,6 +623,22 @@ fn object_uv(
                 point,
             )
         }
+
+        Object::Hemisphere(
+            hemisphere,
+        ) => {
+            hemisphere_uv(
+                hemisphere,
+                point,
+            )
+        }
+
+        Object::Torus(torus) => {
+            torus_uv(
+                torus,
+                point,
+            )
+        }
     }
 }
 
@@ -632,6 +652,84 @@ fn sphere_uv(
                 - sphere.center
         )
             .normalize();
+
+    let u =
+        0.5
+            + p.z
+                .atan2(
+                    p.x,
+                )
+                / (
+                    2.0
+                        * PI
+                );
+
+    let v =
+        0.5
+            - p.y
+                .asin()
+                / PI;
+
+    (
+        u,
+        v,
+    )
+}
+
+fn hemisphere_uv(
+    hemisphere: &Hemisphere,
+    point: &Vec3,
+) -> (f32, f32) {
+    let local =
+        *point
+            - hemisphere.center;
+
+    let plane_distance =
+        local.dot(
+            &hemisphere.normal,
+        );
+
+    if plane_distance.abs()
+        < 0.004
+    {
+        let (
+            tangent,
+            bitangent,
+        ) =
+            axis_basis(
+                hemisphere.normal,
+            );
+
+        let u =
+            0.5
+                + local
+                    .dot(
+                        &tangent,
+                    )
+                    / (
+                        hemisphere.radius
+                            * 2.0
+                    );
+
+        let v =
+            0.5
+                + local
+                    .dot(
+                        &bitangent,
+                    )
+                    / (
+                        hemisphere.radius
+                            * 2.0
+                    );
+
+        return (
+            u,
+            v,
+        );
+    }
+
+    let p =
+        local.normalize();
 
     let u =
         0.5
@@ -695,9 +793,8 @@ fn cylinder_uv(
     cylinder: &Cylinder,
     point: &Vec3,
 ) -> (f32, f32) {
-    use std::f32::consts::PI;
-
-    let axis = cylinder.axis.normalize();
+    let axis =
+        cylinder.axis.normalize();
 
     let local =
         *point
@@ -718,7 +815,8 @@ fn cylinder_uv(
 
     let radial =
         local
-            - axis * axial;
+            - axis
+                * axial;
 
     let x =
         radial.dot(
@@ -920,6 +1018,59 @@ fn cube_uv(
     }
 }
 
+fn torus_uv(
+    torus: &Torus,
+    point: &Vec3,
+) -> (f32, f32) {
+    let local =
+        *point
+            - torus.center;
+
+    let major_angle =
+        local.z
+            .atan2(
+                local.x,
+            );
+
+    let radial =
+        (
+            local.x * local.x
+                + local.z * local.z
+        )
+            .sqrt();
+
+    let tube_x =
+        radial
+            - torus.major_radius;
+
+    let tube_angle =
+        local.y
+            .atan2(
+                tube_x,
+            );
+
+    let u =
+        0.5
+            + major_angle
+                / (
+                    2.0
+                        * PI
+                );
+
+    let v =
+        0.5
+            + tube_angle
+                / (
+                    2.0
+                        * PI
+                );
+
+    (
+        u,
+        v,
+    )
+}
+
 fn object_tangent_basis(
     object: &Object,
     point: &Vec3,
@@ -978,16 +1129,18 @@ fn object_tangent_basis(
             )
         }
 
-        Object::Cylinder(cylinder) => {
+        Object::Cylinder(
+            cylinder,
+        ) => {
             let axis =
                 cylinder.axis.normalize();
 
-            let normal =
+            let cylinder_normal =
                 cylinder.normal_at(
                     point,
                 );
 
-            if normal
+            if cylinder_normal
                 .dot(
                     &axis,
                 )
@@ -999,7 +1152,7 @@ fn object_tangent_basis(
                 )
             } else {
                 tangent_basis(
-                    normal,
+                    cylinder_normal,
                 )
             }
         }
@@ -1062,6 +1215,69 @@ fn object_tangent_basis(
                 normal,
             )
         }
+
+        Object::Hemisphere(
+            hemisphere,
+        ) => {
+            let local =
+                *point
+                    - hemisphere.center;
+
+            let plane_distance =
+                local.dot(
+                    &hemisphere.normal,
+                );
+
+            if plane_distance.abs()
+                < 0.004
+            {
+                axis_basis(
+                    hemisphere.normal,
+                )
+            } else {
+                let local_normal =
+                    local.normalize();
+
+                let mut tangent =
+                    Vec3::new(
+                        -local_normal.z,
+                        0.0,
+                        local_normal.x,
+                    );
+
+                if tangent.length()
+                    < 0.001
+                {
+                    tangent =
+                        tangent_basis(
+                            normal,
+                        ).0;
+                } else {
+                    tangent =
+                        tangent.normalize();
+                }
+
+                let bitangent =
+                    normal
+                        .cross(
+                            &tangent,
+                        )
+                        .normalize();
+
+                (
+                    tangent,
+                    bitangent,
+                )
+            }
+        }
+
+        Object::Torus(torus) => {
+            torus_tangent_basis(
+                torus,
+                point,
+                normal,
+            )
+        }
     }
 }
 
@@ -1091,6 +1307,46 @@ fn tangent_basis(
                 &normal,
             )
             .normalize();
+
+    let bitangent =
+        normal
+            .cross(
+                &tangent,
+            )
+            .normalize();
+
+    (
+        tangent,
+        bitangent,
+    )
+}
+
+fn torus_tangent_basis(
+    torus: &Torus,
+    point: &Vec3,
+    normal: Vec3,
+) -> (Vec3, Vec3) {
+    let local =
+        *point
+            - torus.center;
+
+    let mut tangent =
+        Vec3::new(
+            -local.z,
+            0.0,
+            local.x,
+        );
+
+    if tangent.length()
+        < 0.0001
+    {
+        return tangent_basis(
+            normal,
+        );
+    }
+
+    tangent =
+        tangent.normalize();
 
     let bitangent =
         normal
