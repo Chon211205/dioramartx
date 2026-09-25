@@ -695,19 +695,18 @@ fn cylinder_uv(
     cylinder: &Cylinder,
     point: &Vec3,
 ) -> (f32, f32) {
-    let axis =
-        cylinder.axis
-            .normalize();
+    use std::f32::consts::PI;
+
+    let axis = cylinder.axis.normalize();
 
     let local =
         *point
             - cylinder.center;
 
     let axial =
-        local
-            .dot(
-                &axis,
-            );
+        local.dot(
+            &axis,
+        );
 
     let (
         tangent,
@@ -719,26 +718,59 @@ fn cylinder_uv(
 
     let radial =
         local
-            - axis
-                * axial;
+            - axis * axial;
 
     let x =
-        radial
-            .dot(
-                &tangent,
-            );
+        radial.dot(
+            &tangent,
+        );
 
     let z =
-        radial
-            .dot(
-                &bitangent,
-            );
+        radial.dot(
+            &bitangent,
+        );
+
+    let half_height =
+        cylinder.height
+            * 0.5;
+
+    let cap_epsilon =
+        0.015;
+
+    if axial.abs()
+        >= half_height
+            - cap_epsilon
+    {
+        let u =
+            0.5
+                + x
+                    / (
+                        cylinder.radius
+                            * 2.0
+                    );
+
+        let v =
+            0.5
+                + z
+                    / (
+                        cylinder.radius
+                            * 2.0
+                    );
+
+        return (
+            u,
+            v,
+        );
+    }
+
+    let angle =
+        z.atan2(
+            x,
+        );
 
     let u =
         0.5
-            + z.atan2(
-                x,
-            )
+            + angle
                 / (
                     2.0
                         * PI
@@ -946,55 +978,30 @@ fn object_tangent_basis(
             )
         }
 
-        Object::Cylinder(
-            cylinder,
-        ) => {
+        Object::Cylinder(cylinder) => {
             let axis =
-                cylinder.axis
-                    .normalize();
+                cylinder.axis.normalize();
 
-            let local =
-                *point
-                    - cylinder.center;
-
-            let axial =
-                local
-                    .dot(
-                        &axis,
-                    );
-
-            let radial =
-                local
-                    - axis
-                        * axial;
-
-            if radial.length()
-                < 0.001
-            {
-                return tangent_basis(
-                    normal,
+            let normal =
+                cylinder.normal_at(
+                    point,
                 );
+
+            if normal
+                .dot(
+                    &axis,
+                )
+                .abs()
+                > 0.85
+            {
+                axis_basis(
+                    axis,
+                )
+            } else {
+                tangent_basis(
+                    normal,
+                )
             }
-
-            let tangent =
-                axis
-                    .cross(
-                        &radial
-                            .normalize(),
-                    )
-                    .normalize();
-
-            let bitangent =
-                normal
-                    .cross(
-                        &tangent,
-                    )
-                    .normalize();
-
-            (
-                tangent,
-                bitangent,
-            )
         }
 
         Object::Cone(
