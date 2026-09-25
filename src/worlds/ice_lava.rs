@@ -335,18 +335,39 @@ fn add_lava_planet(
     _lava: Material,
     _orange_lava: Material,
 ) {
+    // Hemisphere de arriba
     objects.push(
         Object::Hemisphere(
             Hemisphere::new(
                 Vec3::new(
                     0.32,
-                    0.22,
+                    0.30,
                     -1.76,
                 ),
                 0.82,
                 Vec3::new(
                     0.0,
                     1.0,
+                    0.0,
+                ),
+                rock,
+            ),
+        ),
+    );
+
+    // Hemisphere de abajo
+    objects.push(
+        Object::Hemisphere(
+            Hemisphere::new(
+                Vec3::new(
+                    0.32,
+                    -0.30,
+                    -1.76,
+                ),
+                0.82,
+                Vec3::new(
+                    0.0,
+                    -1.0,
                     0.0,
                 ),
                 rock,
