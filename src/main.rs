@@ -16,6 +16,7 @@ use core::vec3::Vec3;
 use materials::material::Material;
 
 use objects::cone::Cone;
+use objects::cube::Cube;
 use objects::cylinder::Cylinder;
 use objects::object::Object;
 use objects::plane::Plane;
@@ -851,6 +852,30 @@ fn transform_objects(
                                 plane.normal,
 
                                 plane.material,
+                            ),
+                        )
+                    }
+
+                    Object::Cube(
+                        cube,
+                    ) => {
+                        Object::Cube(
+                            Cube::from_basis(
+                                cube.center
+                                    * scale
+                                    + offset,
+
+                                cube.half_size
+                                    * 2.0
+                                    * scale,
+
+                                cube.right,
+
+                                cube.up,
+
+                                cube.forward,
+
+                                cube.material,
                             ),
                         )
                     }
