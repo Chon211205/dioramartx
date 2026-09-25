@@ -1,4 +1,3 @@
-use std::f32::consts::TAU;
 use std::sync::OnceLock;
 
 use crate::core::vec3::Vec3;
@@ -10,6 +9,15 @@ use crate::objects::object::Object;
 use crate::objects::torus::Torus;
 
 use crate::textures::texture::TextureMap;
+
+static ICE_COLOR: OnceLock<TextureMap> =
+    OnceLock::new();
+
+static ICE_NORMAL: OnceLock<TextureMap> =
+    OnceLock::new();
+
+static ICE_ROUGHNESS: OnceLock<TextureMap> =
+    OnceLock::new();
 
 static LAVA_FLAT_COLOR: OnceLock<TextureMap> =
     OnceLock::new();
@@ -28,6 +36,30 @@ static LAVA_CURVED_NORMAL: OnceLock<TextureMap> =
 
 static LAVA_CURVED_ROUGHNESS: OnceLock<TextureMap> =
     OnceLock::new();
+
+fn ice_color() -> &'static TextureMap {
+    ICE_COLOR.get_or_init(|| {
+        TextureMap::from_file(
+            "assets/textures/ice/Ice002_1K-PNG_Color.png",
+        )
+    })
+}
+
+fn ice_normal() -> &'static TextureMap {
+    ICE_NORMAL.get_or_init(|| {
+        TextureMap::from_file(
+            "assets/textures/ice/Ice002_1K-PNG_NormalGL.png",
+        )
+    })
+}
+
+fn ice_roughness() -> &'static TextureMap {
+    ICE_ROUGHNESS.get_or_init(|| {
+        TextureMap::from_file(
+            "assets/textures/ice/Ice002_1K-PNG_Roughness.png",
+        )
+    })
+}
 
 fn lava_flat_color() -> &'static TextureMap {
     LAVA_FLAT_COLOR.get_or_init(|| {
@@ -82,29 +114,49 @@ pub fn create_ice_lava_diorama() -> Vec<Object> {
         Vec::new();
 
     let ice_material =
-        Material::new(
+        Material::textured(
             Vec3::new(
-                0.72,
-                0.90,
-                1.0,
-            ),
-            0.98,
-            0.55,
-            0.06,
-            0.16,
-        );
-
-    let crystal_material =
-        Material::new(
-            Vec3::new(
-                0.36,
+                0.82,
                 0.94,
                 1.0,
             ),
-            0.98,
-            0.75,
-            0.04,
-            0.20,
+            0.90,
+            0.95,
+            0.12,
+            0.42,
+            Some(
+                ice_color(),
+            ),
+            Some(
+                ice_normal(),
+            ),
+            Some(
+                ice_roughness(),
+            ),
+            None,
+        );
+
+    let crystal_material =
+        Material::textured(
+            Vec3::new(
+                0.72,
+                0.95,
+                1.0,
+            ),
+            0.92,
+            1.0,
+            0.10,
+            0.35,
+            Some(
+                ice_color(),
+            ),
+            Some(
+                ice_normal(),
+            ),
+            Some(
+                ice_roughness(),
+            ),
+            None,
         );
 
     let lava_outer_material =
@@ -203,39 +255,49 @@ fn add_crystals(
         0.28;
 
     let ring_angles = [
-        0.35_f32,
-        1.15_f32,
-        2.00_f32,
-        2.85_f32,
-        3.70_f32,
-        4.55_f32,
-        5.40_f32,
-        6.00_f32,
+        0.25_f32,
+        0.85_f32,
+        1.45_f32,
+        2.05_f32,
+        2.65_f32,
+        3.25_f32,
+        3.85_f32,
+        4.45_f32,
+        5.05_f32,
+        5.65_f32,
     ];
 
     let tube_angles = [
-        0.35_f32,
-        1.20_f32,
+        0.30_f32,
+        0.90_f32,
         1.57_f32,
-        2.05_f32,
-        2.80_f32,
-        3.55_f32,
-        4.25_f32,
+        2.20_f32,
+        2.85_f32,
+        3.45_f32,
+        4.10_f32,
         4.71_f32,
         5.35_f32,
         5.95_f32,
     ];
 
-    for (ring_index, ring_angle) in
-        ring_angles.iter().enumerate()
+    for (
+        ring_index,
+        ring_angle,
+    ) in ring_angles
+        .iter()
+        .enumerate()
     {
-        for (tube_index, tube_angle) in
-            tube_angles.iter().enumerate()
+        for (
+            tube_index,
+            tube_angle,
+        ) in tube_angles
+            .iter()
+            .enumerate()
         {
             if (
                 ring_index
                     + tube_index
-            ) % 2
+            ) % 3
                 != 0
             {
                 continue;
@@ -270,7 +332,7 @@ fn add_crystals(
                 radial_distance
                     * sin_ring;
 
-            let normal =
+            let surface_normal =
                 Vec3::new(
                     cos_tube
                         * cos_ring,
@@ -286,22 +348,22 @@ fn add_crystals(
                     y,
                     z,
                 )
-                    - normal
+                    - surface_normal
                         * 0.025;
 
             let size =
                 if tube_index % 3
                     == 0
                 {
-                    0.34
+                    0.30
                 } else {
-                    0.27
+                    0.23
                 };
 
             add_crystal_cluster(
                 objects,
                 base,
-                normal,
+                surface_normal,
                 size,
                 material,
             );
@@ -357,16 +419,16 @@ fn add_crystal_cluster(
         (
             normal
                 + tangent
-                    * 0.28
+                    * 0.30
         )
             .normalize(),
 
         (
             normal
                 - tangent
-                    * 0.25
+                    * 0.24
                 + bitangent
-                    * 0.12
+                    * 0.15
         )
             .normalize(),
     ];
@@ -388,10 +450,10 @@ fn add_crystal_cluster(
         let radius =
             if i == 0 {
                 size
-                    * 0.18
+                    * 0.17
             } else {
                 size
-                    * 0.13
+                    * 0.12
             };
 
         let center =
