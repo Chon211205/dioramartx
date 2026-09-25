@@ -595,7 +595,6 @@ pub fn create_water_diorama() -> Vec<Object> {
     );
 
 
-
     let block_yellow = Material::new(
 
         Vec3::new(
@@ -879,6 +878,135 @@ pub fn create_water_diorama() -> Vec<Object> {
     );
 
 
+    add_island(
+
+        &mut objects,
+
+        Vec3::new(
+
+            -0.95,
+
+            -0.15,
+
+            0.25,
+
+        ),
+
+        0.22,
+
+        ground,
+
+        sand,
+
+        grass,
+
+    );
+
+
+
+    add_island(
+
+        &mut objects,
+
+        Vec3::new(
+
+            -0.45,
+
+            -0.55,
+
+            -0.65,
+
+        ),
+
+        0.24,
+
+        ground,
+
+        sand,
+
+        grass,
+
+    );
+
+
+
+    add_island(
+
+        &mut objects,
+
+        Vec3::new(
+
+            0.25,
+
+            -0.82,
+
+            -0.45,
+
+        ),
+
+        0.21,
+
+        ground,
+
+        sand,
+
+        grass,
+
+    );
+
+
+
+    add_island(
+
+        &mut objects,
+
+        Vec3::new(
+
+            0.88,
+
+            0.10,
+
+            -0.35,
+
+        ),
+
+        0.20,
+
+        ground,
+
+        sand,
+
+        grass,
+
+    );
+
+
+
+    add_island(
+
+        &mut objects,
+
+        Vec3::new(
+
+            -0.75,
+
+            0.15,
+
+            0.72,
+
+        ),
+
+        0.18,
+
+        ground,
+
+        sand,
+
+        grass,
+
+    );
+
+
 
     add_plateau(
 
@@ -905,7 +1033,6 @@ pub fn create_water_diorama() -> Vec<Object> {
     );
 
 
-
     add_question_block(
 
         &mut objects,
@@ -924,7 +1051,7 @@ pub fn create_water_diorama() -> Vec<Object> {
 
         0.24,
 
-        0.12,
+        0.14,
 
         block_yellow,
 
@@ -1003,6 +1130,31 @@ pub fn create_water_diorama() -> Vec<Object> {
         0.24,
 
         0.28,
+
+        ground,
+
+        grass,
+
+    );
+
+
+    add_plateau(
+
+        &mut objects,
+
+        Vec3::new(
+
+            -0.35,
+
+            -0.62,
+
+            -0.55,
+
+        ),
+
+        0.20,
+
+        0.24,
 
         ground,
 
@@ -1181,6 +1333,77 @@ pub fn create_water_diorama() -> Vec<Object> {
     );
 
 
+    add_palm(
+
+        &mut objects,
+
+        Vec3::new(
+
+            -0.95,
+
+            -0.15,
+
+            0.25,
+
+        ),
+
+        0.27,
+
+        palm_wood,
+
+        palm_leaf,
+
+    );
+
+
+
+    add_palm(
+
+        &mut objects,
+
+        Vec3::new(
+
+            -0.45,
+
+            -0.55,
+
+            -0.65,
+
+        ),
+
+        0.25,
+
+        palm_wood,
+
+        palm_leaf,
+
+    );
+
+
+
+    add_palm(
+
+        &mut objects,
+
+        Vec3::new(
+
+            0.88,
+
+            0.10,
+
+            -0.35,
+
+        ),
+
+        0.24,
+
+        palm_wood,
+
+        palm_leaf,
+
+    );
+
+
 
     add_rock_column(
 
@@ -1277,6 +1500,83 @@ pub fn create_water_diorama() -> Vec<Object> {
         0.11,
 
         0.27,
+
+        dark_rock,
+
+        grass,
+
+    );
+
+
+    add_rock_column(
+
+        &mut objects,
+
+        Vec3::new(
+
+            -0.65,
+
+            -0.35,
+
+            0.62,
+
+        ),
+
+        0.08,
+
+        0.18,
+
+        dark_rock,
+
+        grass,
+
+    );
+
+
+
+    add_rock_column(
+
+        &mut objects,
+
+        Vec3::new(
+
+            0.28,
+
+            -0.72,
+
+            -0.50,
+
+        ),
+
+        0.07,
+
+        0.16,
+
+        rock,
+
+        grass,
+
+    );
+
+
+
+    add_rock_column(
+
+        &mut objects,
+
+        Vec3::new(
+
+            0.96,
+
+            0.20,
+
+            0.05,
+
+        ),
+
+        0.07,
+
+        0.17,
 
         dark_rock,
 
@@ -2298,43 +2598,35 @@ fn add_question_block(
 
         up,
 
-    ) = surface_point(
+    ) =
 
-        direction,
+        surface_point(
 
-        0.0,
+            direction,
 
-    );
+            0.0,
 
-
-
-    let view_hint = Vec3::new(
-
-        0.0,
-
-        0.0,
-
-        1.0,
-
-    );
+        );
 
 
 
-    let projected =
+    let helper =
 
-        view_hint
+        if up.y.abs()
 
-            - up
+            < 0.9
 
-                * view_hint.dot(&up);
+        {
 
+            Vec3::new(
 
+                0.0,
 
-    let forward =
+                1.0,
 
-        if projected.length() > 0.0001 {
+                0.0,
 
-            projected.normalize()
+            )
 
         } else {
 
@@ -2354,7 +2646,13 @@ fn add_question_block(
 
     let right =
 
-        up.cross(&forward)
+        helper
+
+            .cross(
+
+                &up,
+
+            )
 
             .normalize();
 
@@ -2362,7 +2660,13 @@ fn add_question_block(
 
     let forward =
 
-        right.cross(&up)
+        up
+
+            .cross(
+
+                &right,
+
+            )
 
             .normalize();
 
@@ -2414,23 +2718,11 @@ fn add_question_block(
 
 
 
-    let pixel_size =
+    let pixel = size * 0.105;
 
-        size * 0.13;
+    let spacing = size * 0.14;
 
-
-
-    let step =
-
-        size * 0.14;
-
-
-
-    let face_offset =
-
-        size * 0.5
-
-            + pixel_size * 0.55;
+    let face_offset = size * 0.5 + pixel * 0.55;
 
 
 
@@ -2468,17 +2760,11 @@ fn add_question_block(
 
             center
 
-                + right
+                + right * (px * spacing)
 
-                    * (px * step)
+                + up * (py * spacing)
 
-                + up
-
-                    * (py * step)
-
-                + forward
-
-                    * face_offset;
+                + forward * face_offset;
 
 
 
@@ -2490,7 +2776,7 @@ fn add_question_block(
 
                     pixel_center,
 
-                    pixel_size,
+                    pixel,
 
                     right,
 
@@ -2505,82 +2791,6 @@ fn add_question_block(
             ),
 
         );
-
-    }
-
-
-
-    let corner_radius =
-
-        size * 0.045;
-
-
-
-    let corner_offset =
-
-        size * 0.36;
-
-
-
-    for sx in [
-
-        -1.0,
-
-        1.0,
-
-    ] {
-
-        for sy in [
-
-            -1.0,
-
-            1.0,
-
-        ] {
-
-            let corner =
-
-                center
-
-                    + right
-
-                        * (sx * corner_offset)
-
-                    + up
-
-                        * (sy * corner_offset)
-
-                    + forward
-
-                        * (
-
-                            size * 0.5
-
-                                + corner_radius
-
-                        );
-
-
-
-            objects.push(
-
-                Object::Sphere(
-
-                    Sphere::new(
-
-                        corner,
-
-                        corner_radius,
-
-                        yellow,
-
-                    ),
-
-                ),
-
-            );
-
-        }
 
     }
 
