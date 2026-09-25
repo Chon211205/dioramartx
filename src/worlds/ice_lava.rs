@@ -339,11 +339,11 @@ fn add_lava_planet(
         Object::Hemisphere(
             Hemisphere::new(
                 Vec3::new(
-                    0.0,
-                    0.05,
-                    -1.32,
+                    0.32,
+                    0.22,
+                    -1.76,
                 ),
-                1.15,
+                0.82,
                 Vec3::new(
                     0.0,
                     1.0,
