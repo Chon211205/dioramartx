@@ -6,6 +6,7 @@ use crate::objects::cone::Cone;
 use crate::objects::cylinder::Cylinder;
 use crate::objects::object::Object;
 use crate::objects::sphere::Sphere;
+use crate::objects::hemisphere::Hemisphere;
 
 pub fn create_ice_lava_diorama() -> Vec<Object> {
     let mut objects = Vec::new();
@@ -331,135 +332,24 @@ fn add_ice_piece(
 fn add_lava_planet(
     objects: &mut Vec<Object>,
     rock: Material,
-    lava: Material,
-    orange_lava: Material,
+    _lava: Material,
+    _orange_lava: Material,
 ) {
-    let center =
-        Vec3::new(
-            0.0,
-            1.37,
-            -1.72,
-        );
-
-    let radius =
-        1.18;
-
     objects.push(
-        Object::Sphere(
-            Sphere::new(
-                center,
-                radius,
-                rock,
-            ),
-        ),
-    );
-
-    let crack_directions = [
-        Vec3::new(
-            -0.55,
-            0.35,
-            0.76,
-        ),
-        Vec3::new(
-            -0.20,
-            0.65,
-            0.72,
-        ),
-        Vec3::new(
-            0.18,
-            0.72,
-            0.65,
-        ),
-        Vec3::new(
-            0.50,
-            0.42,
-            0.76,
-        ),
-        Vec3::new(
-            -0.65,
-            -0.05,
-            0.75,
-        ),
-        Vec3::new(
-            0.65,
-            0.02,
-            0.75,
-        ),
-    ];
-
-    for direction in crack_directions {
-        add_lava_crack(
-            objects,
-            center,
-            radius,
-            direction,
-            lava,
-        );
-    }
-
-    let hot_directions = [
-        Vec3::new(
-            -0.32,
-            0.12,
-            0.94,
-        ),
-        Vec3::new(
-            0.10,
-            0.20,
-            0.97,
-        ),
-        Vec3::new(
-            0.40,
-            0.08,
-            0.91,
-        ),
-    ];
-
-    for direction in hot_directions {
-        let normal =
-            direction.normalize();
-
-        let position =
-            center
-                + normal
-                    * (
-                        radius
-                            + 0.018
-                    );
-
-        objects.push(
-            Object::Sphere(
-                Sphere::new(
-                    position,
-                    0.075,
-                    orange_lava,
+        Object::Hemisphere(
+            Hemisphere::new(
+                Vec3::new(
+                    0.0,
+                    0.05,
+                    -1.32,
                 ),
-            ),
-        );
-    }
-
-    let lava_band_center =
-        Vec3::new(
-            center.x,
-            center.y
-                - radius
-                    * 0.66,
-            center.z,
-        );
-
-    objects.push(
-        Object::Cylinder(
-            Cylinder::new_oriented(
-                lava_band_center,
+                1.15,
                 Vec3::new(
                     0.0,
                     1.0,
                     0.0,
                 ),
-                radius
-                    * 0.82,
-                0.10,
-                orange_lava,
+                rock,
             ),
         ),
     );

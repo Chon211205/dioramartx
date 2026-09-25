@@ -21,6 +21,7 @@ use objects::cylinder::Cylinder;
 use objects::object::Object;
 use objects::plane::Plane;
 use objects::sphere::Sphere;
+use objects::hemisphere::Hemisphere;
 
 use scene::light::Light;
 use scene::scene::Scene;
@@ -906,6 +907,18 @@ fn transform_objects(
                             ),
                         )
                     }
+
+                    Object::Hemisphere(hemisphere) => {
+                        Object::Hemisphere(
+                            Hemisphere::new(
+                                hemisphere.center * scale + offset,
+                                hemisphere.radius * scale,
+                                hemisphere.normal,
+                                hemisphere.material,
+                            ),
+                        )
+                    }
+
                 }
             },
         )
