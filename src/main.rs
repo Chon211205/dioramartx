@@ -908,13 +908,23 @@ fn transform_objects(
                         )
                     }
 
-                    Object::Hemisphere(hemisphere) => {
+                    Object::Hemisphere(
+                        hemisphere,
+                    ) => {
                         Object::Hemisphere(
-                            Hemisphere::new(
-                                hemisphere.center * scale + offset,
-                                hemisphere.radius * scale,
+                            Hemisphere::new_with_materials(
+                                hemisphere.center
+                                    * scale
+                                    + offset,
+
+                                hemisphere.radius
+                                    * scale,
+
                                 hemisphere.normal,
+
                                 hemisphere.material,
+
+                                hemisphere.flat_material,
                             ),
                         )
                     }

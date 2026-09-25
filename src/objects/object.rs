@@ -129,6 +129,39 @@ impl Object {
         }
     }
 
+    pub fn material_at(
+        &self,
+        point: &Vec3,
+    ) -> Material {
+        match self {
+            Object::Sphere(sphere) => {
+                sphere.material
+            }
+
+            Object::Plane(plane) => {
+                plane.material
+            }
+
+            Object::Cylinder(cylinder) => {
+                cylinder.material
+            }
+
+            Object::Cone(cone) => {
+                cone.material
+            }
+
+            Object::Cube(cube) => {
+                cube.material
+            }
+
+            Object::Hemisphere(hemisphere) => {
+                hemisphere.material_at(
+                    point,
+                )
+            }
+        }
+    }
+
     pub fn bounding_box(
         &self,
     ) -> Option<Aabb> {

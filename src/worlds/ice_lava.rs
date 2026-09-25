@@ -1,123 +1,210 @@
 use std::f32::consts::PI;
+use std::sync::OnceLock;
 
 use crate::core::vec3::Vec3;
 use crate::materials::material::Material;
+
 use crate::objects::cone::Cone;
 use crate::objects::cylinder::Cylinder;
+use crate::objects::hemisphere::Hemisphere;
 use crate::objects::object::Object;
 use crate::objects::sphere::Sphere;
-use crate::objects::hemisphere::Hemisphere;
+
+use crate::textures::texture::TextureMap;
+
+static LAVA_FLAT_COLOR: OnceLock<TextureMap> =
+    OnceLock::new();
+
+static LAVA_FLAT_NORMAL: OnceLock<TextureMap> =
+    OnceLock::new();
+
+static LAVA_FLAT_ROUGHNESS: OnceLock<TextureMap> =
+    OnceLock::new();
+
+static LAVA_CURVED_COLOR: OnceLock<TextureMap> =
+    OnceLock::new();
+
+static LAVA_CURVED_NORMAL: OnceLock<TextureMap> =
+    OnceLock::new();
+
+static LAVA_CURVED_ROUGHNESS: OnceLock<TextureMap> =
+    OnceLock::new();
+
+fn lava_flat_color() -> &'static TextureMap {
+    LAVA_FLAT_COLOR.get_or_init(|| {
+        TextureMap::from_file(
+            "assets/textures/lava/Lava004_1K-PNG_Color.png",
+        )
+    })
+}
+
+fn lava_flat_normal() -> &'static TextureMap {
+    LAVA_FLAT_NORMAL.get_or_init(|| {
+        TextureMap::from_file(
+            "assets/textures/lava/Lava004_1K-PNG_NormalGL.png",
+        )
+    })
+}
+
+fn lava_flat_roughness() -> &'static TextureMap {
+    LAVA_FLAT_ROUGHNESS.get_or_init(|| {
+        TextureMap::from_file(
+            "assets/textures/lava/Lava004_1K-PNG_Roughness.png",
+        )
+    })
+}
+
+fn lava_curved_color() -> &'static TextureMap {
+    LAVA_CURVED_COLOR.get_or_init(|| {
+        TextureMap::from_file(
+            "assets/textures/lava/Lava002_1K-PNG_Color.png",
+        )
+    })
+}
+
+fn lava_curved_normal() -> &'static TextureMap {
+    LAVA_CURVED_NORMAL.get_or_init(|| {
+        TextureMap::from_file(
+            "assets/textures/lava/Lava002_1K-PNG_NormalGL.png",
+        )
+    })
+}
+
+fn lava_curved_roughness() -> &'static TextureMap {
+    LAVA_CURVED_ROUGHNESS.get_or_init(|| {
+        TextureMap::from_file(
+            "assets/textures/lava/Lava002_1K-PNG_Roughness.png",
+        )
+    })
+}
 
 pub fn create_ice_lava_diorama() -> Vec<Object> {
-    let mut objects = Vec::new();
+    let mut objects =
+        Vec::new();
 
-    let ice = Material::new(
-        Vec3::new(
-            0.32,
+    let ice =
+        Material::new(
+            Vec3::new(
+                0.32,
+                0.72,
+                0.95,
+            ),
             0.72,
             0.95,
-        ),
-        0.72,
-        0.95,
-        0.12,
-        0.18,
-    );
-
-    let ice_light = Material::new(
-        Vec3::new(
-            0.55,
-            0.90,
-            1.0,
-        ),
-        0.82,
-        1.0,
-        0.08,
-        0.22,
-    );
-
-    let lava_rock = Material::new(
-        Vec3::new(
-            0.20,
-            0.07,
-            0.025,
-        ),
-        0.70,
-        0.28,
-        0.0,
-        0.08,
-    );
-
-    let lava = Material::new(
-        Vec3::new(
-            1.0,
-            0.20,
-            0.015,
-        ),
-        1.0,
-        0.80,
-        0.0,
-        0.10,
-    );
-
-    let orange_lava = Material::new(
-        Vec3::new(
-            1.0,
-            0.48,
-            0.02,
-        ),
-        1.0,
-        0.90,
-        0.0,
-        0.08,
-    );
-
-    let crystal = Material::new(
-        Vec3::new(
-            0.08,
-            0.92,
-            1.0,
-        ),
-        0.75,
-        1.0,
-        0.16,
-        0.20,
-    );
-
-    let crystal_core = Material::new(
-        Vec3::new(
-            0.95,
-            0.90,
             0.12,
-        ),
-        1.0,
-        1.0,
-        0.0,
-        0.10,
-    );
+            0.18,
+        );
 
-    let stone = Material::new(
-        Vec3::new(
-            0.32,
-            0.36,
-            0.40,
-        ),
-        0.76,
-        0.30,
-        0.0,
-        0.05,
-    );
+    let ice_light =
+        Material::new(
+            Vec3::new(
+                0.55,
+                0.90,
+                1.0,
+            ),
+            0.82,
+            1.0,
+            0.08,
+            0.22,
+        );
 
-    let black_rock = Material::new(
-        Vec3::new(
-            0.055,
-            0.045,
+    let lava_outer_material =
+        Material::textured(
+            Vec3::new(
+                1.0,
+                1.0,
+                1.0,
+            ),
+            0.90,
+            0.35,
+            0.0,
             0.04,
-        ),
-        0.65,
-        0.20,
-        0.0,
-        0.04,
-    );
+            Some(
+                lava_curved_color(),
+            ),
+            Some(
+                lava_curved_normal(),
+            ),
+            Some(
+                lava_curved_roughness(),
+            ),
+            None,
+        );
+
+    let lava_inner_material =
+        Material::textured(
+            Vec3::new(
+                1.0,
+                1.0,
+                1.0,
+            ),
+            1.0,
+            0.75,
+            0.0,
+            0.05,
+            Some(
+                lava_flat_color(),
+            ),
+            Some(
+                lava_flat_normal(),
+            ),
+            Some(
+                lava_flat_roughness(),
+            ),
+            None,
+        );
+
+    let crystal =
+        Material::new(
+            Vec3::new(
+                0.08,
+                0.92,
+                1.0,
+            ),
+            0.75,
+            1.0,
+            0.16,
+            0.20,
+        );
+
+    let crystal_core =
+        Material::new(
+            Vec3::new(
+                0.95,
+                0.90,
+                0.12,
+            ),
+            1.0,
+            1.0,
+            0.0,
+            0.10,
+        );
+
+    let stone =
+        Material::new(
+            Vec3::new(
+                0.32,
+                0.36,
+                0.40,
+            ),
+            0.76,
+            0.30,
+            0.0,
+            0.05,
+        );
+
+    let black_rock =
+        Material::new(
+            Vec3::new(
+                0.055,
+                0.045,
+                0.04,
+            ),
+            0.65,
+            0.20,
+            0.0,
+            0.04,
+        );
 
     add_ice_ring(
         &mut objects,
@@ -127,9 +214,8 @@ pub fn create_ice_lava_diorama() -> Vec<Object> {
 
     add_lava_planet(
         &mut objects,
-        lava_rock,
-        lava,
-        orange_lava,
+        lava_outer_material,
+        lava_inner_material,
     );
 
     add_crystal_cluster(
@@ -236,7 +322,6 @@ pub fn create_ice_lava_diorama() -> Vec<Object> {
             0.10,
         ),
         black_rock,
-        lava,
     );
 
     add_small_ice_rocks(
@@ -252,11 +337,17 @@ fn add_ice_ring(
     ice: Material,
     ice_light: Material,
 ) {
-    const SEGMENTS: usize = 28;
+    const SEGMENTS: usize =
+        28;
 
-    let inner_radius = 0.92;
-    let middle_radius = 1.20;
-    let outer_radius = 1.48;
+    let inner_radius =
+        0.92;
+
+    let middle_radius =
+        1.20;
+
+    let outer_radius =
+        1.48;
 
     for i in 0..SEGMENTS {
         let angle =
@@ -274,9 +365,11 @@ fn add_ice_ring(
         add_ice_piece(
             objects,
             Vec3::new(
-                cos_a * inner_radius,
+                cos_a
+                    * inner_radius,
                 0.0,
-                sin_a * inner_radius,
+                sin_a
+                    * inner_radius,
             ),
             0.32,
             ice,
@@ -285,9 +378,11 @@ fn add_ice_ring(
         add_ice_piece(
             objects,
             Vec3::new(
-                cos_a * middle_radius,
+                cos_a
+                    * middle_radius,
                 -0.01,
-                sin_a * middle_radius,
+                sin_a
+                    * middle_radius,
             ),
             0.34,
             ice_light,
@@ -296,9 +391,11 @@ fn add_ice_ring(
         add_ice_piece(
             objects,
             Vec3::new(
-                cos_a * outer_radius,
+                cos_a
+                    * outer_radius,
                 -0.03,
-                sin_a * outer_radius,
+                sin_a
+                    * outer_radius,
             ),
             0.33,
             ice,
@@ -331,17 +428,15 @@ fn add_ice_piece(
 
 fn add_lava_planet(
     objects: &mut Vec<Object>,
-    rock: Material,
-    _lava: Material,
-    _orange_lava: Material,
+    outer_material: Material,
+    inner_material: Material,
 ) {
-    // Hemisphere de arriba
     objects.push(
         Object::Hemisphere(
-            Hemisphere::new(
+            Hemisphere::new_with_materials(
                 Vec3::new(
                     0.32,
-                    0.30,
+                    0.46,
                     -1.76,
                 ),
                 0.82,
@@ -350,18 +445,18 @@ fn add_lava_planet(
                     1.0,
                     0.0,
                 ),
-                rock,
+                outer_material,
+                inner_material,
             ),
         ),
     );
 
-    // Hemisphere de abajo
     objects.push(
         Object::Hemisphere(
-            Hemisphere::new(
+            Hemisphere::new_with_materials(
                 Vec3::new(
                     0.32,
-                    -0.30,
+                    -0.46,
                     -1.76,
                 ),
                 0.82,
@@ -370,62 +465,8 @@ fn add_lava_planet(
                     -1.0,
                     0.0,
                 ),
-                rock,
-            ),
-        ),
-    );
-}
-
-fn add_lava_crack(
-    objects: &mut Vec<Object>,
-    center: Vec3,
-    radius: f32,
-    direction: Vec3,
-    material: Material,
-) {
-    let normal =
-        direction.normalize();
-
-    let crack_center =
-        center
-            + normal
-                * (
-                    radius
-                        + 0.025
-                );
-
-    let helper =
-        if normal.y.abs()
-            < 0.90
-        {
-            Vec3::new(
-                0.0,
-                1.0,
-                0.0,
-            )
-        } else {
-            Vec3::new(
-                1.0,
-                0.0,
-                0.0,
-            )
-        };
-
-    let tangent =
-        normal
-            .cross(
-                &helper,
-            )
-            .normalize();
-
-    objects.push(
-        Object::Cylinder(
-            Cylinder::new_oriented(
-                crack_center,
-                tangent,
-                0.025,
-                0.32,
-                material,
+                outer_material,
+                inner_material,
             ),
         ),
     );
@@ -512,13 +553,11 @@ fn add_crystal_cluster(
                     center,
                     direction,
                     size
-                        * (
-                            if index == 0 {
-                                0.24
-                            } else {
-                                0.17
-                            }
-                        ),
+                        * if index == 0 {
+                            0.24
+                        } else {
+                            0.17
+                        },
                     height,
                     crystal,
                 ),
@@ -577,63 +616,14 @@ fn add_stone_platform(
 fn add_black_rock(
     objects: &mut Vec<Object>,
     position: Vec3,
-    rock: Material,
-    lava: Material,
+    material: Material,
 ) {
-    let rock_radius =
-        0.30;
-
     objects.push(
         Object::Sphere(
             Sphere::new(
                 position,
-                rock_radius,
-                rock,
-            ),
-        ),
-    );
-
-    objects.push(
-        Object::Sphere(
-            Sphere::new(
-                position
-                    + Vec3::new(
-                        0.10,
-                        0.015,
-                        0.25,
-                    ),
-                0.065,
-                lava,
-            ),
-        ),
-    );
-
-    objects.push(
-        Object::Sphere(
-            Sphere::new(
-                position
-                    + Vec3::new(
-                        -0.08,
-                        0.08,
-                        0.24,
-                    ),
-                0.040,
-                lava,
-            ),
-        ),
-    );
-
-    objects.push(
-        Object::Sphere(
-            Sphere::new(
-                position
-                    + Vec3::new(
-                        0.02,
-                        -0.07,
-                        0.27,
-                    ),
-                0.035,
-                lava,
+                0.30,
+                material,
             ),
         ),
     );

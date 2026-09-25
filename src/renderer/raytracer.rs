@@ -201,7 +201,9 @@ fn cast_ray(
         };
 
     let material =
-        object.material();
+        object.material_at(
+            &hit_point,
+        );
 
     let (
         u,
