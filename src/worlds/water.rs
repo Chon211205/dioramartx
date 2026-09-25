@@ -171,196 +171,151 @@ fn palm_roughness_map() -> &'static TextureMap {
 pub fn create_water_diorama() -> Vec<Object> {
     let mut objects = Vec::new();
 
-    let planet_center =
+    let planet_center = Vec3::new(
+        0.0,
+        0.0,
+        0.0,
+    );
+
+    let water = Material::new(
         Vec3::new(
-            0.0,
-            -0.45,
-            0.0,
-        );
-
-    let water =
-        Material::new(
-            Vec3::new(
-                0.03,
-                0.38,
-                0.72,
-            ),
+            0.03,
+            0.38,
             0.72,
-            0.85,
-            0.08,
-            0.12,
-        );
+        ),
+        0.72,
+        0.85,
+        0.08,
+        0.12,
+    );
 
-    let waterfall =
-        Material::new(
-            Vec3::new(
-                0.15,
-                0.70,
-                0.95,
-            ),
-            0.75,
-            0.80,
-            0.03,
-            0.02,
-        );
-
-    let ground =
-        Material::textured(
-            Vec3::new(
-                0.80,
-                0.74,
-                0.68,
-            ),
-            0.80,
-            0.12,
-            0.0,
-            0.01,
-            Some(
-                ground_color_map(),
-            ),
-            Some(
-                ground_normal_map(),
-            ),
-            Some(
-                ground_roughness_map(),
-            ),
-            Some(
-                ground_ao_map(),
-            ),
-        );
-
-    let grass =
-        Material::textured(
-            Vec3::new(
-                0.80,
-                1.0,
-                0.80,
-            ),
-            0.85,
-            0.12,
-            0.0,
-            0.01,
-            Some(
-                grass_color_map(),
-            ),
-            Some(
-                grass_normal_map(),
-            ),
-            Some(
-                grass_roughness_map(),
-            ),
-            Some(
-                grass_ao_map(),
-            ),
-        );
-
-    let sand =
-        Material::textured(
-            Vec3::new(
-                1.0,
-                0.97,
-                0.90,
-            ),
-            0.82,
-            0.08,
-            0.0,
-            0.0,
-            Some(
-                sand_color_map(),
-            ),
-            Some(
-                sand_normal_map(),
-            ),
-            Some(
-                sand_roughness_map(),
-            ),
-            None,
-        );
-
-    let rock =
-        Material::textured(
-            Vec3::new(
-                0.80,
-                0.78,
-                0.75,
-            ),
-            0.78,
+    let waterfall = Material::new(
+        Vec3::new(
             0.15,
-            0.0,
-            0.03,
-            Some(
-                rock_color_map(),
-            ),
-            Some(
-                rock_normal_map(),
-            ),
-            Some(
-                rock_roughness_map(),
-            ),
-            None,
-        );
+            0.70,
+            0.95,
+        ),
+        0.75,
+        0.80,
+        0.03,
+        0.02,
+    );
 
-    let palm_wood =
-        Material::new(
-            Vec3::new(
-                0.38,
-                0.20,
-                0.07,
-            ),
+    let ground = Material::textured(
+        Vec3::new(
+            0.80,
+            0.74,
+            0.68,
+        ),
+        0.80,
+        0.12,
+        0.0,
+        0.01,
+        Some(ground_color_map()),
+        Some(ground_normal_map()),
+        Some(ground_roughness_map()),
+        Some(ground_ao_map()),
+    );
+
+    let grass = Material::textured(
+        Vec3::new(
+            0.80,
+            1.0,
+            0.80,
+        ),
+        0.85,
+        0.12,
+        0.0,
+        0.01,
+        Some(grass_color_map()),
+        Some(grass_normal_map()),
+        Some(grass_roughness_map()),
+        Some(grass_ao_map()),
+    );
+
+    let sand = Material::textured(
+        Vec3::new(
+            1.0,
+            0.97,
+            0.90,
+        ),
+        0.82,
+        0.08,
+        0.0,
+        0.0,
+        Some(sand_color_map()),
+        Some(sand_normal_map()),
+        Some(sand_roughness_map()),
+        None,
+    );
+
+    let rock = Material::textured(
+        Vec3::new(
+            0.80,
+            0.78,
             0.75,
-            0.10,
-            0.0,
-            0.01,
-        );
+        ),
+        0.78,
+        0.15,
+        0.0,
+        0.03,
+        Some(rock_color_map()),
+        Some(rock_normal_map()),
+        Some(rock_roughness_map()),
+        None,
+    );
 
-    let palm_leaf =
-        Material::textured(
-            Vec3::new(
-                0.85,
-                1.0,
-                0.85,
-            ),
-            0.85,
-            0.12,
-            0.0,
-            0.01,
-            Some(
-                palm_color_map(),
-            ),
-            Some(
-                palm_normal_map(),
-            ),
-            Some(
-                palm_roughness_map(),
-            ),
-            None,
-        );
-
-    let block_yellow =
-        Material::new(
-            Vec3::new(
-                1.0,
-                0.78,
-                0.05,
-            ),
-            0.82,
-            0.35,
-            0.0,
-            0.03,
-        );
-
-    let block_white =
-        Material::new(
-            Vec3::new(
-                0.98,
-                0.98,
-                0.98,
-            ),
-            0.88,
+    let palm_wood = Material::new(
+        Vec3::new(
+            0.38,
             0.20,
-            0.0,
-            0.01,
-        );
+            0.07,
+        ),
+        0.75,
+        0.10,
+        0.0,
+        0.01,
+    );
+
+    let palm_leaf = Material::textured(
+        Vec3::new(
+            0.85,
+            1.0,
+            0.85,
+        ),
+        0.85,
+        0.12,
+        0.0,
+        0.01,
+        Some(palm_color_map()),
+        Some(palm_normal_map()),
+        Some(palm_roughness_map()),
+        None,
+    );
+
+    let block_yellow = Material::new(
+        Vec3::new(
+            1.0,
+            0.78,
+            0.05,
+        ),
+        0.82,
+        0.35,
+        0.0,
+        0.03,
+    );
+
+    let block_white = Material::new(
+        Vec3::new(
+            0.98,
+            0.98,
+            0.98,
+        ),
+        0.88,
+        0.20,
+        0.0,
+        0.01,
+    );
 
     objects.push(
         Object::Sphere(
@@ -372,284 +327,268 @@ pub fn create_water_diorama() -> Vec<Object> {
         ),
     );
 
-    add_spherical_island(
+    add_island(
         &mut objects,
         planet_center,
-        PLANET_RADIUS,
-        -0.85,
-        0.45,
-        0.27,
+        -0.82,
+        0.40,
+        0.26,
         ground,
         sand,
         grass,
     );
 
-    add_spherical_island(
+    add_island(
         &mut objects,
         planet_center,
-        PLANET_RADIUS,
-        -0.45,
-        0.85,
-        0.20,
+        -0.50,
+        0.82,
+        0.19,
         ground,
         sand,
         grass,
     );
 
-    add_spherical_island(
+    add_island(
         &mut objects,
         planet_center,
-        PLANET_RADIUS,
         -0.10,
-        0.35,
-        0.16,
+        0.62,
+        0.17,
         ground,
         sand,
         grass,
     );
 
-    add_spherical_island(
+    add_island(
         &mut objects,
         planet_center,
-        PLANET_RADIUS,
-        0.35,
-        0.80,
-        0.22,
-        ground,
-        sand,
-        grass,
-    );
-
-    add_spherical_island(
-        &mut objects,
-        planet_center,
-        PLANET_RADIUS,
-        -0.75,
-        -0.40,
+        0.37,
+        0.72,
         0.21,
         ground,
         sand,
         grass,
     );
 
-    add_spherical_island(
+    add_island(
         &mut objects,
         planet_center,
-        PLANET_RADIUS,
-        -0.15,
-        -0.70,
-        0.18,
+        -0.80,
+        -0.35,
+        0.20,
         ground,
         sand,
         grass,
     );
 
-    let big_platform_x =
-        0.60;
-
-    let big_platform_z =
-        -0.20;
-
-    let big_surface_y =
-        sphere_surface_y(
-            planet_center,
-            PLANET_RADIUS,
-            big_platform_x,
-            big_platform_z,
-        );
-
-    let big_platform_radius =
-        0.42;
-
-    let big_platform_height =
-        0.42;
-
-    add_spherical_plateau(
+    add_island(
         &mut objects,
-        big_platform_x,
-        big_surface_y,
-        big_platform_z,
-        big_platform_radius,
-        big_platform_height,
+        planet_center,
+        -0.20,
+        -0.62,
+        0.17,
+        ground,
+        sand,
+        grass,
+    );
+
+    let big_x = 0.52;
+    let big_z = -0.18;
+
+    let big_surface = sphere_surface_point(
+        planet_center,
+        big_x,
+        big_z,
+    );
+
+    let big_normal = sphere_normal(
+        planet_center,
+        big_surface,
+    );
+
+    let big_height = 0.34;
+
+    add_plateau(
+        &mut objects,
+        big_surface,
+        big_normal,
+        0.40,
+        big_height,
         ground,
         grass,
     );
 
-    let second_platform_x =
-        0.95;
-
-    let second_platform_z =
-        -0.45;
-
-    let second_surface_y =
-        sphere_surface_y(
-            planet_center,
-            PLANET_RADIUS,
-            second_platform_x,
-            second_platform_z,
-        );
-
-    add_spherical_plateau(
-        &mut objects,
-        second_platform_x,
-        second_surface_y,
-        second_platform_z,
-        0.28,
-        0.28,
-        ground,
-        grass,
+    let second_surface = sphere_surface_point(
+        planet_center,
+        0.88,
+        -0.43,
     );
 
-    let third_platform_x =
-        0.55;
-
-    let third_platform_z =
-        -0.72;
-
-    let third_surface_y =
-        sphere_surface_y(
-            planet_center,
-            PLANET_RADIUS,
-            third_platform_x,
-            third_platform_z,
-        );
-
-    add_spherical_plateau(
-        &mut objects,
-        third_platform_x,
-        third_surface_y,
-        third_platform_z,
-        0.23,
-        0.20,
-        ground,
-        grass,
+    let second_normal = sphere_normal(
+        planet_center,
+        second_surface,
     );
 
-    let big_platform_top =
-        big_surface_y
-            + big_platform_height
-            + 0.032;
-
-    add_floating_question_block(
+    add_plateau(
         &mut objects,
-        big_platform_x,
-        big_platform_z,
-        big_platform_top,
+        second_surface,
+        second_normal,
+        0.27,
         0.22,
-        0.19,
+        ground,
+        grass,
+    );
+
+    let third_surface = sphere_surface_point(
+        planet_center,
+        0.55,
+        -0.68,
+    );
+
+    let third_normal = sphere_normal(
+        planet_center,
+        third_surface,
+    );
+
+    add_plateau(
+        &mut objects,
+        third_surface,
+        third_normal,
+        0.22,
+        0.18,
+        ground,
+        grass,
+    );
+
+    let block_base =
+        big_surface
+            + big_normal
+                * (
+                    big_height
+                        + 0.03
+                );
+
+    add_question_block(
+        &mut objects,
+        block_base,
+        big_normal,
+        0.22,
+        0.18,
         block_yellow,
         block_white,
     );
 
-    add_spherical_palm(
+    add_palm(
         &mut objects,
         planet_center,
-        PLANET_RADIUS,
-        -0.85,
-        0.45,
-        0.26,
-        palm_wood,
-        palm_leaf,
-    );
-
-    add_spherical_palm(
-        &mut objects,
-        planet_center,
-        PLANET_RADIUS,
-        -0.45,
-        0.85,
-        0.23,
-        palm_wood,
-        palm_leaf,
-    );
-
-    add_spherical_palm(
-        &mut objects,
-        planet_center,
-        PLANET_RADIUS,
-        0.35,
-        0.80,
-        0.23,
-        palm_wood,
-        palm_leaf,
-    );
-
-    add_spherical_palm(
-        &mut objects,
-        planet_center,
-        PLANET_RADIUS,
-        -0.75,
-        -0.40,
-        0.21,
-        palm_wood,
-        palm_leaf,
-    );
-
-    add_plateau_palm(
-        &mut objects,
-        second_platform_x,
-        second_surface_y
-            + 0.28
-            + 0.032,
-        second_platform_z,
+        -0.82,
+        0.40,
         0.25,
         palm_wood,
         palm_leaf,
     );
 
-    add_spherical_rock(
+    add_palm(
         &mut objects,
         planet_center,
-        PLANET_RADIUS,
-        -0.10,
-        1.05,
+        -0.50,
+        0.82,
+        0.22,
+        palm_wood,
+        palm_leaf,
+    );
+
+    add_palm(
+        &mut objects,
+        planet_center,
+        0.37,
+        0.72,
+        0.22,
+        palm_wood,
+        palm_leaf,
+    );
+
+    add_palm(
+        &mut objects,
+        planet_center,
+        -0.80,
+        -0.35,
+        0.20,
+        palm_wood,
+        palm_leaf,
+    );
+
+    add_palm_at_point(
+        &mut objects,
+        second_surface
+            + second_normal
+                * 0.23,
+        second_normal,
+        0.22,
+        palm_wood,
+        palm_leaf,
+    );
+
+    add_rock(
+        &mut objects,
+        planet_center,
+        -0.12,
+        1.00,
         0.085,
         rock,
     );
 
-    add_spherical_rock(
+    add_rock(
         &mut objects,
         planet_center,
-        PLANET_RADIUS,
-        0.55,
+        0.52,
         0.95,
         0.07,
         rock,
     );
 
-    add_spherical_rock(
+    add_rock(
         &mut objects,
         planet_center,
-        PLANET_RADIUS,
-        -1.05,
+        -1.03,
         -0.10,
         0.09,
         rock,
     );
 
+    add_rock(
+        &mut objects,
+        planet_center,
+        0.92,
+        0.18,
+        0.065,
+        rock,
+    );
+
+    let waterfall_start =
+        big_surface
+            + big_normal
+                * (
+                    big_height
+                        + 0.025
+                );
+
     add_waterfall(
         &mut objects,
-        Vec3::new(
-            big_platform_x
-                - big_platform_radius
-                * 0.90,
-            big_platform_top,
-            big_platform_z,
-        ),
-        planet_center,
-        PLANET_RADIUS,
+        waterfall_start,
+        big_normal,
         waterfall,
     );
 
     objects
 }
 
-fn sphere_surface_y(
+fn sphere_surface_point(
     center: Vec3,
-    radius: f32,
     x: f32,
     z: f32,
-) -> f32 {
+) -> Vec3 {
     let dx =
         x
             - center.x;
@@ -658,27 +597,41 @@ fn sphere_surface_y(
         z
             - center.z;
 
-    let inside =
-        (
-            radius
-                * radius
-                - dx
-                    * dx
-                - dz
-                    * dz
-        )
-            .max(
-                0.0,
-            );
+    let y_squared =
+        PLANET_RADIUS
+            * PLANET_RADIUS
+            - dx
+                * dx
+            - dz
+                * dz;
 
-    center.y
-        + inside.sqrt()
+    let y =
+        center.y
+            + y_squared
+                .max(0.0)
+                .sqrt();
+
+    Vec3::new(
+        x,
+        y,
+        z,
+    )
 }
 
-fn add_spherical_island(
-    objects: &mut Vec<Object>,
+fn sphere_normal(
     center: Vec3,
-    planet_radius: f32,
+    point: Vec3,
+) -> Vec3 {
+    (
+        point
+            - center
+    )
+        .normalize()
+}
+
+fn add_island(
+    objects: &mut Vec<Object>,
+    planet_center: Vec3,
     x: f32,
     z: f32,
     radius: f32,
@@ -686,33 +639,33 @@ fn add_spherical_island(
     sand: Material,
     grass: Material,
 ) {
-    let surface_y =
-        sphere_surface_y(
-            center,
-            planet_radius,
+    let surface =
+        sphere_surface_point(
+            planet_center,
             x,
             z,
         );
 
+    let normal =
+        sphere_normal(
+            planet_center,
+            surface,
+        );
+
     let body_height =
         radius
-            * 0.34;
+            * 0.28;
 
     objects.push(
         Object::Cylinder(
             Cylinder::new_oriented(
-                Vec3::new(
-                    x,
-                    surface_y
-                        + body_height
-                            * 0.5,
-                    z,
-                ),
-                Vec3::new(
-                    0.0,
-                    1.0,
-                    0.0,
-                ),
+                surface
+                    + normal
+                        * (
+                            body_height
+                                * 0.42
+                        ),
+                normal,
                 radius,
                 body_height,
                 ground,
@@ -723,18 +676,13 @@ fn add_spherical_island(
     objects.push(
         Object::Cylinder(
             Cylinder::new_oriented(
-                Vec3::new(
-                    x,
-                    surface_y
-                        + body_height
-                        + 0.012,
-                    z,
-                ),
-                Vec3::new(
-                    0.0,
-                    1.0,
-                    0.0,
-                ),
+                surface
+                    + normal
+                        * (
+                            body_height
+                                + 0.006
+                        ),
+                normal,
                 radius
                     * 0.92,
                 0.022,
@@ -746,18 +694,13 @@ fn add_spherical_island(
     objects.push(
         Object::Cylinder(
             Cylinder::new_oriented(
-                Vec3::new(
-                    x,
-                    surface_y
-                        + body_height
-                        + 0.031,
-                    z,
-                ),
-                Vec3::new(
-                    0.0,
-                    1.0,
-                    0.0,
-                ),
+                surface
+                    + normal
+                        * (
+                            body_height
+                                + 0.025
+                        ),
+                normal,
                 radius
                     * 0.58,
                 0.018,
@@ -767,11 +710,10 @@ fn add_spherical_island(
     );
 }
 
-fn add_spherical_plateau(
+fn add_plateau(
     objects: &mut Vec<Object>,
-    x: f32,
-    surface_y: f32,
-    z: f32,
+    surface: Vec3,
+    normal: Vec3,
     radius: f32,
     height: f32,
     ground: Material,
@@ -780,18 +722,13 @@ fn add_spherical_plateau(
     objects.push(
         Object::Cylinder(
             Cylinder::new_oriented(
-                Vec3::new(
-                    x,
-                    surface_y
-                        + height
-                            * 0.5,
-                    z,
-                ),
-                Vec3::new(
-                    0.0,
-                    1.0,
-                    0.0,
-                ),
+                surface
+                    + normal
+                        * (
+                            height
+                                * 0.46
+                        ),
+                normal,
                 radius,
                 height,
                 ground,
@@ -802,18 +739,13 @@ fn add_spherical_plateau(
     objects.push(
         Object::Cylinder(
             Cylinder::new_oriented(
-                Vec3::new(
-                    x,
-                    surface_y
-                        + height
-                        + 0.016,
-                    z,
-                ),
-                Vec3::new(
-                    0.0,
-                    1.0,
-                    0.0,
-                ),
+                surface
+                    + normal
+                        * (
+                            height
+                                + 0.016
+                        ),
+                normal,
                 radius
                     * 1.01,
                 0.032,
@@ -823,64 +755,65 @@ fn add_spherical_plateau(
     );
 }
 
-fn add_spherical_palm(
+fn add_palm(
     objects: &mut Vec<Object>,
-    center: Vec3,
-    planet_radius: f32,
+    planet_center: Vec3,
     x: f32,
     z: f32,
     size: f32,
     wood: Material,
     leaves: Material,
 ) {
-    let base_y =
-        sphere_surface_y(
-            center,
-            planet_radius,
+    let surface =
+        sphere_surface_point(
+            planet_center,
             x,
             z,
-        )
-            + 0.08;
+        );
 
-    add_plateau_palm(
+    let normal =
+        sphere_normal(
+            planet_center,
+            surface,
+        );
+
+    add_palm_at_point(
         objects,
-        x,
-        base_y,
-        z,
+        surface
+            + normal
+                * 0.06,
+        normal,
         size,
         wood,
         leaves,
     );
 }
 
-fn add_plateau_palm(
+fn add_palm_at_point(
     objects: &mut Vec<Object>,
-    x: f32,
-    base_y: f32,
-    z: f32,
+    base: Vec3,
+    normal: Vec3,
     size: f32,
     wood: Material,
     leaves: Material,
 ) {
     let trunk_height =
         size
-            * 0.75;
+            * 0.80;
+
+    let trunk_center =
+        base
+            + normal
+                * (
+                    trunk_height
+                        * 0.5
+                );
 
     objects.push(
         Object::Cylinder(
             Cylinder::new_oriented(
-                Vec3::new(
-                    x,
-                    base_y
-                        + trunk_height
-                            * 0.5,
-                    z,
-                ),
-                Vec3::new(
-                    0.0,
-                    1.0,
-                    0.0,
-                ),
+                trunk_center,
+                normal,
                 size
                     * 0.045,
                 trunk_height,
@@ -890,12 +823,9 @@ fn add_plateau_palm(
     );
 
     let crown =
-        Vec3::new(
-            x,
-            base_y
-                + trunk_height,
-            z,
-        );
+        base
+            + normal
+                * trunk_height;
 
     objects.push(
         Object::Sphere(
@@ -908,58 +838,64 @@ fn add_plateau_palm(
         ),
     );
 
-    let leaf_positions = [
-        Vec3::new(
-            0.10,
-            0.0,
-            0.0,
-        ),
+    let (
+        tangent,
+        bitangent,
+    ) =
+        tangent_basis(
+            normal,
+        );
 
-        Vec3::new(
-            -0.10,
-            0.0,
-            0.0,
-        ),
+    let leaf_distance =
+        size
+            * 0.40;
 
-        Vec3::new(
-            0.0,
-            0.0,
-            0.10,
-        ),
+    let leaf_radius =
+        size
+            * 0.075;
 
-        Vec3::new(
-            0.0,
-            0.0,
-            -0.10,
-        ),
-
-        Vec3::new(
-            0.07,
-            0.0,
-            0.07,
-        ),
-
-        Vec3::new(
-            -0.07,
-            0.0,
-            -0.07,
-        ),
+    let directions = [
+        tangent,
+        -tangent,
+        bitangent,
+        -bitangent,
+        (
+            tangent
+                + bitangent
+        )
+            .normalize(),
+        (
+            tangent
+                - bitangent
+        )
+            .normalize(),
+        (
+            -tangent
+                + bitangent
+        )
+            .normalize(),
+        (
+            -tangent
+                - bitangent
+        )
+            .normalize(),
     ];
 
-    for offset in
-        leaf_positions
+    for direction in
+        directions
     {
         objects.push(
             Object::Sphere(
                 Sphere::new(
                     crown
-                        + offset
+                        + direction
+                            * leaf_distance
+                        + normal
                             * (
                                 size
-                                    * 6.0
+                                    * 0.02
                             ),
-                    size
-                        * 0.075,
+                    leaf_radius,
                     leaves,
                 ),
             ),
@@ -967,33 +903,36 @@ fn add_plateau_palm(
     }
 }
 
-fn add_spherical_rock(
+fn add_rock(
     objects: &mut Vec<Object>,
-    center: Vec3,
-    planet_radius: f32,
+    planet_center: Vec3,
     x: f32,
     z: f32,
     radius: f32,
     material: Material,
 ) {
-    let surface_y =
-        sphere_surface_y(
-            center,
-            planet_radius,
+    let surface =
+        sphere_surface_point(
+            planet_center,
             x,
             z,
+        );
+
+    let normal =
+        sphere_normal(
+            planet_center,
+            surface,
         );
 
     objects.push(
         Object::Sphere(
             Sphere::new(
-                Vec3::new(
-                    x,
-                    surface_y
-                        + radius
-                            * 0.55,
-                    z,
-                ),
+                surface
+                    + normal
+                        * (
+                            radius
+                                * 0.55
+                        ),
                 radius,
                 material,
             ),
@@ -1004,18 +943,16 @@ fn add_spherical_rock(
 fn add_waterfall(
     objects: &mut Vec<Object>,
     start: Vec3,
-    planet_center: Vec3,
-    planet_radius: f32,
+    normal: Vec3,
     material: Material,
 ) {
-    let bottom_y =
-        sphere_surface_y(
-            planet_center,
-            planet_radius,
-            start.x,
-            start.z,
-        )
-            + 0.03;
+    let (
+        tangent,
+        bitangent,
+    ) =
+        tangent_basis(
+            normal,
+        );
 
     for offset in [
         -0.055,
@@ -1024,49 +961,45 @@ fn add_waterfall(
         0.0275,
         0.055,
     ] {
-        let waterfall_start =
-            Vec3::new(
-                start.x,
-                start.y,
-                start.z
-                    + offset,
-            );
+        let stream_start =
+            start
+                + bitangent
+                    * offset;
 
-        let waterfall_end =
-            Vec3::new(
-                start.x,
-                bottom_y,
-                start.z
-                    + offset,
-            );
+        let stream_end =
+            stream_start
+                - normal
+                    * 0.30
+                + tangent
+                    * 0.03;
 
         add_cylinder_between(
             objects,
-            waterfall_start,
-            waterfall_end,
+            stream_start,
+            stream_end,
             0.012,
             material,
         );
     }
 }
 
-fn add_floating_question_block(
+fn add_question_block(
     objects: &mut Vec<Object>,
-    x: f32,
-    z: f32,
-    platform_top_y: f32,
+    platform_top: Vec3,
+    normal: Vec3,
     size: f32,
     float_height: f32,
     yellow: Material,
     white: Material,
 ) {
     let center =
-        Vec3::new(
-            x,
-            platform_top_y
-                + float_height,
-            z,
-        );
+        platform_top
+            + normal
+                * (
+                    float_height
+                        + size
+                            * 0.5
+                );
 
     objects.push(
         Object::Cube(
@@ -1078,13 +1011,13 @@ fn add_floating_question_block(
         ),
     );
 
+    let pixel =
+        size
+            * 0.105;
+
     let half =
         size
             * 0.5;
-
-    let pixel =
-        size
-            * 0.115;
 
     let question_pixels = [
         (-1, 2),
@@ -1096,179 +1029,148 @@ fn add_floating_question_block(
         (0, -3),
     ];
 
+    let (
+        tangent,
+        bitangent,
+    ) =
+        tangent_basis(
+            normal,
+        );
+
+    let front_direction =
+        Vec3::new(
+            0.0,
+            0.0,
+            1.0,
+        );
+
     for (
         px,
         py,
-    ) in question_pixels
+    ) in
+        question_pixels
     {
+        let position =
+            center
+                + tangent
+                    * (
+                        px as f32
+                            * pixel
+                    )
+                + normal
+                    * (
+                        py as f32
+                            * pixel
+                    )
+                + front_direction
+                    * (
+                        half
+                            + pixel
+                                * 0.55
+                    );
+
         objects.push(
             Object::Cube(
                 Cube::new(
-                    Vec3::new(
-                        center.x
-                            + px as f32
-                                * pixel,
-
-                        center.y
-                            + py as f32
-                                * pixel,
-
-                        center.z
-                            + half
-                            + pixel
-                                * 0.54,
-                    ),
+                    position,
                     pixel,
                     white,
                 ),
             ),
         );
     }
-
-    for (
-        px,
-        py,
-    ) in question_pixels
-    {
-        objects.push(
-            Object::Cube(
-                Cube::new(
-                    Vec3::new(
-                        center.x
-                            + half
-                            + pixel
-                                * 0.54,
-
-                        center.y
-                            + py as f32
-                                * pixel,
-
-                        center.z
-                            - px as f32
-                                * pixel,
-                    ),
-                    pixel,
-                    white,
-                ),
-            ),
-        );
-    }
-
-    let corner_offset =
-        size
-            * 0.36;
 
     let corner_radius =
         size
             * 0.045;
 
-    let front_z =
-        center.z
-            + half
-            + corner_radius
-                * 0.9;
+    let corner_offset =
+        size
+            * 0.36;
 
-    let front_corners = [
-        Vec3::new(
-            center.x
-                - corner_offset,
-            center.y
-                + corner_offset,
-            front_z,
-        ),
+    for sx in [
+        -1.0,
+        1.0,
+    ] {
+        for sy in [
+            -1.0,
+            1.0,
+        ] {
+            let corner =
+                center
+                    + tangent
+                        * (
+                            sx
+                                * corner_offset
+                        )
+                    + normal
+                        * (
+                            sy
+                                * corner_offset
+                        )
+                    + front_direction
+                        * (
+                            half
+                                + corner_radius
+                        );
 
-        Vec3::new(
-            center.x
-                + corner_offset,
-            center.y
-                + corner_offset,
-            front_z,
-        ),
-
-        Vec3::new(
-            center.x
-                - corner_offset,
-            center.y
-                - corner_offset,
-            front_z,
-        ),
-
-        Vec3::new(
-            center.x
-                + corner_offset,
-            center.y
-                - corner_offset,
-            front_z,
-        ),
-    ];
-
-    for corner in
-        front_corners
-    {
-        objects.push(
-            Object::Sphere(
-                Sphere::new(
-                    corner,
-                    corner_radius,
-                    yellow,
+            objects.push(
+                Object::Sphere(
+                    Sphere::new(
+                        corner,
+                        corner_radius,
+                        yellow,
+                    ),
                 ),
-            ),
-        );
+            );
+        }
     }
 
-    let right_x =
-        center.x
-            + half
-            + corner_radius
-                * 0.9;
+    let _ =
+        bitangent;
+}
 
-    let right_corners = [
-        Vec3::new(
-            right_x,
-            center.y
-                + corner_offset,
-            center.z
-                - corner_offset,
-        ),
+fn tangent_basis(
+    normal: Vec3,
+) -> (
+    Vec3,
+    Vec3,
+) {
+    let helper =
+        if normal.y.abs()
+            < 0.90
+        {
+            Vec3::new(
+                0.0,
+                1.0,
+                0.0,
+            )
+        } else {
+            Vec3::new(
+                1.0,
+                0.0,
+                0.0,
+            )
+        };
 
-        Vec3::new(
-            right_x,
-            center.y
-                + corner_offset,
-            center.z
-                + corner_offset,
-        ),
+    let tangent =
+        helper
+            .cross(
+                &normal,
+            )
+            .normalize();
 
-        Vec3::new(
-            right_x,
-            center.y
-                - corner_offset,
-            center.z
-                - corner_offset,
-        ),
+    let bitangent =
+        normal
+            .cross(
+                &tangent,
+            )
+            .normalize();
 
-        Vec3::new(
-            right_x,
-            center.y
-                - corner_offset,
-            center.z
-                + corner_offset,
-        ),
-    ];
-
-    for corner in
-        right_corners
-    {
-        objects.push(
-            Object::Sphere(
-                Sphere::new(
-                    corner,
-                    corner_radius,
-                    yellow,
-                ),
-            ),
-        );
-    }
+    (
+        tangent,
+        bitangent,
+    )
 }
 
 fn add_cylinder_between(
