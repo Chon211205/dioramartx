@@ -5,18 +5,65 @@ pub struct Cube {
     pub center: Vec3,
     pub half_size: f32,
     pub material: Material,
+    pub right: Vec3,
+    pub up: Vec3,
+    pub forward: Vec3,
 }
 
 impl Cube {
-    pub fn new(
+    pub fn new(center: Vec3, size: f32, material: Material) -> Self {
+        Self {
+            center,
+            half_size: size * 0.5,
+            material,
+            right: Vec3::new(1.0, 0.0, 0.0),
+            up: Vec3::new(0.0, 1.0, 0.0),
+            forward: Vec3::new(0.0, 0.0, 1.0),
+        }
+    }
+
+    pub fn new_oriented(
         center: Vec3,
         size: f32,
+        up: Vec3,
+        material: Material,
+    ) -> Self {
+        let up = up.normalize();
+
+        let helper = if up.y.abs() < 0.99 {
+            Vec3::new(0.0, 1.0, 0.0)
+        } else {
+            Vec3::new(1.0, 0.0, 0.0)
+        };
+
+        let right = helper.cross(&up).normalize();
+        let forward = up.cross(&right).normalize();
+
+        Self::from_basis(
+            center,
+            size,
+            right,
+            up,
+            forward,
+            material,
+        )
+    }
+
+    pub fn from_basis(
+        center: Vec3,
+        size: f32,
+        right: Vec3,
+        up: Vec3,
+        forward: Vec3,
         material: Material,
     ) -> Self {
         Self {
             center,
             half_size: size * 0.5,
             material,
+            right: right.normalize(),
+            up: up.normalize(),
+            forward: forward.normalize(),
         }
     }
 
@@ -25,17 +72,31 @@ impl Cube {
         origin: &Vec3,
         direction: &Vec3,
     ) -> Option<f32> {
-        let min = self.min();
-        let max = self.max();
+        let relative_origin = *origin - self.center;
+
+        let local_origin = Vec3::new(
+            relative_origin.dot(&self.right),
+            relative_origin.dot(&self.up),
+            relative_origin.dot(&self.forward),
+        );
+
+        let local_direction = Vec3::new(
+            direction.dot(&self.right),
+            direction.dot(&self.up),
+            direction.dot(&self.forward),
+        );
+
+        let min = -self.half_size;
+        let max = self.half_size;
 
         let mut t_min = -f32::INFINITY;
         let mut t_max = f32::INFINITY;
 
         if !update_slab(
-            origin.x,
-            direction.x,
-            min.x,
-            max.x,
+            local_origin.x,
+            local_direction.x,
+            min,
+            max,
             &mut t_min,
             &mut t_max,
         ) {
@@ -43,10 +104,10 @@ impl Cube {
         }
 
         if !update_slab(
-            origin.y,
-            direction.y,
-            min.y,
-            max.y,
+            local_origin.y,
+            local_direction.y,
+            min,
+            max,
             &mut t_min,
             &mut t_max,
         ) {
@@ -54,10 +115,10 @@ impl Cube {
         }
 
         if !update_slab(
-            origin.z,
-            direction.z,
-            min.z,
-            max.z,
+            local_origin.z,
+            local_direction.z,
+            min,
+            max,
             &mut t_min,
             &mut t_max,
         ) {
@@ -77,51 +138,54 @@ impl Cube {
         }
     }
 
-    pub fn normal_at(
-        &self,
-        point: &Vec3,
-    ) -> Vec3 {
-        let local =
-            *point - self.center;
+    pub fn normal_at(&self, point: &Vec3) -> Vec3 {
+        let relative = *point - self.center;
+
+        let local = Vec3::new(
+            relative.dot(&self.right),
+            relative.dot(&self.up),
+            relative.dot(&self.forward),
+        );
 
         let ax = local.x.abs();
         let ay = local.y.abs();
         let az = local.z.abs();
 
         if ax >= ay && ax >= az {
-            Vec3::new(
-                local.x.signum(),
-                0.0,
-                0.0,
-            )
+            (self.right * local.x.signum()).normalize()
         } else if ay >= ax && ay >= az {
-            Vec3::new(
-                0.0,
-                local.y.signum(),
-                0.0,
-            )
+            (self.up * local.y.signum()).normalize()
         } else {
-            Vec3::new(
-                0.0,
-                0.0,
-                local.z.signum(),
-            )
+            (self.forward * local.z.signum()).normalize()
         }
     }
 
     pub fn min(&self) -> Vec3 {
-        Vec3::new(
-            self.center.x - self.half_size,
-            self.center.y - self.half_size,
-            self.center.z - self.half_size,
-        )
+        self.aabb().0
     }
 
     pub fn max(&self) -> Vec3 {
-        Vec3::new(
-            self.center.x + self.half_size,
-            self.center.y + self.half_size,
-            self.center.z + self.half_size,
+        self.aabb().1
+    }
+
+    pub fn aabb(&self) -> (Vec3, Vec3) {
+        let ex = self.right.x.abs() * self.half_size
+            + self.up.x.abs() * self.half_size
+            + self.forward.x.abs() * self.half_size;
+
+        let ey = self.right.y.abs() * self.half_size
+            + self.up.y.abs() * self.half_size
+            + self.forward.y.abs() * self.half_size;
+
+        let ez = self.right.z.abs() * self.half_size
+            + self.up.z.abs() * self.half_size
+            + self.forward.z.abs() * self.half_size;
+
+        let extent = Vec3::new(ex, ey, ez);
+
+        (
+            self.center - extent,
+            self.center + extent,
         )
     }
 }
@@ -140,27 +204,17 @@ fn update_slab(
         return origin >= min && origin <= max;
     }
 
-    let inverse =
-        1.0 / direction;
+    let inverse = 1.0 / direction;
 
-    let mut t0 =
-        (min - origin) * inverse;
-
-    let mut t1 =
-        (max - origin) * inverse;
+    let mut t0 = (min - origin) * inverse;
+    let mut t1 = (max - origin) * inverse;
 
     if t0 > t1 {
-        std::mem::swap(
-            &mut t0,
-            &mut t1,
-        );
+        std::mem::swap(&mut t0, &mut t1);
     }
 
-    *t_min =
-        t_min.max(t0);
-
-    *t_max =
-        t_max.min(t1);
+    *t_min = t_min.max(t0);
+    *t_max = t_max.min(t1);
 
     *t_max >= *t_min
 }

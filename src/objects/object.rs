@@ -23,63 +23,37 @@ impl Object {
     ) -> Option<f32> {
         match self {
             Object::Sphere(sphere) => {
-                sphere.intersect(
-                    origin,
-                    direction,
-                )
+                sphere.intersect(origin, direction)
             }
-
             Object::Plane(plane) => {
-                plane.intersect(
-                    origin,
-                    direction,
-                )
+                plane.intersect(origin, direction)
             }
-
             Object::Cylinder(cylinder) => {
-                cylinder.intersect(
-                    origin,
-                    direction,
-                )
+                cylinder.intersect(origin, direction)
             }
-
             Object::Cone(cone) => {
-                cone.intersect(
-                    origin,
-                    direction,
-                )
+                cone.intersect(origin, direction)
             }
-
             Object::Cube(cube) => {
-                cube.intersect(
-                    origin,
-                    direction,
-                )
+                cube.intersect(origin, direction)
             }
         }
     }
 
-    pub fn normal_at(
-        &self,
-        point: &Vec3,
-    ) -> Vec3 {
+    pub fn normal_at(&self, point: &Vec3) -> Vec3 {
         match self {
             Object::Sphere(sphere) => {
                 sphere.normal_at(point)
             }
-
             Object::Plane(plane) => {
                 plane.normal_at()
             }
-
             Object::Cylinder(cylinder) => {
                 cylinder.normal_at(point)
             }
-
             Object::Cone(cone) => {
                 cone.normal_at(point)
             }
-
             Object::Cube(cube) => {
                 cube.normal_at(point)
             }
@@ -88,197 +62,107 @@ impl Object {
 
     pub fn material(&self) -> Material {
         match self {
-            Object::Sphere(sphere) => {
-                sphere.material
-            }
-
-            Object::Plane(plane) => {
-                plane.material
-            }
-
-            Object::Cylinder(cylinder) => {
-                cylinder.material
-            }
-
-            Object::Cone(cone) => {
-                cone.material
-            }
-
-            Object::Cube(cube) => {
-                cube.material
-            }
+            Object::Sphere(sphere) => sphere.material,
+            Object::Plane(plane) => plane.material,
+            Object::Cylinder(cylinder) => cylinder.material,
+            Object::Cone(cone) => cone.material,
+            Object::Cube(cube) => cube.material,
         }
     }
 
-    pub fn bounding_box(
-        &self,
-    ) -> Option<Aabb> {
+    pub fn bounding_box(&self) -> Option<Aabb> {
         match self {
             Object::Sphere(sphere) => {
-                let radius =
-                    Vec3::new(
-                        sphere.radius,
-                        sphere.radius,
-                        sphere.radius,
-                    );
+                let r = Vec3::new(
+                    sphere.radius,
+                    sphere.radius,
+                    sphere.radius,
+                );
 
-                Some(
-                    Aabb::new(
-                        sphere.center - radius,
-                        sphere.center + radius,
-                    ),
-                )
+                Some(Aabb::new(
+                    sphere.center - r,
+                    sphere.center + r,
+                ))
             }
 
-            Object::Plane(_) => {
-                None
-            }
+            Object::Plane(_) => None,
 
             Object::Cylinder(cylinder) => {
-                let axis =
-                    cylinder.axis.normalize();
+                let axis = cylinder.axis.normalize();
+                let half_height = cylinder.height * 0.5;
 
-                let half_height =
-                    cylinder.height * 0.5;
+                let radial_x = cylinder.radius
+                    * (1.0 - axis.x * axis.x)
+                        .max(0.0)
+                        .sqrt();
 
-                let radial_x =
-                    cylinder.radius
-                        * (
-                            1.0
-                                - axis.x * axis.x
-                        )
-                            .max(0.0)
-                            .sqrt();
+                let radial_y = cylinder.radius
+                    * (1.0 - axis.y * axis.y)
+                        .max(0.0)
+                        .sqrt();
 
-                let radial_y =
-                    cylinder.radius
-                        * (
-                            1.0
-                                - axis.y * axis.y
-                        )
-                            .max(0.0)
-                            .sqrt();
+                let radial_z = cylinder.radius
+                    * (1.0 - axis.z * axis.z)
+                        .max(0.0)
+                        .sqrt();
 
-                let radial_z =
-                    cylinder.radius
-                        * (
-                            1.0
-                                - axis.z * axis.z
-                        )
-                            .max(0.0)
-                            .sqrt();
+                let extent = Vec3::new(
+                    axis.x.abs() * half_height + radial_x,
+                    axis.y.abs() * half_height + radial_y,
+                    axis.z.abs() * half_height + radial_z,
+                );
 
-                let extent =
-                    Vec3::new(
-                        axis.x.abs()
-                            * half_height
-                            + radial_x,
-
-                        axis.y.abs()
-                            * half_height
-                            + radial_y,
-
-                        axis.z.abs()
-                            * half_height
-                            + radial_z,
-                    );
-
-                Some(
-                    Aabb::new(
-                        cylinder.center
-                            - extent,
-
-                        cylinder.center
-                            + extent,
-                    ),
-                )
+                Some(Aabb::new(
+                    cylinder.center - extent,
+                    cylinder.center + extent,
+                ))
             }
 
             Object::Cone(cone) => {
-                let axis =
-                    cone.axis.normalize();
+                let axis = cone.axis.normalize();
+                let half_height = cone.height * 0.5;
 
-                let half_height =
-                    cone.height * 0.5;
+                let radial_x = cone.radius
+                    * (1.0 - axis.x * axis.x)
+                        .max(0.0)
+                        .sqrt();
 
-                let radial_x =
-                    cone.radius
-                        * (
-                            1.0
-                                - axis.x * axis.x
-                        )
-                            .max(0.0)
-                            .sqrt();
+                let radial_y = cone.radius
+                    * (1.0 - axis.y * axis.y)
+                        .max(0.0)
+                        .sqrt();
 
-                let radial_y =
-                    cone.radius
-                        * (
-                            1.0
-                                - axis.y * axis.y
-                        )
-                            .max(0.0)
-                            .sqrt();
+                let radial_z = cone.radius
+                    * (1.0 - axis.z * axis.z)
+                        .max(0.0)
+                        .sqrt();
 
-                let radial_z =
-                    cone.radius
-                        * (
-                            1.0
-                                - axis.z * axis.z
-                        )
-                            .max(0.0)
-                            .sqrt();
+                let extent = Vec3::new(
+                    axis.x.abs() * half_height + radial_x,
+                    axis.y.abs() * half_height + radial_y,
+                    axis.z.abs() * half_height + radial_z,
+                );
 
-                let extent =
-                    Vec3::new(
-                        axis.x.abs()
-                            * half_height
-                            + radial_x,
-
-                        axis.y.abs()
-                            * half_height
-                            + radial_y,
-
-                        axis.z.abs()
-                            * half_height
-                            + radial_z,
-                    );
-
-                Some(
-                    Aabb::new(
-                        cone.center
-                            - extent,
-
-                        cone.center
-                            + extent,
-                    ),
-                )
+                Some(Aabb::new(
+                    cone.center - extent,
+                    cone.center + extent,
+                ))
             }
 
             Object::Cube(cube) => {
-                Some(
-                    Aabb::new(
-                        cube.min(),
-                        cube.max(),
-                    ),
-                )
+                let (min, max) = cube.aabb();
+                Some(Aabb::new(min, max))
             }
         }
     }
 
     pub fn centroid(&self) -> Vec3 {
-        self
-            .bounding_box()
-            .map(
-                |bounds| {
-                    bounds.centroid()
-                },
-            )
-            .unwrap_or(
-                Vec3::new(
-                    0.0,
-                    0.0,
-                    0.0,
-                ),
-            )
+        match self.bounding_box() {
+            Some(bounds) => bounds.centroid(),
+            None => match self {
+                Object::Plane(plane) => plane.point,
+                _ => Vec3::new(0.0, 0.0, 0.0),
+            },
+        }
     }
 }
