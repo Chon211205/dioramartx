@@ -1,14 +1,13 @@
-use std::f32::consts::PI;
+use std::f32::consts::TAU;
 use std::sync::OnceLock;
 
 use crate::core::vec3::Vec3;
 use crate::materials::material::Material;
 
 use crate::objects::cone::Cone;
-use crate::objects::cylinder::Cylinder;
 use crate::objects::hemisphere::Hemisphere;
 use crate::objects::object::Object;
-use crate::objects::sphere::Sphere;
+use crate::objects::torus::Torus;
 
 use crate::textures::texture::TextureMap;
 
@@ -82,30 +81,30 @@ pub fn create_ice_lava_diorama() -> Vec<Object> {
     let mut objects =
         Vec::new();
 
-    let ice =
+    let ice_material =
         Material::new(
             Vec3::new(
-                0.32,
                 0.72,
-                0.95,
-            ),
-            0.72,
-            0.95,
-            0.12,
-            0.18,
-        );
-
-    let ice_light =
-        Material::new(
-            Vec3::new(
-                0.55,
                 0.90,
                 1.0,
             ),
-            0.82,
-            1.0,
-            0.08,
-            0.22,
+            0.98,
+            0.55,
+            0.06,
+            0.16,
+        );
+
+    let crystal_material =
+        Material::new(
+            Vec3::new(
+                0.36,
+                0.94,
+                1.0,
+            ),
+            0.98,
+            0.75,
+            0.04,
+            0.20,
         );
 
     let lava_outer_material =
@@ -115,8 +114,8 @@ pub fn create_ice_lava_diorama() -> Vec<Object> {
                 1.0,
                 1.0,
             ),
-            0.90,
-            0.35,
+            0.95,
+            0.40,
             0.0,
             0.04,
             Some(
@@ -138,8 +137,8 @@ pub fn create_ice_lava_diorama() -> Vec<Object> {
                 1.0,
                 1.0,
             ),
-            1.0,
-            0.75,
+            0.98,
+            0.78,
             0.0,
             0.05,
             Some(
@@ -154,62 +153,14 @@ pub fn create_ice_lava_diorama() -> Vec<Object> {
             None,
         );
 
-    let crystal =
-        Material::new(
-            Vec3::new(
-                0.08,
-                0.92,
-                1.0,
-            ),
-            0.75,
-            1.0,
-            0.16,
-            0.20,
-        );
-
-    let crystal_core =
-        Material::new(
-            Vec3::new(
-                0.95,
-                0.90,
-                0.12,
-            ),
-            1.0,
-            1.0,
-            0.0,
-            0.10,
-        );
-
-    let stone =
-        Material::new(
-            Vec3::new(
-                0.32,
-                0.36,
-                0.40,
-            ),
-            0.76,
-            0.30,
-            0.0,
-            0.05,
-        );
-
-    let black_rock =
-        Material::new(
-            Vec3::new(
-                0.055,
-                0.045,
-                0.04,
-            ),
-            0.65,
-            0.20,
-            0.0,
-            0.04,
-        );
-
     add_ice_ring(
         &mut objects,
-        ice,
-        ice_light,
+        ice_material,
+    );
+
+    add_crystals(
+        &mut objects,
+        crystal_material,
     );
 
     add_lava_planet(
@@ -218,212 +169,251 @@ pub fn create_ice_lava_diorama() -> Vec<Object> {
         lava_inner_material,
     );
 
-    add_crystal_cluster(
-        &mut objects,
-        Vec3::new(
-            -1.38,
-            0.20,
-            0.35,
-        ),
-        0.42,
-        crystal,
-        crystal_core,
-    );
-
-    add_crystal_cluster(
-        &mut objects,
-        Vec3::new(
-            1.20,
-            0.18,
-            0.40,
-        ),
-        0.46,
-        crystal,
-        crystal_core,
-    );
-
-    add_crystal_cluster(
-        &mut objects,
-        Vec3::new(
-            -0.90,
-            0.15,
-            -1.02,
-        ),
-        0.36,
-        crystal,
-        crystal_core,
-    );
-
-    add_crystal_cluster(
-        &mut objects,
-        Vec3::new(
-            0.95,
-            0.14,
-            -0.95,
-        ),
-        0.34,
-        crystal,
-        crystal_core,
-    );
-
-    add_stone_platform(
-        &mut objects,
-        Vec3::new(
-            -1.05,
-            0.20,
-            0.95,
-        ),
-        0.28,
-        0.30,
-        stone,
-    );
-
-    add_stone_platform(
-        &mut objects,
-        Vec3::new(
-            0.78,
-            0.20,
-            0.92,
-        ),
-        0.27,
-        0.34,
-        stone,
-    );
-
-    add_stone_platform(
-        &mut objects,
-        Vec3::new(
-            1.20,
-            0.17,
-            -0.20,
-        ),
-        0.20,
-        0.22,
-        stone,
-    );
-
-    add_stone_platform(
-        &mut objects,
-        Vec3::new(
-            -0.05,
-            0.14,
-            -1.30,
-        ),
-        0.18,
-        0.18,
-        stone,
-    );
-
-    add_black_rock(
-        &mut objects,
-        Vec3::new(
-            0.05,
-            0.23,
-            0.10,
-        ),
-        black_rock,
-    );
-
-    add_small_ice_rocks(
-        &mut objects,
-        stone,
-    );
-
     objects
 }
 
 fn add_ice_ring(
     objects: &mut Vec<Object>,
-    ice: Material,
-    ice_light: Material,
-) {
-    const SEGMENTS: usize =
-        28;
-
-    let inner_radius =
-        0.92;
-
-    let middle_radius =
-        1.20;
-
-    let outer_radius =
-        1.48;
-
-    for i in 0..SEGMENTS {
-        let angle =
-            i as f32
-                / SEGMENTS as f32
-                * 2.0
-                * PI;
-
-        let cos_a =
-            angle.cos();
-
-        let sin_a =
-            angle.sin();
-
-        add_ice_piece(
-            objects,
-            Vec3::new(
-                cos_a
-                    * inner_radius,
-                0.0,
-                sin_a
-                    * inner_radius,
-            ),
-            0.32,
-            ice,
-        );
-
-        add_ice_piece(
-            objects,
-            Vec3::new(
-                cos_a
-                    * middle_radius,
-                -0.01,
-                sin_a
-                    * middle_radius,
-            ),
-            0.34,
-            ice_light,
-        );
-
-        add_ice_piece(
-            objects,
-            Vec3::new(
-                cos_a
-                    * outer_radius,
-                -0.03,
-                sin_a
-                    * outer_radius,
-            ),
-            0.33,
-            ice,
-        );
-    }
-}
-
-fn add_ice_piece(
-    objects: &mut Vec<Object>,
-    position: Vec3,
-    radius: f32,
     material: Material,
 ) {
     objects.push(
-        Object::Cylinder(
-            Cylinder::new_oriented(
-                position,
+        Object::Torus(
+            Torus::new(
                 Vec3::new(
                     0.0,
-                    1.0,
+                    0.0,
                     0.0,
                 ),
-                radius,
-                0.16,
+                1.35,
+                0.28,
                 material,
             ),
         ),
     );
+}
+
+fn add_crystals(
+    objects: &mut Vec<Object>,
+    material: Material,
+) {
+    let major_radius =
+        1.35;
+
+    let minor_radius =
+        0.28;
+
+    let ring_angles = [
+        0.35_f32,
+        1.15_f32,
+        2.00_f32,
+        2.85_f32,
+        3.70_f32,
+        4.55_f32,
+        5.40_f32,
+        6.00_f32,
+    ];
+
+    let tube_angles = [
+        0.35_f32,
+        1.20_f32,
+        1.57_f32,
+        2.05_f32,
+        2.80_f32,
+        3.55_f32,
+        4.25_f32,
+        4.71_f32,
+        5.35_f32,
+        5.95_f32,
+    ];
+
+    for (ring_index, ring_angle) in
+        ring_angles.iter().enumerate()
+    {
+        for (tube_index, tube_angle) in
+            tube_angles.iter().enumerate()
+        {
+            if (
+                ring_index
+                    + tube_index
+            ) % 2
+                != 0
+            {
+                continue;
+            }
+
+            let cos_ring =
+                ring_angle.cos();
+
+            let sin_ring =
+                ring_angle.sin();
+
+            let cos_tube =
+                tube_angle.cos();
+
+            let sin_tube =
+                tube_angle.sin();
+
+            let radial_distance =
+                major_radius
+                    + minor_radius
+                        * cos_tube;
+
+            let x =
+                radial_distance
+                    * cos_ring;
+
+            let y =
+                minor_radius
+                    * sin_tube;
+
+            let z =
+                radial_distance
+                    * sin_ring;
+
+            let normal =
+                Vec3::new(
+                    cos_tube
+                        * cos_ring,
+                    sin_tube,
+                    cos_tube
+                        * sin_ring,
+                )
+                .normalize();
+
+            let base =
+                Vec3::new(
+                    x,
+                    y,
+                    z,
+                )
+                    - normal
+                        * 0.025;
+
+            let size =
+                if tube_index % 3
+                    == 0
+                {
+                    0.34
+                } else {
+                    0.27
+                };
+
+            add_crystal_cluster(
+                objects,
+                base,
+                normal,
+                size,
+                material,
+            );
+        }
+    }
+}
+
+fn add_crystal_cluster(
+    objects: &mut Vec<Object>,
+    base: Vec3,
+    surface_normal: Vec3,
+    size: f32,
+    material: Material,
+) {
+    let normal =
+        surface_normal
+            .normalize();
+
+    let reference =
+        if normal.y.abs()
+            < 0.90
+        {
+            Vec3::new(
+                0.0,
+                1.0,
+                0.0,
+            )
+        } else {
+            Vec3::new(
+                1.0,
+                0.0,
+                0.0,
+            )
+        };
+
+    let tangent =
+        reference
+            .cross(
+                &normal,
+            )
+            .normalize();
+
+    let bitangent =
+        normal
+            .cross(
+                &tangent,
+            )
+            .normalize();
+
+    let directions = [
+        normal,
+
+        (
+            normal
+                + tangent
+                    * 0.28
+        )
+            .normalize(),
+
+        (
+            normal
+                - tangent
+                    * 0.25
+                + bitangent
+                    * 0.12
+        )
+            .normalize(),
+    ];
+
+    let scales = [
+        1.0_f32,
+        0.72_f32,
+        0.60_f32,
+    ];
+
+    for i in 0..directions.len() {
+        let axis =
+            directions[i];
+
+        let height =
+            size
+                * scales[i];
+
+        let radius =
+            if i == 0 {
+                size
+                    * 0.18
+            } else {
+                size
+                    * 0.13
+            };
+
+        let center =
+            base
+                + axis
+                    * (
+                        height
+                            * 0.46
+                    );
+
+        objects.push(
+            Object::Cone(
+                Cone::new_oriented(
+                    center,
+                    axis,
+                    radius,
+                    height,
+                    material,
+                ),
+            ),
+        );
+    }
 }
 
 fn add_lava_planet(
@@ -470,217 +460,4 @@ fn add_lava_planet(
             ),
         ),
     );
-}
-
-fn add_crystal_cluster(
-    objects: &mut Vec<Object>,
-    position: Vec3,
-    size: f32,
-    crystal: Material,
-    core: Material,
-) {
-    let directions = [
-        (
-            Vec3::new(
-                0.0,
-                1.0,
-                0.0,
-            ),
-            1.0,
-        ),
-        (
-            Vec3::new(
-                0.28,
-                0.96,
-                0.05,
-            ),
-            0.82,
-        ),
-        (
-            Vec3::new(
-                -0.34,
-                0.93,
-                0.08,
-            ),
-            0.76,
-        ),
-        (
-            Vec3::new(
-                0.10,
-                0.93,
-                0.35,
-            ),
-            0.68,
-        ),
-        (
-            Vec3::new(
-                -0.10,
-                0.94,
-                -0.32,
-            ),
-            0.62,
-        ),
-    ];
-
-    for (
-        index,
-        (
-            direction,
-            scale,
-        ),
-    ) in directions
-        .iter()
-        .enumerate()
-    {
-        let direction =
-            direction.normalize();
-
-        let height =
-            size
-                * scale;
-
-        let center =
-            position
-                + direction
-                    * (
-                        height
-                            * 0.40
-                    );
-
-        objects.push(
-            Object::Cone(
-                Cone::new_oriented(
-                    center,
-                    direction,
-                    size
-                        * if index == 0 {
-                            0.24
-                        } else {
-                            0.17
-                        },
-                    height,
-                    crystal,
-                ),
-            ),
-        );
-    }
-
-    objects.push(
-        Object::Sphere(
-            Sphere::new(
-                position
-                    + Vec3::new(
-                        0.0,
-                        size
-                            * 0.32,
-                        0.0,
-                    ),
-                size
-                    * 0.105,
-                core,
-            ),
-        ),
-    );
-}
-
-fn add_stone_platform(
-    objects: &mut Vec<Object>,
-    position: Vec3,
-    radius: f32,
-    height: f32,
-    material: Material,
-) {
-    objects.push(
-        Object::Cylinder(
-            Cylinder::new_oriented(
-                Vec3::new(
-                    position.x,
-                    position.y
-                        + height
-                            * 0.5,
-                    position.z,
-                ),
-                Vec3::new(
-                    0.0,
-                    1.0,
-                    0.0,
-                ),
-                radius,
-                height,
-                material,
-            ),
-        ),
-    );
-}
-
-fn add_black_rock(
-    objects: &mut Vec<Object>,
-    position: Vec3,
-    material: Material,
-) {
-    objects.push(
-        Object::Sphere(
-            Sphere::new(
-                position,
-                0.30,
-                material,
-            ),
-        ),
-    );
-}
-
-fn add_small_ice_rocks(
-    objects: &mut Vec<Object>,
-    material: Material,
-) {
-    let rocks = [
-        (
-            Vec3::new(
-                -1.50,
-                0.08,
-                -0.30,
-            ),
-            0.10,
-        ),
-        (
-            Vec3::new(
-                1.48,
-                0.07,
-                0.22,
-            ),
-            0.08,
-        ),
-        (
-            Vec3::new(
-                0.35,
-                0.06,
-                1.42,
-            ),
-            0.075,
-        ),
-        (
-            Vec3::new(
-                -0.45,
-                0.07,
-                -1.43,
-            ),
-            0.09,
-        ),
-    ];
-
-    for (
-        position,
-        radius,
-    ) in rocks
-    {
-        objects.push(
-            Object::Sphere(
-                Sphere::new(
-                    position,
-                    radius,
-                    material,
-                ),
-            ),
-        );
-    }
 }

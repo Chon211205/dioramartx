@@ -22,6 +22,7 @@ use objects::object::Object;
 use objects::plane::Plane;
 use objects::sphere::Sphere;
 use objects::hemisphere::Hemisphere;
+use objects::torus::Torus;
 
 use scene::light::Light;
 use scene::scene::Scene;
@@ -925,6 +926,21 @@ fn transform_objects(
                                 hemisphere.material,
 
                                 hemisphere.flat_material,
+                            ),
+                        )
+                    }
+
+                    Object::Torus(torus) => {
+                        Object::Torus(
+                            Torus::new(
+                                torus.center
+                                    * scale
+                                    + offset,
+                                torus.major_radius
+                                    * scale,
+                                torus.minor_radius
+                                    * scale,
+                                torus.material,
                             ),
                         )
                     }

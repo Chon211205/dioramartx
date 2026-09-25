@@ -16,6 +16,7 @@ use crate::objects::hemisphere::Hemisphere;
 use crate::objects::object::Object;
 use crate::objects::plane::Plane;
 use crate::objects::sphere::Sphere;
+use crate::objects::torus::Torus;
 
 use crate::scene::light::Light;
 use crate::scene::scene::Scene;
@@ -631,6 +632,13 @@ fn object_uv(
                 point,
             )
         }
+
+        Object::Torus(torus) => {
+            torus_uv(
+                torus,
+                point,
+            )
+        }
     }
 }
 
@@ -1010,6 +1018,59 @@ fn cube_uv(
     }
 }
 
+fn torus_uv(
+    torus: &Torus,
+    point: &Vec3,
+) -> (f32, f32) {
+    let local =
+        *point
+            - torus.center;
+
+    let major_angle =
+        local.z
+            .atan2(
+                local.x,
+            );
+
+    let radial =
+        (
+            local.x * local.x
+                + local.z * local.z
+        )
+            .sqrt();
+
+    let tube_x =
+        radial
+            - torus.major_radius;
+
+    let tube_angle =
+        local.y
+            .atan2(
+                tube_x,
+            );
+
+    let u =
+        0.5
+            + major_angle
+                / (
+                    2.0
+                        * PI
+                );
+
+    let v =
+        0.5
+            + tube_angle
+                / (
+                    2.0
+                        * PI
+                );
+
+    (
+        u,
+        v,
+    )
+}
+
 fn object_tangent_basis(
     object: &Object,
     point: &Vec3,
@@ -1209,6 +1270,14 @@ fn object_tangent_basis(
                 )
             }
         }
+
+        Object::Torus(torus) => {
+            torus_tangent_basis(
+                torus,
+                point,
+                normal,
+            )
+        }
     }
 }
 
@@ -1238,6 +1307,46 @@ fn tangent_basis(
                 &normal,
             )
             .normalize();
+
+    let bitangent =
+        normal
+            .cross(
+                &tangent,
+            )
+            .normalize();
+
+    (
+        tangent,
+        bitangent,
+    )
+}
+
+fn torus_tangent_basis(
+    torus: &Torus,
+    point: &Vec3,
+    normal: Vec3,
+) -> (Vec3, Vec3) {
+    let local =
+        *point
+            - torus.center;
+
+    let mut tangent =
+        Vec3::new(
+            -local.z,
+            0.0,
+            local.x,
+        );
+
+    if tangent.length()
+        < 0.0001
+    {
+        return tangent_basis(
+            normal,
+        );
+    }
+
+    tangent =
+        tangent.normalize();
 
     let bitangent =
         normal
