@@ -1,3 +1,4 @@
+use std::f32::consts::PI;
 use std::sync::OnceLock;
 
 use crate::core::vec3::Vec3;
@@ -60,12 +61,12 @@ pub fn create_egg_diorama() -> Vec<Object> {
     let shell_material =
         Material::new(
             Vec3::new(
-                0.90,
-                0.88,
-                0.80,
+                0.93,
+                0.91,
+                0.82,
             ),
-            0.88,
-            0.30,
+            0.90,
+            0.32,
             0.0,
             0.06,
         );
@@ -73,9 +74,9 @@ pub fn create_egg_diorama() -> Vec<Object> {
     let grass_material =
         Material::textured(
             Vec3::new(
-                0.75,
+                0.55,
                 1.0,
-                0.75,
+                0.55,
             ),
             0.95,
             0.30,
@@ -100,7 +101,7 @@ pub fn create_egg_diorama() -> Vec<Object> {
         shell_material,
     );
 
-    add_grass_patches(
+    add_yoshi_pattern(
         &mut objects,
         grass_material,
     );
@@ -131,98 +132,178 @@ fn add_egg_body(
     );
 }
 
-fn add_grass_patches(
+fn add_yoshi_pattern(
     objects: &mut Vec<Object>,
     material: Material,
 ) {
-    add_patch(
-        objects,
+    let egg_radii =
         Vec3::new(
-            0.0,
-            0.82,
-            0.91,
-        ),
+            1.12,
+            1.55,
+            1.12,
+        );
+
+    add_surface_spot(
+        objects,
+        egg_radii,
+        58.0,
+        78.0,
+        0.46,
+        material,
+    );
+
+    add_surface_spot(
+        objects,
+        egg_radii,
+        22.0,
+        18.0,
         0.43,
         material,
     );
 
-    add_patch(
+    add_surface_spot(
         objects,
-        Vec3::new(
-            0.82,
-            0.26,
-            0.62,
-        ),
+        egg_radii,
+        10.0,
+        118.0,
+        0.38,
+        material,
+    );
+
+    add_surface_spot(
+        objects,
+        egg_radii,
+        -18.0,
+        55.0,
+        0.45,
+        material,
+    );
+
+    add_surface_spot(
+        objects,
+        egg_radii,
+        -35.0,
+        155.0,
+        0.37,
+        material,
+    );
+
+    add_surface_spot(
+        objects,
+        egg_radii,
+        36.0,
+        205.0,
+        0.40,
+        material,
+    );
+
+    add_surface_spot(
+        objects,
+        egg_radii,
+        -8.0,
+        245.0,
+        0.44,
+        material,
+    );
+
+    add_surface_spot(
+        objects,
+        egg_radii,
+        -46.0,
+        300.0,
         0.34,
         material,
     );
 
-    add_patch(
+    add_surface_spot(
         objects,
-        Vec3::new(
-            -0.86,
-            0.10,
-            0.58,
-        ),
-        0.36,
-        material,
-    );
-
-    add_patch(
-        objects,
-        Vec3::new(
-            0.48,
-            -0.82,
-            0.77,
-        ),
-        0.31,
-        material,
-    );
-
-    add_patch(
-        objects,
-        Vec3::new(
-            -0.55,
-            -0.72,
-            0.82,
-        ),
-        0.27,
-        material,
-    );
-
-    add_patch(
-        objects,
-        Vec3::new(
-            0.68,
-            0.82,
-            -0.50,
-        ),
-        0.30,
-        material,
-    );
-
-    add_patch(
-        objects,
-        Vec3::new(
-            -0.70,
-            0.62,
-            -0.56,
-        ),
-        0.28,
+        egg_radii,
+        16.0,
+        330.0,
+        0.39,
         material,
     );
 }
 
-fn add_patch(
+fn add_surface_spot(
     objects: &mut Vec<Object>,
-    position: Vec3,
+    egg_radii: Vec3,
+    latitude_degrees: f32,
+    longitude_degrees: f32,
     radius: f32,
     material: Material,
 ) {
+    let latitude =
+        latitude_degrees
+            * PI
+            / 180.0;
+
+    let longitude =
+        longitude_degrees
+            * PI
+            / 180.0;
+
+    let cos_lat =
+        latitude.cos();
+
+    let sin_lat =
+        latitude.sin();
+
+    let cos_lon =
+        longitude.cos();
+
+    let sin_lon =
+        longitude.sin();
+
+    let surface =
+        Vec3::new(
+            egg_radii.x
+                * cos_lat
+                * cos_lon,
+
+            egg_radii.y
+                * sin_lat,
+
+            egg_radii.z
+                * cos_lat
+                * sin_lon,
+        );
+
+    let outward =
+        Vec3::new(
+            surface.x
+                / (
+                    egg_radii.x
+                        * egg_radii.x
+                ),
+
+            surface.y
+                / (
+                    egg_radii.y
+                        * egg_radii.y
+                ),
+
+            surface.z
+                / (
+                    egg_radii.z
+                        * egg_radii.z
+                ),
+        )
+        .normalize();
+
+    let inset =
+        radius
+            * 0.58;
+
+    let center =
+        surface
+            - outward
+                * inset;
+
     objects.push(
         Object::Sphere(
             Sphere::new(
-                position,
+                center,
                 radius,
                 material,
             ),
