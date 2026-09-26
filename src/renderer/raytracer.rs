@@ -17,6 +17,7 @@ use crate::objects::object::Object;
 use crate::objects::plane::Plane;
 use crate::objects::sphere::Sphere;
 use crate::objects::torus::Torus;
+use crate::objects::ellipsoid::Ellipsoid;
 
 use crate::scene::light::Light;
 use crate::scene::scene::Scene;
@@ -639,6 +640,13 @@ fn object_uv(
                 point,
             )
         }
+
+        Object::Ellipsoid(ellipsoid) => {
+            ellipsoid_uv(
+                ellipsoid,
+                point,
+            )
+        }
     }
 }
 
@@ -1071,6 +1079,48 @@ fn torus_uv(
     )
 }
 
+fn ellipsoid_uv(
+    ellipsoid: &Ellipsoid,
+    point: &Vec3,
+) -> (f32, f32) {
+    let local =
+        *point
+            - ellipsoid.center;
+
+    let normalized =
+        Vec3::new(
+            local.x
+                / ellipsoid.radii.x,
+            local.y
+                / ellipsoid.radii.y,
+            local.z
+                / ellipsoid.radii.z,
+        )
+        .normalize();
+
+    let u =
+        0.5
+            + normalized.z
+                .atan2(
+                    normalized.x,
+                )
+                / (
+                    2.0
+                        * std::f32::consts::PI
+                );
+
+    let v =
+        0.5
+            - normalized.y
+                .asin()
+                / std::f32::consts::PI;
+
+    (
+        u,
+        v,
+    )
+}
+
 fn object_tangent_basis(
     object: &Object,
     point: &Vec3,
@@ -1278,7 +1328,65 @@ fn object_tangent_basis(
                 normal,
             )
         }
+
+        Object::Ellipsoid(ellipsoid) => {
+            ellipsoid_tangent_basis(
+                ellipsoid,
+                point,
+                normal,
+            )
+        }
     }
+}
+
+fn ellipsoid_tangent_basis(
+    ellipsoid: &Ellipsoid,
+    point: &Vec3,
+    normal: Vec3,
+) -> (Vec3, Vec3) {
+    let local =
+        *point
+            - ellipsoid.center;
+
+    let normalized =
+        Vec3::new(
+            local.x
+                / ellipsoid.radii.x,
+            local.y
+                / ellipsoid.radii.y,
+            local.z
+                / ellipsoid.radii.z,
+        );
+
+    let mut tangent =
+        Vec3::new(
+            -normalized.z,
+            0.0,
+            normalized.x,
+        );
+
+    if tangent.length()
+        < 0.0001
+    {
+        return tangent_basis(
+            normal,
+        );
+    }
+
+    tangent =
+        tangent.normalize();
+
+    let bitangent =
+        normal
+            .cross(
+                &tangent,
+            )
+            .normalize();
+
+    (
+        tangent,
+        bitangent,
+    )
 }
 
 fn tangent_basis(

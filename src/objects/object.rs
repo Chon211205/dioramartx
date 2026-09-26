@@ -9,6 +9,7 @@ use crate::objects::hemisphere::Hemisphere;
 use crate::objects::plane::Plane;
 use crate::objects::sphere::Sphere;
 use crate::objects::torus::Torus;
+use crate::objects::ellipsoid::Ellipsoid;
 
 pub enum Object {
     Sphere(Sphere),
@@ -18,6 +19,8 @@ pub enum Object {
     Cube(Cube),
     Hemisphere(Hemisphere),
     Torus(Torus),
+    Ellipsoid(Ellipsoid),
+
 }
 
 impl Object {
@@ -89,6 +92,20 @@ impl Object {
                     direction,
                 )
             }
+
+            Object::Torus(torus) => {
+                torus.intersect(
+                    origin,
+                    direction,
+                )
+            }
+
+            Object::Ellipsoid(ellipsoid) => {
+                ellipsoid.intersect(
+                    origin,
+                    direction,
+                )
+            }
         }
     }
 
@@ -150,6 +167,12 @@ impl Object {
                     point,
                 )
             }
+
+            Object::Ellipsoid(ellipsoid) => {
+                ellipsoid.normal_at(
+                    point,
+                )
+            }
         }
     }
 
@@ -197,6 +220,10 @@ impl Object {
                 torus,
             ) => {
                 torus.material
+            }
+
+            Object::Ellipsoid(ellipsoid) => {
+                ellipsoid.material
             }
         }
     }
@@ -248,6 +275,10 @@ impl Object {
                 torus,
             ) => {
                 torus.material
+            }
+
+            Object::Ellipsoid(ellipsoid) => {
+                ellipsoid.material
             }
         }
     }
@@ -403,6 +434,15 @@ impl Object {
                     Aabb::new(
                         torus.min(),
                         torus.max(),
+                    ),
+                )
+            }
+
+            Object::Ellipsoid(ellipsoid) => {
+                Some(
+                    Aabb::new(
+                        ellipsoid.min(),
+                        ellipsoid.max(),
                     ),
                 )
             }
