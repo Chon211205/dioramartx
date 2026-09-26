@@ -10,6 +10,15 @@ use crate::objects::sphere::Sphere;
 
 use crate::textures::texture::TextureMap;
 
+static SHELL_COLOR: OnceLock<TextureMap> =
+    OnceLock::new();
+
+static SHELL_NORMAL: OnceLock<TextureMap> =
+    OnceLock::new();
+
+static SHELL_ROUGHNESS: OnceLock<TextureMap> =
+    OnceLock::new();
+
 static GRASS_COLOR: OnceLock<TextureMap> =
     OnceLock::new();
 
@@ -21,6 +30,30 @@ static GRASS_ROUGHNESS: OnceLock<TextureMap> =
 
 static GRASS_AO: OnceLock<TextureMap> =
     OnceLock::new();
+
+fn shell_color() -> &'static TextureMap {
+    SHELL_COLOR.get_or_init(|| {
+        TextureMap::from_file(
+            "assets/textures/egg/PaintedPlaster017_1K-PNG_Color.png",
+        )
+    })
+}
+
+fn shell_normal() -> &'static TextureMap {
+    SHELL_NORMAL.get_or_init(|| {
+        TextureMap::from_file(
+            "assets/textures/egg/PaintedPlaster017_1K-PNG_NormalGL.png",
+        )
+    })
+}
+
+fn shell_roughness() -> &'static TextureMap {
+    SHELL_ROUGHNESS.get_or_init(|| {
+        TextureMap::from_file(
+            "assets/textures/egg/PaintedPlaster017_1K-PNG_Roughness.png",
+        )
+    })
+}
 
 fn grass_color() -> &'static TextureMap {
     GRASS_COLOR.get_or_init(|| {
@@ -59,16 +92,26 @@ pub fn create_egg_diorama() -> Vec<Object> {
         Vec::new();
 
     let shell_material =
-        Material::new(
+        Material::textured(
             Vec3::new(
-                0.93,
-                0.91,
-                0.82,
+                1.0,
+                1.0,
+                1.0,
             ),
-            0.90,
-            0.32,
+            0.92,
+            0.28,
             0.0,
-            0.06,
+            0.04,
+            Some(
+                shell_color(),
+            ),
+            Some(
+                shell_normal(),
+            ),
+            Some(
+                shell_roughness(),
+            ),
+            None,
         );
 
     let grass_material =
@@ -293,7 +336,7 @@ fn add_surface_spot(
 
     let inset =
         radius
-            * 0.58;
+            * 0.64;
 
     let center =
         surface
