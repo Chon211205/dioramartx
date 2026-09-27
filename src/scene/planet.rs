@@ -8,7 +8,6 @@ pub struct PlanetDefinition {
     pub preview_scale: f32,
     pub hit_radius: f32,
     pub node_offset: Vec3,
-    pub rotation_speed: f32,
 }
 
 impl PlanetDefinition {
@@ -19,7 +18,6 @@ impl PlanetDefinition {
         preview_scale: f32,
         hit_radius: f32,
         node_offset: Vec3,
-        rotation_speed: f32,
     ) -> Self {
         Self {
             name,
@@ -28,7 +26,6 @@ impl PlanetDefinition {
             preview_scale,
             hit_radius,
             node_offset,
-            rotation_speed,
         }
     }
 }

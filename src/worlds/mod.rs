@@ -1,17 +1,17 @@
-pub mod forest;
-pub mod water;
-pub mod ice_lava;
 pub mod egg;
+pub mod forest;
+pub mod ice_lava;
 pub mod tree_planet;
+pub mod water;
 
 use crate::core::vec3::Vec3;
 use crate::scene::planet::PlanetDefinition;
 
-use forest::create_forest_diorama;
-use water::create_water_diorama;
-use ice_lava::create_ice_lava_diorama;
 use egg::create_egg_diorama;
+use forest::create_forest_diorama;
+use ice_lava::create_ice_lava_diorama;
 use tree_planet::create_tree_planet_world;
+use water::create_water_diorama;
 
 pub fn planet_registry() -> Vec<PlanetDefinition> {
     vec![
@@ -30,7 +30,6 @@ pub fn planet_registry() -> Vec<PlanetDefinition> {
                 -0.95,
                 0.12,
             ),
-            1.0,
         ),
 
         PlanetDefinition::new(
@@ -48,7 +47,6 @@ pub fn planet_registry() -> Vec<PlanetDefinition> {
                 -0.95,
                 0.12,
             ),
-            0.9,
         ),
 
         PlanetDefinition::new(
@@ -66,7 +64,6 @@ pub fn planet_registry() -> Vec<PlanetDefinition> {
                 -0.95,
                 0.12,
             ),
-            1.1,
         ),
 
         PlanetDefinition::new(
@@ -84,7 +81,6 @@ pub fn planet_registry() -> Vec<PlanetDefinition> {
                 -0.90,
                 0.12,
             ),
-            0.8,
         ),
 
         PlanetDefinition::new(
@@ -102,7 +98,6 @@ pub fn planet_registry() -> Vec<PlanetDefinition> {
                 -0.95,
                 0.12,
             ),
-            0.95,
         ),
     ]
 }

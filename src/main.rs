@@ -29,19 +29,35 @@ use crate::scene::light::Light;
 use crate::scene::scene::Scene;
 use crate::scene::state::SceneState;
 
-fn main() {
-    const RENDER_WIDTH: i32 = 1280;
-    const RENDER_HEIGHT: i32 = 720;
+const RENDER_WIDTH: i32 = 1280;
+const RENDER_HEIGHT: i32 = 720;
 
+struct Sparkle {
+    position: Vector2,
+    velocity: Vector2,
+    radius: f32,
+    active: bool,
+    rotation: f32,
+    rotation_speed: f32,
+}
+
+struct PlanetCollider {
+    center: Vector2,
+    radius: f32,
+}
+
+struct Viewport {
+    x: f32,
+    y: f32,
+    width: f32,
+    height: f32,
+}
+
+fn main() {
     let (mut rl, thread) =
         raylib::init()
-            .size(
-                800,
-                600,
-            )
-            .title(
-                "Galaxy Diorama",
-            )
+            .size(800, 600)
+            .title("Galaxy Diorama")
             .build();
 
     let monitor =
@@ -64,9 +80,7 @@ fn main() {
 
     rl.toggle_fullscreen();
 
-    rl.set_target_fps(
-        60,
-    );
+    rl.set_target_fps(60);
 
     rl.hide_cursor();
 
@@ -202,6 +216,21 @@ fn main() {
         Option<usize> =
         None;
 
+    let mut sparkles:
+        Vec<Sparkle> =
+        Vec::new();
+
+    let mut sparkle_score:
+        u32 =
+        0;
+
+    let mut sparkle_spawn_timer =
+        0.0;
+
+    let mut sparkle_spawn_id:
+        u32 =
+        0;
+
     while !rl.window_should_close() {
         let current_screen_width =
             rl.get_screen_width();
@@ -209,97 +238,104 @@ fn main() {
         let current_screen_height =
             rl.get_screen_height();
 
+        let dt =
+            rl.get_frame_time()
+                .min(0.033);
+
+        let current_time =
+            rl.get_time()
+                as f32;
+
+        let mouse_position =
+            rl.get_mouse_position();
+
+        let viewport =
+            calculate_viewport(
+                current_screen_width
+                    as f32,
+                current_screen_height
+                    as f32,
+            );
+
         match state {
             SceneState::Galaxy => {
                 if rl.is_mouse_button_pressed(
                     MouseButton::MOUSE_BUTTON_LEFT,
                 ) {
-                    let mouse =
-                        rl.get_mouse_position();
+                    if point_inside_viewport(
+                        mouse_position,
+                        &viewport,
+                    ) {
+                        let render_mouse =
+                            screen_to_render(
+                                mouse_position,
+                                &viewport,
+                            );
 
-                    let ray_x =
-                        mouse.x
-                            / current_screen_width
-                                as f32
-                            * RENDER_WIDTH
-                                as f32;
+                        let ray =
+                            camera.get_ray(
+                                render_mouse.x,
+                                render_mouse.y,
+                                RENDER_WIDTH
+                                    as f32,
+                                RENDER_HEIGHT
+                                    as f32,
+                            );
 
-                    let ray_y =
-                        mouse.y
-                            / current_screen_height
-                                as f32
-                            * RENDER_HEIGHT
-                                as f32;
+                        let mut closest =
+                            f32::INFINITY;
 
-                    let ray =
-                        camera.get_ray(
-                            ray_x,
-                            ray_y,
-                            RENDER_WIDTH
-                                as f32,
-                            RENDER_HEIGHT
-                                as f32,
-                        );
+                        let mut selected_index:
+                            Option<usize> =
+                            None;
 
-                    let mut closest =
-                        f32::INFINITY;
-
-                    let mut selected_index:
-                        Option<usize> =
-                        None;
-
-                    for (
-                        index,
-                        object,
-                    ) in galaxy_hit_objects
-                        .iter()
-                        .enumerate()
-                    {
-                        if let Some(
-                            distance,
-                        ) =
-                            object.intersect(
-                                &ray.origin,
-                                &ray.direction,
-                            )
+                        for (
+                            index,
+                            object,
+                        ) in galaxy_hit_objects
+                            .iter()
+                            .enumerate()
                         {
-                            if distance
-                                < closest
+                            if let Some(
+                                distance,
+                            ) =
+                                object.intersect(
+                                    &ray.origin,
+                                    &ray.direction,
+                                )
                             {
-                                closest =
-                                    distance;
+                                if distance
+                                    < closest
+                                {
+                                    closest =
+                                        distance;
 
-                                selected_index =
-                                    Some(
-                                        index,
-                                    );
+                                    selected_index =
+                                        Some(index);
+                                }
                             }
                         }
-                    }
 
-                    if let Some(
-                        index,
-                    ) =
-                        selected_index
-                    {
-                        selected_planet =
-                            Some(
-                                index,
-                            );
+                        if let Some(index) =
+                            selected_index
+                        {
+                            selected_planet =
+                                Some(index);
 
-                        camera =
-                            Camera::new(
-                                Vec3::new(
-                                    0.0,
-                                    0.0,
-                                    0.0,
-                                ),
-                                5.2,
-                                60.0,
-                            );
+                            camera =
+                                Camera::new(
+                                    Vec3::new(
+                                        0.0,
+                                        0.0,
+                                        0.0,
+                                    ),
+                                    5.2,
+                                    60.0,
+                                );
 
-                        state =
-                            SceneState::Focused;
+                            state =
+                                SceneState::Focused;
+                        }
                     }
                 }
 
@@ -356,27 +392,61 @@ fn main() {
             rl.get_mouse_wheel_move();
 
         if wheel != 0.0 {
-            camera.zoom(
-                wheel,
+            camera.zoom(wheel);
+        }
+
+        if state == SceneState::Galaxy {
+            sparkle_spawn_timer +=
+                dt;
+
+            if sparkle_spawn_timer
+                >= 0.70
+            {
+                sparkle_spawn_id +=
+                    1;
+
+                spawn_sparkle(
+                    &mut sparkles,
+                    &viewport,
+                    current_time,
+                    sparkle_spawn_id,
+                );
+
+                sparkle_spawn_timer =
+                    0.0;
+            }
+
+            let planet_colliders =
+                create_planet_colliders(
+                    &planets,
+                    &camera,
+                    &viewport,
+                );
+
+            update_sparkles(
+                &mut sparkles,
+                &planet_colliders,
+                dt,
+                &viewport,
+            );
+
+            collect_sparkles(
+                &mut sparkles,
+                mouse_position,
+                &mut sparkle_score,
             );
         }
 
         match state {
             SceneState::Galaxy => {
-                let time =
-                    rl.get_time()
-                        as f32;
-
                 let rotation =
-                    time
+                    current_time
                         * 0.25;
 
                 let mut galaxy_objects =
                     Vec::new();
 
-                if nodes.len()
-                    > 1
-                {
+                if nodes.len() > 1 {
                     for i in
                         0..nodes.len() - 1
                     {
@@ -389,9 +459,7 @@ fn main() {
                     }
                 }
 
-                for node in
-                    &nodes
-                {
+                for node in &nodes {
                     add_planet_node(
                         &mut galaxy_objects,
                         *node,
@@ -399,9 +467,7 @@ fn main() {
                     );
                 }
 
-                for planet in
-                    &planets
-                {
+                for planet in &planets {
                     let preview =
                         transform_objects_rotated(
                             (planet.create)(),
@@ -430,9 +496,7 @@ fn main() {
             }
 
             SceneState::Focused => {
-                if let Some(
-                    index,
-                ) =
+                if let Some(index) =
                     selected_planet
                 {
                     renderer::raytracer::render(
@@ -452,7 +516,6 @@ fn main() {
                         .pixels()
                         .as_ptr()
                         as *const u8,
-
                     framebuffer
                         .pixels()
                         .len()
@@ -468,72 +531,14 @@ fn main() {
                 "No se pudo actualizar la textura",
             );
 
-        let mouse_position =
-            rl.get_mouse_position();
-
         let mut d =
             rl.begin_drawing(
                 &thread,
             );
 
-
         d.clear_background(
             Color::BLACK,
         );
-
-        let actual_screen_width =
-            d.get_screen_width()
-                as f32;
-
-        let actual_screen_height =
-            d.get_screen_height()
-                as f32;
-
-        let render_aspect =
-            RENDER_WIDTH
-                as f32
-                / RENDER_HEIGHT
-                    as f32;
-
-        let screen_aspect =
-            actual_screen_width
-                / actual_screen_height;
-
-        let (
-            destination_width,
-            destination_height,
-        ) =
-            if screen_aspect
-                > render_aspect
-            {
-                (
-                    actual_screen_height
-                        * render_aspect,
-
-                    actual_screen_height,
-                )
-            } else {
-                (
-                    actual_screen_width,
-
-                    actual_screen_width
-                        / render_aspect,
-                )
-            };
-
-        let offset_x =
-            (
-                actual_screen_width
-                    - destination_width
-            )
-                * 0.5;
-
-        let offset_y =
-            (
-                actual_screen_height
-                    - destination_height
-            )
-                * 0.5;
 
         let source =
             Rectangle::new(
@@ -547,10 +552,10 @@ fn main() {
 
         let destination =
             Rectangle::new(
-                offset_x,
-                offset_y,
-                destination_width,
-                destination_height,
+                viewport.x,
+                viewport.y,
+                viewport.width,
+                viewport.height,
             );
 
         d.draw_texture_pro(
@@ -567,6 +572,11 @@ fn main() {
 
         match state {
             SceneState::Galaxy => {
+                draw_sparkles(
+                    &mut d,
+                    &sparkles,
+                );
+
                 d.draw_text(
                     "Selecciona un planeta",
                     30,
@@ -598,12 +608,26 @@ fn main() {
                     20,
                     Color::LIGHTGRAY,
                 );
+
+                d.draw_text(
+                    &format!(
+                        "Destellos: {}",
+                        sparkle_score,
+                    ),
+                    30,
+                    170,
+                    24,
+                    Color::new(
+                        255,
+                        235,
+                        70,
+                        255,
+                    ),
+                );
             }
 
             SceneState::Focused => {
-                if let Some(
-                    index,
-                ) =
+                if let Some(index) =
                     selected_planet
                 {
                     d.draw_text(
@@ -652,7 +676,910 @@ fn main() {
             &mut d,
             mouse_position,
         );
+    }
+}
 
+fn calculate_viewport(
+    screen_width: f32,
+    screen_height: f32,
+) -> Viewport {
+    let render_aspect =
+        RENDER_WIDTH as f32
+            / RENDER_HEIGHT as f32;
+
+    let screen_aspect =
+        screen_width
+            / screen_height;
+
+    let (
+        width,
+        height,
+    ) =
+        if screen_aspect
+            > render_aspect
+        {
+            (
+                screen_height
+                    * render_aspect,
+                screen_height,
+            )
+        } else {
+            (
+                screen_width,
+                screen_width
+                    / render_aspect,
+            )
+        };
+
+    Viewport {
+        x:
+            (
+                screen_width
+                    - width
+            )
+                * 0.5,
+
+        y:
+            (
+                screen_height
+                    - height
+            )
+                * 0.5,
+
+        width,
+        height,
+    }
+}
+
+fn point_inside_viewport(
+    point: Vector2,
+    viewport: &Viewport,
+) -> bool {
+    point.x >= viewport.x
+        && point.x
+            <= viewport.x
+                + viewport.width
+        && point.y
+            >= viewport.y
+        && point.y
+            <= viewport.y
+                + viewport.height
+}
+
+fn screen_to_render(
+    point: Vector2,
+    viewport: &Viewport,
+) -> Vector2 {
+    Vector2::new(
+        (
+            point.x
+                - viewport.x
+        )
+            / viewport.width
+            * RENDER_WIDTH
+                as f32,
+
+        (
+            point.y
+                - viewport.y
+        )
+            / viewport.height
+            * RENDER_HEIGHT
+                as f32,
+    )
+}
+
+fn world_to_screen(
+    world: Vec3,
+    camera: &Camera,
+    viewport: &Viewport,
+) -> Option<Vector2> {
+    let forward =
+        (
+            camera.target
+                - camera.position
+        )
+            .normalize();
+
+    let reference_up =
+        Vec3::new(
+            0.0,
+            1.0,
+            0.0,
+        );
+
+    let mut right =
+        forward.cross(
+            &reference_up,
+        );
+
+    if right.length()
+        < 0.001
+    {
+        right =
+            Vec3::new(
+                1.0,
+                0.0,
+                0.0,
+            );
+    }
+
+    right =
+        right.normalize();
+
+    let up =
+        right
+            .cross(
+                &forward,
+            )
+            .normalize();
+
+    let relative =
+        world
+            - camera.position;
+
+    let camera_x =
+        relative.dot(
+            &right,
+        );
+
+    let camera_y =
+        relative.dot(
+            &up,
+        );
+
+    let camera_z =
+        relative.dot(
+            &forward,
+        );
+
+    if camera_z <= 0.01 {
+        return None;
+    }
+
+    let aspect =
+        RENDER_WIDTH
+            as f32
+            / RENDER_HEIGHT
+                as f32;
+
+    let fov =
+        camera.fov
+            .to_radians();
+
+    let focal =
+        1.0
+            / (
+                fov
+                    * 0.5
+            )
+                .tan();
+
+    let ndc_x =
+        camera_x
+            * focal
+            / aspect
+            / camera_z;
+
+    let ndc_y =
+        camera_y
+            * focal
+            / camera_z;
+
+    let render_x =
+        (
+            ndc_x
+                + 1.0
+        )
+            * 0.5
+            * RENDER_WIDTH
+                as f32;
+
+    let render_y =
+        (
+            1.0
+                - ndc_y
+        )
+            * 0.5
+            * RENDER_HEIGHT
+                as f32;
+
+    Some(
+        Vector2::new(
+            viewport.x
+                + render_x
+                    / RENDER_WIDTH
+                        as f32
+                    * viewport.width,
+
+            viewport.y
+                + render_y
+                    / RENDER_HEIGHT
+                        as f32
+                    * viewport.height,
+        ),
+    )
+}
+
+fn create_planet_colliders(
+    planets: &[scene::planet::PlanetDefinition],
+    camera: &Camera,
+    viewport: &Viewport,
+) -> Vec<PlanetCollider> {
+    let mut colliders =
+        Vec::new();
+
+    let forward =
+        (
+            camera.target
+                - camera.position
+        )
+            .normalize();
+
+    let reference_up =
+        Vec3::new(
+            0.0,
+            1.0,
+            0.0,
+        );
+
+    let mut camera_right =
+        forward.cross(
+            &reference_up,
+        );
+
+    if camera_right.length()
+        < 0.001
+    {
+        camera_right =
+            Vec3::new(
+                1.0,
+                0.0,
+                0.0,
+            );
+    }
+
+    camera_right =
+        camera_right.normalize();
+
+    for planet in planets {
+        let center =
+            match world_to_screen(
+                planet.position,
+                camera,
+                viewport,
+            ) {
+                Some(value) => value,
+                None => continue,
+            };
+
+        let edge_world =
+            planet.position
+                + camera_right
+                    * planet.hit_radius;
+
+        let edge =
+            match world_to_screen(
+                edge_world,
+                camera,
+                viewport,
+            ) {
+                Some(value) => value,
+                None => continue,
+            };
+
+        let dx =
+            edge.x
+                - center.x;
+
+        let dy =
+            edge.y
+                - center.y;
+
+        let radius =
+            (
+                dx * dx
+                    + dy * dy
+            )
+                .sqrt()
+                * 0.90;
+
+        if radius > 2.0 {
+            colliders.push(
+                PlanetCollider {
+                    center,
+                    radius,
+                },
+            );
+        }
+    }
+
+    colliders
+}
+
+fn pseudo_random(
+    seed: f32,
+) -> f32 {
+    let value =
+        (
+            seed
+                * 12.9898
+        )
+            .sin()
+            * 43758.5453;
+
+    value
+        - value.floor()
+}
+
+fn spawn_sparkle(
+    sparkles: &mut Vec<Sparkle>,
+    viewport: &Viewport,
+    time: f32,
+    spawn_id: u32,
+) {
+    if sparkles.len()
+        >= 30
+    {
+        return;
+    }
+
+    let seed =
+        time
+            + spawn_id
+                as f32
+                * 3.731;
+
+    let x_random =
+        pseudo_random(
+            seed * 17.31,
+        );
+
+    let speed_random =
+        pseudo_random(
+            seed * 31.73,
+        );
+
+    let direction_random =
+        pseudo_random(
+            seed * 47.19,
+        );
+
+    let size_random =
+        pseudo_random(
+            seed * 61.53,
+        );
+
+    let spin_random =
+        pseudo_random(
+            seed * 77.11,
+        );
+
+    let x =
+        viewport.x
+            + 35.0
+            + x_random
+                * (
+                    viewport.width
+                        - 70.0
+                );
+
+    let horizontal_speed =
+        (
+            direction_random
+                - 0.5
+        )
+            * 120.0;
+
+    sparkles.push(
+        Sparkle {
+            position:
+                Vector2::new(
+                    x,
+                    viewport.y
+                        - 25.0,
+                ),
+
+            velocity:
+                Vector2::new(
+                    horizontal_speed,
+                    15.0
+                        + speed_random
+                            * 35.0,
+                ),
+
+            radius:
+                7.0
+                    + size_random
+                        * 5.0,
+
+            active:
+                true,
+
+            rotation:
+                spin_random
+                    * std::f32::consts::PI
+                    * 2.0,
+
+            rotation_speed:
+                -4.0
+                    + spin_random
+                        * 8.0,
+        },
+    );
+}
+
+fn update_sparkles(
+    sparkles: &mut Vec<Sparkle>,
+    colliders: &[PlanetCollider],
+    dt: f32,
+    viewport: &Viewport,
+) {
+    let gravity =
+        360.0;
+
+    for sparkle in
+        sparkles.iter_mut()
+    {
+        if !sparkle.active {
+            continue;
+        }
+
+        sparkle.velocity.y +=
+            gravity
+                * dt;
+
+        sparkle.position.x +=
+            sparkle.velocity.x
+                * dt;
+
+        sparkle.position.y +=
+            sparkle.velocity.y
+                * dt;
+
+        sparkle.rotation +=
+            sparkle.rotation_speed
+                * dt;
+
+        for collider in colliders {
+            collide_sparkle_planet(
+                sparkle,
+                collider,
+            );
+        }
+
+        let left =
+            viewport.x
+                + sparkle.radius;
+
+        let right =
+            viewport.x
+                + viewport.width
+                - sparkle.radius;
+
+        if sparkle.position.x
+            < left
+        {
+            sparkle.position.x =
+                left;
+
+            sparkle.velocity.x =
+                sparkle.velocity
+                    .x
+                    .abs()
+                    * 0.72;
+
+            sparkle.rotation_speed +=
+                1.0;
+        }
+
+        if sparkle.position.x
+            > right
+        {
+            sparkle.position.x =
+                right;
+
+            sparkle.velocity.x =
+                -sparkle.velocity
+                    .x
+                    .abs()
+                    * 0.72;
+
+            sparkle.rotation_speed -=
+                1.0;
+        }
+
+        if sparkle.position.y
+            > viewport.y
+                + viewport.height
+                + 80.0
+        {
+            sparkle.active =
+                false;
+        }
+    }
+
+    sparkles.retain(
+        |sparkle| {
+            sparkle.active
+        },
+    );
+}
+
+fn collide_sparkle_planet(
+    sparkle: &mut Sparkle,
+    planet: &PlanetCollider,
+) {
+    let dx =
+        sparkle.position.x
+            - planet.center.x;
+
+    let dy =
+        sparkle.position.y
+            - planet.center.y;
+
+    let distance_squared =
+        dx * dx
+            + dy * dy;
+
+    let minimum_distance =
+        sparkle.radius
+            + planet.radius;
+
+    if distance_squared
+        >= minimum_distance
+            * minimum_distance
+    {
+        return;
+    }
+
+    let distance =
+        distance_squared
+            .sqrt()
+            .max(
+                0.001,
+            );
+
+    let normal =
+        Vector2::new(
+            dx / distance,
+            dy / distance,
+        );
+
+    let penetration =
+        minimum_distance
+            - distance;
+
+    sparkle.position.x +=
+        normal.x
+            * penetration;
+
+    sparkle.position.y +=
+        normal.y
+            * penetration;
+
+    let normal_velocity =
+        sparkle.velocity.x
+            * normal.x
+            + sparkle.velocity.y
+                * normal.y;
+
+    if normal_velocity
+        >= 0.0
+    {
+        return;
+    }
+
+    let restitution =
+        0.72;
+
+    let impulse =
+        (
+            1.0
+                + restitution
+        )
+            * normal_velocity;
+
+    sparkle.velocity.x -=
+        impulse
+            * normal.x;
+
+    sparkle.velocity.y -=
+        impulse
+            * normal.y;
+
+    sparkle.velocity.x *=
+        0.97;
+
+    sparkle.velocity.y *=
+        0.97;
+
+    let tangent_velocity =
+        -sparkle.velocity.x
+            * normal.y
+            + sparkle.velocity.y
+                * normal.x;
+
+    sparkle.rotation_speed +=
+        tangent_velocity
+            * 0.015;
+}
+
+fn collect_sparkles(
+    sparkles: &mut Vec<Sparkle>,
+    mouse: Vector2,
+    score: &mut u32,
+) {
+    let cursor_radius =
+        21.0;
+
+    for sparkle in
+        sparkles.iter_mut()
+    {
+        if !sparkle.active {
+            continue;
+        }
+
+        let dx =
+            sparkle.position.x
+                - mouse.x;
+
+        let dy =
+            sparkle.position.y
+                - mouse.y;
+
+        let total_radius =
+            sparkle.radius
+                + cursor_radius;
+
+        if dx * dx
+            + dy * dy
+            <= total_radius
+                * total_radius
+        {
+            sparkle.active =
+                false;
+
+            *score +=
+                1;
+        }
+    }
+
+    sparkles.retain(
+        |sparkle| {
+            sparkle.active
+        },
+    );
+}
+
+fn draw_sparkles(
+    d: &mut RaylibDrawHandle,
+    sparkles: &[Sparkle],
+) {
+    for sparkle in sparkles {
+        if sparkle.active {
+            draw_sparkle(
+                d,
+                sparkle,
+            );
+        }
+    }
+}
+
+fn draw_sparkle(
+    d: &mut RaylibDrawHandle,
+    sparkle: &Sparkle,
+) {
+    const POINTS: usize =
+        8;
+
+    let outer =
+        sparkle.radius;
+
+    let inner =
+        sparkle.radius
+            * 0.28;
+
+    let mut vertices =
+        [Vector2::new(
+            0.0,
+            0.0,
+        ); POINTS];
+
+    for i in 0..POINTS {
+        let radius =
+            if i % 2 == 0 {
+                outer
+            } else {
+                inner
+            };
+
+        let angle =
+            sparkle.rotation
+                + i as f32
+                    * std::f32::consts::PI
+                    / 4.0;
+
+        vertices[i] =
+            Vector2::new(
+                sparkle.position.x
+                    + angle.cos()
+                        * radius,
+
+                sparkle.position.y
+                    + angle.sin()
+                        * radius,
+            );
+    }
+
+    let color =
+        Color::new(
+            255,
+            226,
+            50,
+            255,
+        );
+
+    for i in 0..POINTS {
+        let next =
+            (
+                i + 1
+            )
+                % POINTS;
+
+        d.draw_triangle(
+            vertices[next],
+            vertices[i],
+            sparkle.position,
+            color,
+        );
+    }
+
+    d.draw_circle_v(
+        sparkle.position,
+        sparkle.radius
+            * 0.18,
+        Color::new(
+            255,
+            255,
+            220,
+            255,
+        ),
+    );
+}
+
+fn draw_star_cursor(
+    d: &mut RaylibDrawHandle,
+    mouse: Vector2,
+) {
+    const POINTS: usize =
+        10;
+
+    let outer_radius =
+        25.0;
+
+    let inner_radius =
+        12.0;
+
+    let rotation =
+        -std::f32::consts::PI
+            / 2.0
+            + 0.15;
+
+    let border =
+        Color::new(
+            151,
+            242,
+            248,
+            255,
+        );
+
+    let fill =
+        Color::new(
+            13,
+            83,
+            198,
+            255,
+        );
+
+    let mut outer =
+        [Vector2::new(
+            0.0,
+            0.0,
+        ); POINTS];
+
+    for i in 0..POINTS {
+        let radius =
+            if i % 2 == 0 {
+                outer_radius
+            } else {
+                inner_radius
+            };
+
+        let angle =
+            rotation
+                + i as f32
+                    * std::f32::consts::PI
+                    / 5.0;
+
+        outer[i] =
+            Vector2::new(
+                mouse.x
+                    + angle.cos()
+                        * radius,
+
+                mouse.y
+                    + angle.sin()
+                        * radius,
+            );
+    }
+
+    for i in 0..POINTS {
+        let next =
+            (
+                i + 1
+            )
+                % POINTS;
+
+        d.draw_triangle(
+            outer[next],
+            outer[i],
+            mouse,
+            border,
+        );
+    }
+
+    let inner_outer_radius =
+        19.0;
+
+    let inner_inner_radius =
+        8.5;
+
+    let mut inner =
+        [Vector2::new(
+            0.0,
+            0.0,
+        ); POINTS];
+
+    for i in 0..POINTS {
+        let radius =
+            if i % 2 == 0 {
+                inner_outer_radius
+            } else {
+                inner_inner_radius
+            };
+
+        let angle =
+            rotation
+                + i as f32
+                    * std::f32::consts::PI
+                    / 5.0;
+
+        inner[i] =
+            Vector2::new(
+                mouse.x
+                    + angle.cos()
+                        * radius,
+
+                mouse.y
+                    + angle.sin()
+                        * radius,
+            );
+    }
+
+    for i in 0..POINTS {
+        let next =
+            (
+                i + 1
+            )
+                % POINTS;
+
+        d.draw_triangle(
+            inner[next],
+            inner[i],
+            mouse,
+            fill,
+        );
     }
 }
 
@@ -1000,134 +1927,4 @@ fn transform_objects_rotated(
             },
         )
         .collect()
-}
-
-fn draw_star_cursor(
-    d: &mut RaylibDrawHandle,
-    mouse: Vector2,
-) {
-    const POINTS: usize = 10;
-
-    let outer_radius =
-        25.0;
-
-    let inner_radius =
-        12.0;
-
-    let inner_outer_radius =
-        19.0;
-
-    let inner_inner_radius =
-        8.5;
-
-    let rotation =
-        -std::f32::consts::PI
-            / 2.0
-            + 0.15;
-
-    let border =
-        Color::new(
-            151,
-            242,
-            248,
-            255,
-        );
-
-    let fill =
-        Color::new(
-            13,
-            83,
-            198,
-            255,
-        );
-
-    let mut outer =
-        [Vector2::new(
-            0.0,
-            0.0,
-        ); POINTS];
-
-    for i in 0..POINTS {
-        let radius =
-            if i % 2 == 0 {
-                outer_radius
-            } else {
-                inner_radius
-            };
-
-        let angle =
-            rotation
-                + i as f32
-                    * std::f32::consts::PI
-                    / 5.0;
-
-        outer[i] =
-            Vector2::new(
-                mouse.x
-                    + angle.cos()
-                        * radius,
-
-                mouse.y
-                    + angle.sin()
-                        * radius,
-            );
-    }
-
-    for i in 0..POINTS {
-        let next =
-            (i + 1)
-                % POINTS;
-
-        d.draw_triangle(
-            outer[next],
-            outer[i],
-            mouse,
-            border,
-        );
-    }
-
-    let mut inner =
-        [Vector2::new(
-            0.0,
-            0.0,
-        ); POINTS];
-
-    for i in 0..POINTS {
-        let radius =
-            if i % 2 == 0 {
-                inner_outer_radius
-            } else {
-                inner_inner_radius
-            };
-
-        let angle =
-            rotation
-                + i as f32
-                    * std::f32::consts::PI
-                    / 5.0;
-
-        inner[i] =
-            Vector2::new(
-                mouse.x
-                    + angle.cos()
-                        * radius,
-
-                mouse.y
-                    + angle.sin()
-                        * radius,
-            );
-    }
-
-    for i in 0..POINTS {
-        let next =
-            (i + 1)
-                % POINTS;
-
-        d.draw_triangle(
-            inner[next],
-            inner[i],
-            mouse,
-            fill,
-        );
-    }
 }
