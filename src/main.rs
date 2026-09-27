@@ -9,43 +9,31 @@ mod worlds;
 
 use raylib::prelude::*;
 
-use core::camera::Camera;
-use core::framebuffer::Framebuffer;
-use core::vec3::Vec3;
+use crate::core::camera::Camera;
+use crate::core::framebuffer::Framebuffer;
+use crate::core::vec3::Vec3;
 
-use materials::material::Material;
+use crate::materials::material::Material;
 
-use objects::cone::Cone;
-use objects::cube::Cube;
-use objects::cylinder::Cylinder;
-use objects::ellipsoid::Ellipsoid;
-use objects::hemisphere::Hemisphere;
-use objects::object::Object;
-use objects::plane::Plane;
-use objects::sphere::Sphere;
-use objects::torus::Torus;
+use crate::objects::cone::Cone;
+use crate::objects::cube::Cube;
+use crate::objects::cylinder::Cylinder;
+use crate::objects::ellipsoid::Ellipsoid;
+use crate::objects::hemisphere::Hemisphere;
+use crate::objects::object::Object;
+use crate::objects::plane::Plane;
+use crate::objects::sphere::Sphere;
+use crate::objects::torus::Torus;
 
-use scene::light::Light;
-use scene::scene::Scene;
-use scene::state::{
-    PlanetType,
-    SceneState,
-};
-
-use worlds::egg::create_egg_diorama;
-use worlds::forest::create_forest_diorama;
-use worlds::ice_lava::create_ice_lava_diorama;
-use worlds::tree_planet::create_tree_planet_world;
-use worlds::water::create_water_diorama;
+use crate::scene::light::Light;
+use crate::scene::scene::Scene;
+use crate::scene::state::SceneState;
 
 fn main() {
     const RENDER_WIDTH: i32 = 1280;
     const RENDER_HEIGHT: i32 = 720;
 
-    let (
-        mut rl,
-        thread,
-    ) =
+    let (mut rl, thread) =
         raylib::init()
             .size(
                 800,
@@ -111,70 +99,60 @@ fn main() {
         TextureFilter::TEXTURE_FILTER_BILINEAR,
     );
 
-    let forest_material =
-        Material::new(
-            Vec3::new(
-                0.15,
-                0.75,
-                0.25,
-            ),
-            0.8,
-            0.4,
-            0.0,
-            0.05,
-        );
+    let planets =
+        worlds::planet_registry();
 
-    let water_material =
-        Material::new(
-            Vec3::new(
-                0.04,
-                0.42,
-                0.78,
-            ),
-            0.48,
-            0.90,
-            0.16,
-            0.12,
-        );
+    let focused_scenes: Vec<Scene> =
+        planets
+            .iter()
+            .map(
+                |planet| {
+                    Scene::new(
+                        (planet.create)(),
+                    )
+                },
+            )
+            .collect();
 
-    let crystal_material =
+    let hit_material =
         Material::new(
             Vec3::new(
-                0.25,
-                0.65,
+                1.0,
+                1.0,
                 1.0,
             ),
-            0.6,
-            0.9,
-            0.25,
-            0.3,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
         );
 
-    let egg_material =
-        Material::new(
-            Vec3::new(
-                0.90,
-                0.88,
-                0.80,
-            ),
-            0.88,
-            0.30,
-            0.0,
-            0.06,
-        );
+    let galaxy_hit_objects: Vec<Object> =
+        planets
+            .iter()
+            .map(
+                |planet| {
+                    Object::Sphere(
+                        Sphere::new(
+                            planet.position,
+                            planet.hit_radius,
+                            hit_material,
+                        ),
+                    )
+                },
+            )
+            .collect();
 
-    let tree_material =
-        Material::new(
-            Vec3::new(
-                0.45,
-                0.30,
-                0.18,
-            ),
-            0.85,
-            0.30,
-            0.0,
-            0.05,
-        );
+    let nodes: Vec<Vec3> =
+        planets
+            .iter()
+            .map(
+                |planet| {
+                    planet.position
+                        + planet.node_offset
+                },
+            )
+            .collect();
 
     let path_yellow_material =
         Material::new(
@@ -187,149 +165,6 @@ fn main() {
             0.80,
             0.0,
             0.15,
-        );
-
-    let forest_position =
-        Vec3::new(
-            -4.2,
-            0.55,
-            0.0,
-        );
-
-    let water_position =
-        Vec3::new(
-            -2.2,
-            1.15,
-            -0.15,
-        );
-
-    let crystal_position =
-        Vec3::new(
-            0.0,
-            0.35,
-            0.10,
-        );
-
-    let egg_position =
-        Vec3::new(
-            2.1,
-            1.00,
-            -0.10,
-        );
-
-    let tree_position =
-        Vec3::new(
-            4.2,
-            0.50,
-            0.0,
-        );
-
-    let forest_node =
-        forest_position
-            + Vec3::new(
-                0.0,
-                -0.95,
-                0.12,
-            );
-
-    let water_node =
-        water_position
-            + Vec3::new(
-                0.0,
-                -0.95,
-                0.12,
-            );
-
-    let crystal_node =
-        crystal_position
-            + Vec3::new(
-                0.0,
-                -0.95,
-                0.12,
-            );
-
-    let egg_node =
-        egg_position
-            + Vec3::new(
-                0.0,
-                -0.90,
-                0.12,
-            );
-
-    let tree_node =
-        tree_position
-            + Vec3::new(
-                0.0,
-                -0.95,
-                0.12,
-            );
-
-    let galaxy_hit_objects =
-        vec![
-            Object::Sphere(
-                Sphere::new(
-                    forest_position,
-                    1.0,
-                    forest_material,
-                ),
-            ),
-
-            Object::Sphere(
-                Sphere::new(
-                    water_position,
-                    1.05,
-                    water_material,
-                ),
-            ),
-
-            Object::Sphere(
-                Sphere::new(
-                    crystal_position,
-                    1.10,
-                    crystal_material,
-                ),
-            ),
-
-            Object::Sphere(
-                Sphere::new(
-                    egg_position,
-                    0.95,
-                    egg_material,
-                ),
-            ),
-
-            Object::Sphere(
-                Sphere::new(
-                    tree_position,
-                    1.10,
-                    tree_material,
-                ),
-            ),
-        ];
-
-    let forest_scene =
-        Scene::new(
-            create_forest_diorama(),
-        );
-
-    let water_scene =
-        Scene::new(
-            create_water_diorama(),
-        );
-
-    let crystal_scene =
-        Scene::new(
-            create_ice_lava_diorama(),
-        );
-
-    let egg_scene =
-        Scene::new(
-            create_egg_diorama(),
-        );
-
-    let tree_scene =
-        Scene::new(
-            create_tree_planet_world(),
         );
 
     let light =
@@ -362,7 +197,7 @@ fn main() {
         SceneState::Galaxy;
 
     let mut selected_planet:
-        Option<PlanetType> =
+        Option<usize> =
         None;
 
     while !rl.window_should_close() {
@@ -440,45 +275,15 @@ fn main() {
                         }
                     }
 
-                    if let Some(index) =
+                    if let Some(
+                        index,
+                    ) =
                         selected_index
                     {
                         selected_planet =
-                            match index {
-                                0 => {
-                                    Some(
-                                        PlanetType::Forest,
-                                    )
-                                }
-
-                                1 => {
-                                    Some(
-                                        PlanetType::Water,
-                                    )
-                                }
-
-                                2 => {
-                                    Some(
-                                        PlanetType::Crystal,
-                                    )
-                                }
-
-                                3 => {
-                                    Some(
-                                        PlanetType::Egg,
-                                    )
-                                }
-
-                                4 => {
-                                    Some(
-                                        PlanetType::Tree,
-                                    )
-                                }
-
-                                _ => {
-                                    None
-                                }
-                            };
+                            Some(
+                                index,
+                            );
 
                         camera =
                             Camera::new(
@@ -562,128 +367,51 @@ fn main() {
 
                 let rotation =
                     time
-                        * 0.30;
-
-                let forest_preview =
-                    transform_objects_rotated(
-                        create_forest_diorama(),
-                        forest_position,
-                        0.42,
-                        rotation,
-                    );
-
-                let water_preview =
-                    transform_objects_rotated(
-                        create_water_diorama(),
-                        water_position,
-                        0.42,
-                        rotation * 0.80,
-                    );
-
-                let crystal_preview =
-                    transform_objects_rotated(
-                        create_ice_lava_diorama(),
-                        crystal_position,
-                        0.42,
-                        rotation * 1.10,
-                    );
-
-                let egg_preview =
-                    transform_objects_rotated(
-                        create_egg_diorama(),
-                        egg_position,
-                        0.42,
-                        rotation * 0.70,
-                    );
-
-                let tree_preview =
-                    transform_objects_rotated(
-                        create_tree_planet_world(),
-                        tree_position,
-                        0.34,
-                        rotation * 0.90,
-                    );
+                        * 0.25;
 
                 let mut galaxy_objects =
                     Vec::new();
 
-                add_path(
-                    &mut galaxy_objects,
-                    forest_node,
-                    water_node,
-                    path_yellow_material,
-                );
+                if nodes.len()
+                    > 1
+                {
+                    for i in
+                        0..nodes.len() - 1
+                    {
+                        add_path(
+                            &mut galaxy_objects,
+                            nodes[i],
+                            nodes[i + 1],
+                            path_yellow_material,
+                        );
+                    }
+                }
 
-                add_path(
-                    &mut galaxy_objects,
-                    water_node,
-                    crystal_node,
-                    path_yellow_material,
-                );
+                for node in
+                    &nodes
+                {
+                    add_planet_node(
+                        &mut galaxy_objects,
+                        *node,
+                        path_yellow_material,
+                    );
+                }
 
-                add_path(
-                    &mut galaxy_objects,
-                    crystal_node,
-                    egg_node,
-                    path_yellow_material,
-                );
+                for planet in
+                    &planets
+                {
+                    let preview =
+                        transform_objects_rotated(
+                            (planet.create)(),
+                            planet.position,
+                            planet.preview_scale,
+                            rotation,
+                        );
 
-                add_path(
-                    &mut galaxy_objects,
-                    egg_node,
-                    tree_node,
-                    path_yellow_material,
-                );
-
-                add_planet_node(
-                    &mut galaxy_objects,
-                    forest_node,
-                    path_yellow_material,
-                );
-
-                add_planet_node(
-                    &mut galaxy_objects,
-                    water_node,
-                    path_yellow_material,
-                );
-
-                add_planet_node(
-                    &mut galaxy_objects,
-                    crystal_node,
-                    path_yellow_material,
-                );
-
-                add_planet_node(
-                    &mut galaxy_objects,
-                    egg_node,
-                    path_yellow_material,
-                );
-
-                add_planet_node(
-                    &mut galaxy_objects,
-                    tree_node,
-                    path_yellow_material,
-                );
-
-                galaxy_objects.extend(
-                    forest_preview,
-                );
-
-                galaxy_objects.extend(
-                    water_preview,
-                );
-
-                galaxy_objects.extend(
-                    crystal_preview,
-                );
-
-                galaxy_objects.extend(
-                    egg_preview,
-                );
-
-                galaxy_objects.extend(
-                    tree_preview,
-                );
+                    galaxy_objects.extend(
+                        preview,
+                    );
+                }
 
                 let galaxy_scene =
                     Scene::new(
@@ -700,22 +428,18 @@ fn main() {
             }
 
             SceneState::Focused => {
-                let selected_scene =
-                    get_selected_scene(
-                        selected_planet,
-                        &forest_scene,
-                        &water_scene,
-                        &crystal_scene,
-                        &egg_scene,
-                        &tree_scene,
+                if let Some(
+                    index,
+                ) =
+                    selected_planet
+                {
+                    renderer::raytracer::render(
+                        &mut framebuffer,
+                        &focused_scenes[index],
+                        &light,
+                        &camera,
                     );
-
-                renderer::raytracer::render(
-                    &mut framebuffer,
-                    selected_scene,
-                    &light,
-                    &camera,
-                );
+                }
             }
         }
 
@@ -854,7 +578,7 @@ fn main() {
                 );
 
                 d.draw_text(
-                    "Click derecho - Rotar",
+                    "Click derecho - Rotar mapa",
                     30,
                     100,
                     20,
@@ -871,15 +595,20 @@ fn main() {
             }
 
             SceneState::Focused => {
-                d.draw_text(
-                    planet_name(
-                        selected_planet,
-                    ),
-                    30,
-                    30,
-                    32,
-                    Color::WHITE,
-                );
+                if let Some(
+                    index,
+                ) =
+                    selected_planet
+                {
+                    d.draw_text(
+                        planets[index]
+                            .name,
+                        30,
+                        30,
+                        32,
+                        Color::WHITE,
+                    );
+                }
 
                 d.draw_text(
                     "Click izquierdo - Rotar",
@@ -912,91 +641,6 @@ fn main() {
                 - 110,
             20,
         );
-    }
-}
-
-fn get_selected_scene<'a>(
-    planet: Option<PlanetType>,
-    forest: &'a Scene,
-    water: &'a Scene,
-    crystal: &'a Scene,
-    egg: &'a Scene,
-    tree: &'a Scene,
-) -> &'a Scene {
-    match planet {
-        Some(
-            PlanetType::Forest,
-        ) => {
-            forest
-        }
-
-        Some(
-            PlanetType::Water,
-        ) => {
-            water
-        }
-
-        Some(
-            PlanetType::Crystal,
-        ) => {
-            crystal
-        }
-
-        Some(
-            PlanetType::Egg,
-        ) => {
-            egg
-        }
-
-        Some(
-            PlanetType::Tree,
-        ) => {
-            tree
-        }
-
-        None => {
-            forest
-        }
-    }
-}
-
-fn planet_name(
-    planet: Option<PlanetType>,
-) -> &'static str {
-    match planet {
-        Some(
-            PlanetType::Forest,
-        ) => {
-            "Forest Planet"
-        }
-
-        Some(
-            PlanetType::Water,
-        ) => {
-            "Water Planet"
-        }
-
-        Some(
-            PlanetType::Crystal,
-        ) => {
-            "Ice & Lava Planet"
-        }
-
-        Some(
-            PlanetType::Egg,
-        ) => {
-            "Egg Planet"
-        }
-
-        Some(
-            PlanetType::Tree,
-        ) => {
-            "Tree Planet"
-        }
-
-        None => {
-            ""
-        }
     }
 }
 
@@ -1066,12 +710,15 @@ fn add_path(
             );
 
     let direction =
-        end - start;
+        end
+            - start;
 
     let length =
         direction.length();
 
-    if length < 0.001 {
+    if length
+        < 0.001
+    {
         return;
     }
 
@@ -1131,145 +778,214 @@ fn transform_objects_rotated(
 ) -> Vec<Object> {
     objects
         .into_iter()
-        .map(|object| {
-            match object {
-                Object::Sphere(sphere) => {
+        .map(
+            |object| {
+                match object {
                     Object::Sphere(
-                        Sphere::new(
-                            rotate_y(
-                                sphere.center * scale,
-                                rotation,
-                            ) + offset,
-                            sphere.radius * scale,
-                            sphere.material,
+                        sphere,
+                    ) => {
+                        Object::Sphere(
+                            Sphere::new(
+                                rotate_y(
+                                    sphere.center
+                                        * scale,
+                                    rotation,
+                                )
+                                    + offset,
+
+                                sphere.radius
+                                    * scale,
+
+                                sphere.material,
+                            ),
                         )
-                    )
-                }
+                    }
 
-                Object::Cylinder(cylinder) => {
                     Object::Cylinder(
-                        Cylinder::new_oriented(
-                            rotate_y(
-                                cylinder.center * scale,
-                                rotation,
-                            ) + offset,
-                            rotate_y(
-                                cylinder.axis,
-                                rotation,
-                            ),
-                            cylinder.radius * scale,
-                            cylinder.height * scale,
-                            cylinder.material,
-                        ),
-                    )
-                }
+                        cylinder,
+                    ) => {
+                        Object::Cylinder(
+                            Cylinder::new_oriented(
+                                rotate_y(
+                                    cylinder.center
+                                        * scale,
+                                    rotation,
+                                )
+                                    + offset,
 
-                Object::Cone(cone) => {
+                                rotate_y(
+                                    cylinder.axis,
+                                    rotation,
+                                ),
+
+                                cylinder.radius
+                                    * scale,
+
+                                cylinder.height
+                                    * scale,
+
+                                cylinder.material,
+                            ),
+                        )
+                    }
+
                     Object::Cone(
-                        Cone::new_oriented(
-                            rotate_y(
-                                cone.center * scale,
-                                rotation,
-                            ) + offset,
-                            rotate_y(
-                                cone.axis,
-                                rotation,
-                            ),
-                            cone.radius * scale,
-                            cone.height * scale,
-                            cone.material,
-                        ),
-                    )
-                }
+                        cone,
+                    ) => {
+                        Object::Cone(
+                            Cone::new_oriented(
+                                rotate_y(
+                                    cone.center
+                                        * scale,
+                                    rotation,
+                                )
+                                    + offset,
 
-                Object::Plane(plane) => {
+                                rotate_y(
+                                    cone.axis,
+                                    rotation,
+                                ),
+
+                                cone.radius
+                                    * scale,
+
+                                cone.height
+                                    * scale,
+
+                                cone.material,
+                            ),
+                        )
+                    }
+
                     Object::Plane(
-                        Plane::new(
-                            rotate_y(
-                                plane.point * scale,
-                                rotation,
-                            ) + offset,
-                            rotate_y(
-                                plane.normal,
-                                rotation,
-                            ),
-                            plane.material,
-                        ),
-                    )
-                }
+                        plane,
+                    ) => {
+                        Object::Plane(
+                            Plane::new(
+                                rotate_y(
+                                    plane.point
+                                        * scale,
+                                    rotation,
+                                )
+                                    + offset,
 
-                Object::Cube(cube) => {
+                                rotate_y(
+                                    plane.normal,
+                                    rotation,
+                                ),
+
+                                plane.material,
+                            ),
+                        )
+                    }
+
                     Object::Cube(
-                        Cube::from_basis(
-                            rotate_y(
-                                cube.center * scale,
-                                rotation,
-                            ) + offset,
-                            cube.half_size
-                                * 2.0
-                                * scale,
-                            rotate_y(
-                                cube.right,
-                                rotation,
-                            ),
-                            rotate_y(
-                                cube.up,
-                                rotation,
-                            ),
-                            rotate_y(
-                                cube.forward,
-                                rotation,
-                            ),
-                            cube.material,
-                        ),
-                    )
-                }
+                        cube,
+                    ) => {
+                        Object::Cube(
+                            Cube::from_basis(
+                                rotate_y(
+                                    cube.center
+                                        * scale,
+                                    rotation,
+                                )
+                                    + offset,
 
-                Object::Hemisphere(hemisphere) => {
+                                cube.half_size
+                                    * 2.0
+                                    * scale,
+
+                                rotate_y(
+                                    cube.right,
+                                    rotation,
+                                ),
+
+                                rotate_y(
+                                    cube.up,
+                                    rotation,
+                                ),
+
+                                rotate_y(
+                                    cube.forward,
+                                    rotation,
+                                ),
+
+                                cube.material,
+                            ),
+                        )
+                    }
+
                     Object::Hemisphere(
-                        Hemisphere::new_with_materials(
-                            rotate_y(
-                                hemisphere.center * scale,
-                                rotation,
-                            ) + offset,
-                            hemisphere.radius * scale,
-                            rotate_y(
-                                hemisphere.normal,
-                                rotation,
+                        hemisphere,
+                    ) => {
+                        Object::Hemisphere(
+                            Hemisphere::new_with_materials(
+                                rotate_y(
+                                    hemisphere.center
+                                        * scale,
+                                    rotation,
+                                )
+                                    + offset,
+
+                                hemisphere.radius
+                                    * scale,
+
+                                rotate_y(
+                                    hemisphere.normal,
+                                    rotation,
+                                ),
+
+                                hemisphere.material,
+
+                                hemisphere.flat_material,
                             ),
-                            hemisphere.material,
-                            hemisphere.flat_material,
-                        ),
-                    )
-                }
+                        )
+                    }
 
-                Object::Torus(torus) => {
                     Object::Torus(
-                        Torus::new(
-                            rotate_y(
-                                torus.center * scale,
-                                rotation,
-                            ) + offset,
-                            torus.major_radius * scale,
-                            torus.minor_radius * scale,
-                            torus.material,
-                        ),
-                    )
-                }
+                        torus,
+                    ) => {
+                        Object::Torus(
+                            Torus::new(
+                                rotate_y(
+                                    torus.center
+                                        * scale,
+                                    rotation,
+                                )
+                                    + offset,
 
-                Object::Ellipsoid(ellipsoid) => {
+                                torus.major_radius
+                                    * scale,
+
+                                torus.minor_radius
+                                    * scale,
+
+                                torus.material,
+                            ),
+                        )
+                    }
+
                     Object::Ellipsoid(
-                        Ellipsoid::new(
-                            rotate_y(
-                                ellipsoid.center * scale,
-                                rotation,
-                            ) + offset,
-                            ellipsoid.radii * scale,
-                            ellipsoid.material,
-                        ),
-                    )
+                        ellipsoid,
+                    ) => {
+                        Object::Ellipsoid(
+                            Ellipsoid::new(
+                                rotate_y(
+                                    ellipsoid.center
+                                        * scale,
+                                    rotation,
+                                )
+                                    + offset,
+
+                                ellipsoid.radii
+                                    * scale,
+
+                                ellipsoid.material,
+                            ),
+                        )
+                    }
                 }
-            }
-        })
+            },
+        )
         .collect()
 }
