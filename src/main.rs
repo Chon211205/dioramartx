@@ -13,7 +13,6 @@ use raylib::prelude::*;
 use crate::core::camera::Camera;
 use crate::core::framebuffer::Framebuffer;
 use crate::core::vec3::Vec3;
-
 use crate::materials::material::Material;
 
 use crate::objects::cone::Cone;
@@ -65,11 +64,10 @@ enum GalaxyTransition {
 }
 
 fn main() {
-    let (mut rl, thread) =
-        raylib::init()
-            .size(800, 600)
-            .title("Galaxy Diorama")
-            .build();
+    let (mut rl, thread) = raylib::init()
+        .size(800, 600)
+        .title("Galaxy Diorama")
+        .build();
 
     let audio =
         RaylibAudio::init_audio_device()
@@ -77,21 +75,13 @@ fn main() {
 
     let starbit_sound =
         audio
-            .new_sound(
-                "assets/sounds/starbit.mp3",
-            )
-            .expect(
-                "No se pudo cargar starbit.mp3",
-            );
+            .new_sound("assets/sounds/starbit.mp3")
+            .expect("No se pudo cargar starbit.mp3");
 
     let mut level_music =
         audio
-            .new_music(
-                "assets/sounds/level.mp3",
-            )
-            .expect(
-                "No se pudo cargar level.mp3",
-            );
+            .new_music("assets/sounds/level.mp3")
+            .expect("No se pudo cargar level.mp3");
 
     level_music.set_looping(true);
 
@@ -114,7 +104,6 @@ fn main() {
     );
 
     rl.toggle_fullscreen();
-
     rl.set_target_fps(60);
     rl.hide_cursor();
 
@@ -248,6 +237,17 @@ fn main() {
         usize =
         0;
 
+    let mut next_galaxy:
+        usize =
+        0;
+
+    let mut galaxy_selector_open =
+        false;
+
+    let mut galaxy_selector_index:
+        usize =
+        0;
+
     let mut galaxy_transition =
         GalaxyTransition::None;
 
@@ -284,17 +284,120 @@ fn main() {
         if state == SceneState::Galaxy
             && galaxy_transition
                 == GalaxyTransition::None
-            && rl.is_key_pressed(
-                KeyboardKey::KEY_N,
-            )
         {
-            galaxy_transition =
-                GalaxyTransition::ZoomOut;
+            if rl.is_key_pressed(
+                KeyboardKey::KEY_N,
+            ) {
+                galaxy_selector_open =
+                    !galaxy_selector_open;
 
-            transition_timer =
-                0.0;
+                galaxy_selector_index =
+                    current_galaxy;
+            } else if galaxy_selector_open {
+                if rl.is_key_pressed(
+                    KeyboardKey::KEY_ESCAPE,
+                ) {
+                    galaxy_selector_open =
+                        false;
+                }
 
-            sparkles.clear();
+                if rl.is_key_pressed(
+                    KeyboardKey::KEY_RIGHT,
+                ) {
+                    galaxy_selector_index =
+                        (
+                            galaxy_selector_index
+                                + 1
+                        )
+                            % GALAXY_COUNT;
+                }
+
+                if rl.is_key_pressed(
+                    KeyboardKey::KEY_LEFT,
+                ) {
+                    if galaxy_selector_index
+                        == 0
+                    {
+                        galaxy_selector_index =
+                            GALAXY_COUNT
+                                - 1;
+                    } else {
+                        galaxy_selector_index -=
+                            1;
+                    }
+                }
+
+                if rl.is_mouse_button_pressed(
+                    MouseButton::MOUSE_BUTTON_LEFT,
+                ) {
+                    for galaxy_index in
+                        0..GALAXY_COUNT
+                    {
+                        let rect =
+                            galaxy_selector_rect(
+                                galaxy_index,
+                                current_screen_width,
+                                current_screen_height,
+                            );
+
+                        if point_inside_rectangle(
+                            mouse_position,
+                            rect,
+                        ) {
+                            galaxy_selector_index =
+                                galaxy_index;
+
+                            if galaxy_index
+                                == current_galaxy
+                            {
+                                galaxy_selector_open =
+                                    false;
+                            } else {
+                                next_galaxy =
+                                    galaxy_index;
+
+                                galaxy_selector_open =
+                                    false;
+
+                                galaxy_transition =
+                                    GalaxyTransition::ZoomOut;
+
+                                transition_timer =
+                                    0.0;
+
+                                sparkles.clear();
+                            }
+
+                            break;
+                        }
+                    }
+                }
+
+                if rl.is_key_pressed(
+                    KeyboardKey::KEY_ENTER,
+                ) {
+                    if galaxy_selector_index
+                        == current_galaxy
+                    {
+                        galaxy_selector_open =
+                            false;
+                    } else {
+                        next_galaxy =
+                            galaxy_selector_index;
+
+                        galaxy_selector_open =
+                            false;
+
+                        galaxy_transition =
+                            GalaxyTransition::ZoomOut;
+
+                        transition_timer =
+                            0.0;
+
+                        sparkles.clear();
+                    }
+                }
+            }
         }
 
         if galaxy_transition
@@ -309,11 +412,7 @@ fn main() {
                         >= 0.85
                     {
                         current_galaxy =
-                            (
-                                current_galaxy
-                                    + 1
-                            )
-                                % GALAXY_COUNT;
+                            next_galaxy;
 
                         galaxy_transition =
                             GalaxyTransition::Warp;
@@ -364,6 +463,7 @@ fn main() {
 
         if galaxy_transition
             == GalaxyTransition::None
+            && !galaxy_selector_open
         {
             match state {
                 SceneState::Galaxy => {
@@ -411,7 +511,7 @@ fn main() {
                                         current_galaxy,
                                     );
 
-                                let hit_object =
+                                let hit =
                                     Sphere::new(
                                         position,
                                         planet.hit_radius,
@@ -421,11 +521,10 @@ fn main() {
                                 if let Some(
                                     distance,
                                 ) =
-                                    hit_object
-                                        .intersect(
-                                            &ray.origin,
-                                            &ray.direction,
-                                        )
+                                    hit.intersect(
+                                        &ray.origin,
+                                        &ray.direction,
+                                    )
                                 {
                                     if distance
                                         < closest
@@ -609,6 +708,7 @@ fn main() {
             == SceneState::Galaxy
             && galaxy_transition
                 == GalaxyTransition::None
+            && !galaxy_selector_open
         {
             sparkle_spawn_timer +=
                 dt;
@@ -700,7 +800,7 @@ fn main() {
                             current_galaxy,
                         );
 
-                    let node_position =
+                    let node =
                         (
                             position
                                 + planet.node_offset
@@ -708,7 +808,7 @@ fn main() {
                             * world_scale;
 
                     nodes.push(
-                        node_position,
+                        node,
                     );
                 }
 
@@ -903,7 +1003,7 @@ fn main() {
                     );
 
                     d.draw_text(
-                        "N - Viajar a otra galaxia",
+                        "N - Galaxias",
                         30,
                         160,
                         20,
@@ -988,6 +1088,16 @@ fn main() {
             );
         }
 
+        if galaxy_selector_open {
+            draw_galaxy_selector(
+                &mut d,
+                current_screen_width,
+                current_screen_height,
+                galaxy_selector_index,
+                current_galaxy,
+            );
+        }
+
         d.draw_fps(
             current_screen_width
                 - 110,
@@ -1011,45 +1121,35 @@ fn galaxy_position(
 
         1 => {
             match index {
-                0 => {
-                    Vec3::new(
-                        -3.8,
-                        1.20,
-                        0.25,
-                    )
-                }
+                0 => Vec3::new(
+                    -3.8,
+                    1.20,
+                    0.25,
+                ),
 
-                1 => {
-                    Vec3::new(
-                        -2.0,
-                        -0.20,
-                        -0.20,
-                    )
-                }
+                1 => Vec3::new(
+                    -2.0,
+                    -0.20,
+                    -0.20,
+                ),
 
-                2 => {
-                    Vec3::new(
-                        0.0,
-                        0.90,
-                        0.15,
-                    )
-                }
+                2 => Vec3::new(
+                    0.0,
+                    0.90,
+                    0.15,
+                ),
 
-                3 => {
-                    Vec3::new(
-                        2.0,
-                        -0.15,
-                        -0.20,
-                    )
-                }
+                3 => Vec3::new(
+                    2.0,
+                    -0.15,
+                    -0.20,
+                ),
 
-                4 => {
-                    Vec3::new(
-                        3.8,
-                        1.10,
-                        0.25,
-                    )
-                }
+                4 => Vec3::new(
+                    3.8,
+                    1.10,
+                    0.25,
+                ),
 
                 _ => {
                     let angle =
@@ -1092,13 +1192,8 @@ fn transition_world_scale(
                         1.0,
                     );
 
-            let t =
-                smoothstep(
-                    t,
-                );
-
             1.0
-                - t
+                - smoothstep(t)
                     * 0.82
         }
 
@@ -1117,13 +1212,8 @@ fn transition_world_scale(
                         1.0,
                     );
 
-            let t =
-                smoothstep(
-                    t,
-                );
-
             0.18
-                + t
+                + smoothstep(t)
                     * 0.82
         }
     }
@@ -1160,13 +1250,6 @@ fn draw_transition(
                         1.0,
                     );
 
-            let alpha =
-                (
-                    t
-                        * 120.0
-                )
-                    as u8;
-
             d.draw_rectangle(
                 0,
                 0,
@@ -1176,7 +1259,9 @@ fn draw_transition(
                     0,
                     0,
                     20,
-                    alpha,
+                    (
+                        t * 120.0
+                    ) as u8,
                 ),
             );
         }
@@ -1199,24 +1284,13 @@ fn draw_transition(
                 t,
             );
 
-            let flash_strength =
+            let flash =
                 1.0
                     - (
                         t * 2.0
                             - 1.0
                     )
                         .abs();
-
-            let flash_alpha =
-                (
-                    flash_strength
-                        .clamp(
-                            0.0,
-                            1.0,
-                        )
-                        * 220.0
-                )
-                    as u8;
 
             d.draw_rectangle(
                 0,
@@ -1227,18 +1301,15 @@ fn draw_transition(
                     255,
                     255,
                     255,
-                    flash_alpha,
+                    (
+                        flash
+                            .clamp(
+                                0.0,
+                                1.0,
+                            )
+                            * 220.0
+                    ) as u8,
                 ),
-            );
-
-            d.draw_text(
-                "Viajando...",
-                width / 2
-                    - 75,
-                height
-                    - 90,
-                26,
-                Color::WHITE,
             );
         }
 
@@ -1253,16 +1324,6 @@ fn draw_transition(
                         1.0,
                     );
 
-            let alpha =
-                (
-                    (
-                        1.0
-                            - t
-                    )
-                        * 120.0
-                )
-                    as u8;
-
             d.draw_rectangle(
                 0,
                 0,
@@ -1272,7 +1333,13 @@ fn draw_transition(
                     0,
                     0,
                     20,
-                    alpha,
+                    (
+                        (
+                            1.0
+                                - t
+                        )
+                            * 120.0
+                    ) as u8,
                 ),
             );
         }
@@ -1296,11 +1363,7 @@ fn draw_warp(
         );
 
     let max_distance =
-        (
-            width.max(
-                height,
-            )
-        )
+        width.max(height)
             as f32
             * 0.75;
 
@@ -1311,9 +1374,7 @@ fn draw_warp(
                 + 3.17;
 
         let angle =
-            pseudo_random(
-                seed,
-            )
+            pseudo_random(seed)
                 * std::f32::consts::PI
                 * 2.0;
 
@@ -1358,7 +1419,6 @@ fn draw_warp(
                 center.x
                     + angle.cos()
                         * distance,
-
                 center.y
                     + angle.sin()
                         * distance,
@@ -1372,7 +1432,6 @@ fn draw_warp(
                             distance
                                 + streak
                         ),
-
                 center.y
                     + angle.sin()
                         * (
@@ -1381,31 +1440,27 @@ fn draw_warp(
                         ),
             );
 
-        let color_value =
+        let value =
             pseudo_random(
                 seed * 9.7,
             );
 
         let color =
-            if color_value < 0.25 {
+            if value < 0.25 {
                 Color::new(
                     120,
                     190,
                     255,
                     230,
                 )
-            } else if color_value
-                < 0.50
-            {
+            } else if value < 0.50 {
                 Color::new(
                     210,
                     150,
                     255,
                     230,
                 )
-            } else if color_value
-                < 0.75
-            {
+            } else if value < 0.75 {
                 Color::new(
                     255,
                     240,
@@ -1430,19 +1485,478 @@ fn draw_warp(
             color,
         );
     }
+}
 
-    d.draw_circle_v(
-        center,
-        10.0
-            + progress
-                * 45.0,
+fn galaxy_selector_rect(
+    index: usize,
+    screen_width: i32,
+    screen_height: i32,
+) -> Rectangle {
+    let card_width =
+        300.0;
+
+    let card_height =
+        220.0;
+
+    let spacing =
+        40.0;
+
+    let total_width =
+        card_width
+            * GALAXY_COUNT
+                as f32
+            + spacing
+                * (
+                    GALAXY_COUNT
+                        as f32
+                    - 1.0
+                );
+
+    let start_x =
+        screen_width
+            as f32
+            * 0.5
+            - total_width
+                * 0.5;
+
+    let y =
+        screen_height
+            as f32
+            * 0.5
+            - card_height
+                * 0.5;
+
+    Rectangle::new(
+        start_x
+            + index
+                as f32
+                * (
+                    card_width
+                        + spacing
+                ),
+        y,
+        card_width,
+        card_height,
+    )
+}
+
+fn point_inside_rectangle(
+    point: Vector2,
+    rect: Rectangle,
+) -> bool {
+    point.x >= rect.x
+        && point.x
+            <= rect.x
+                + rect.width
+        && point.y >= rect.y
+        && point.y
+            <= rect.y
+                + rect.height
+}
+
+fn draw_galaxy_selector(
+    d: &mut RaylibDrawHandle<'_>,
+    screen_width: i32,
+    screen_height: i32,
+    selected: usize,
+    current: usize,
+) {
+    d.draw_rectangle(
+        0,
+        0,
+        screen_width,
+        screen_height,
         Color::new(
-            255,
-            255,
-            255,
-            70,
+            0,
+            0,
+            15,
+            205,
         ),
     );
+
+    let title =
+        "SELECCIONA UNA GALAXIA";
+
+    let title_size =
+        34;
+
+    let title_width =
+        d.measure_text(
+            title,
+            title_size,
+        );
+
+    d.draw_text(
+        title,
+        screen_width / 2
+            - title_width / 2,
+        screen_height / 2
+            - 190,
+        title_size,
+        Color::WHITE,
+    );
+
+    for index in
+        0..GALAXY_COUNT
+    {
+        let rect =
+            galaxy_selector_rect(
+                index,
+                screen_width,
+                screen_height,
+            );
+
+        let is_selected =
+            index == selected;
+
+        let is_current =
+            index == current;
+
+        let background =
+            if index == 0 {
+                Color::new(
+                    8,
+                    28,
+                    50,
+                    245,
+                )
+            } else {
+                Color::new(
+                    35,
+                    8,
+                    55,
+                    245,
+                )
+            };
+
+        d.draw_rectangle(
+            rect.x as i32,
+            rect.y as i32,
+            rect.width as i32,
+            rect.height as i32,
+            background,
+        );
+
+        let border =
+            if is_selected {
+                Color::new(
+                    255,
+                    225,
+                    80,
+                    255,
+                )
+            } else {
+                Color::new(
+                    110,
+                    120,
+                    145,
+                    255,
+                )
+            };
+
+        d.draw_rectangle_lines_ex(
+            rect,
+            if is_selected {
+                5.0
+            } else {
+                2.0
+            },
+            border,
+        );
+
+        let center =
+            Vector2::new(
+                rect.x
+                    + rect.width
+                        * 0.5,
+                rect.y
+                    + 83.0,
+            );
+
+        if index == 0 {
+            draw_galaxy_one_icon(
+                d,
+                center,
+            );
+        } else {
+            draw_galaxy_two_icon(
+                d,
+                center,
+            );
+        }
+
+        let name =
+            match index {
+                0 => "GALAXIA 1",
+                1 => "GALAXIA 2",
+                _ => "GALAXIA",
+            };
+
+        let name_size =
+            26;
+
+        let name_width =
+            d.measure_text(
+                name,
+                name_size,
+            );
+
+        d.draw_text(
+            name,
+            (
+                rect.x
+                    + rect.width
+                        * 0.5
+            ) as i32
+                - name_width / 2,
+            (
+                rect.y
+                    + 153.0
+            ) as i32,
+            name_size,
+            Color::WHITE,
+        );
+
+        let status =
+            if is_current {
+                "ACTUAL"
+            } else if is_selected {
+                "VIAJAR"
+            } else {
+                ""
+            };
+
+        if !status.is_empty() {
+            let size =
+                17;
+
+            let width =
+                d.measure_text(
+                    status,
+                    size,
+                );
+
+            d.draw_text(
+                status,
+                (
+                    rect.x
+                        + rect.width
+                            * 0.5
+                ) as i32
+                    - width / 2,
+                (
+                    rect.y
+                        + 188.0
+                ) as i32,
+                size,
+                if is_current {
+                    Color::new(
+                        90,
+                        235,
+                        135,
+                        255,
+                    )
+                } else {
+                    Color::new(
+                        255,
+                        225,
+                        80,
+                        255,
+                    )
+                },
+            );
+        }
+    }
+
+    let instruction =
+        "< > Seleccionar     ENTER Viajar     N / ESC Cerrar";
+
+    let size =
+        19;
+
+    let width =
+        d.measure_text(
+            instruction,
+            size,
+        );
+
+    d.draw_text(
+        instruction,
+        screen_width / 2
+            - width / 2,
+        screen_height / 2
+            + 155,
+        size,
+        Color::LIGHTGRAY,
+    );
+}
+
+fn draw_galaxy_one_icon(
+    d: &mut RaylibDrawHandle<'_>,
+    center: Vector2,
+) {
+    d.draw_circle_v(
+        center,
+        52.0,
+        Color::new(
+            4,
+            15,
+            40,
+            255,
+        ),
+    );
+
+    d.draw_circle_v(
+        Vector2::new(
+            center.x - 12.0,
+            center.y - 5.0,
+        ),
+        30.0,
+        Color::new(
+            15,
+            95,
+            145,
+            180,
+        ),
+    );
+
+    d.draw_circle_v(
+        Vector2::new(
+            center.x + 16.0,
+            center.y + 4.0,
+        ),
+        22.0,
+        Color::new(
+            40,
+            180,
+            130,
+            150,
+        ),
+    );
+
+    for i in 0..12 {
+        let angle =
+            i as f32
+                * 0.91;
+
+        let distance =
+            16.0
+                + (
+                    i % 4
+                ) as f32
+                    * 8.0;
+
+        d.draw_circle_v(
+            Vector2::new(
+                center.x
+                    + angle.cos()
+                        * distance,
+                center.y
+                    + angle.sin()
+                        * distance,
+            ),
+            1.8,
+            Color::WHITE,
+        );
+    }
+}
+
+fn draw_galaxy_two_icon(
+    d: &mut RaylibDrawHandle<'_>,
+    center: Vector2,
+) {
+    d.draw_circle_v(
+        center,
+        52.0,
+        Color::new(
+            18,
+            3,
+            38,
+            255,
+        ),
+    );
+
+    d.draw_circle_v(
+        Vector2::new(
+            center.x - 10.0,
+            center.y + 3.0,
+        ),
+        34.0,
+        Color::new(
+            115,
+            25,
+            170,
+            170,
+        ),
+    );
+
+    d.draw_circle_v(
+        Vector2::new(
+            center.x + 17.0,
+            center.y - 8.0,
+        ),
+        24.0,
+        Color::new(
+            220,
+            55,
+            170,
+            125,
+        ),
+    );
+
+    d.draw_circle_v(
+        Vector2::new(
+            center.x - 22.0,
+            center.y - 13.0,
+        ),
+        15.0,
+        Color::new(
+            60,
+            110,
+            255,
+            130,
+        ),
+    );
+
+    for i in 0..14 {
+        let angle =
+            i as f32
+                * 1.17;
+
+        let distance =
+            14.0
+                + (
+                    i % 5
+                ) as f32
+                    * 7.0;
+
+        d.draw_circle_v(
+            Vector2::new(
+                center.x
+                    + angle.cos()
+                        * distance,
+                center.y
+                    + angle.sin()
+                        * distance,
+            ),
+            1.8,
+            if i % 3 == 0 {
+                Color::new(
+                    255,
+                    170,
+                    240,
+                    255,
+                )
+            } else {
+                Color::new(
+                    200,
+                    220,
+                    255,
+                    255,
+                )
+            },
+        );
+    }
 }
 
 fn calculate_viewport(
@@ -1505,8 +2019,7 @@ fn point_inside_viewport(
         && point.x
             <= viewport.x
                 + viewport.width
-        && point.y
-            >= viewport.y
+        && point.y >= viewport.y
         && point.y
             <= viewport.y
                 + viewport.height
@@ -1616,8 +2129,7 @@ fn world_to_screen(
     let focal =
         1.0
             / (
-                fov
-                    * 0.5
+                fov * 0.5
             )
                 .tan();
 
@@ -1807,59 +2319,47 @@ fn sparkle_color(
             as i32;
 
     match index {
-        0 => {
-            Color::new(
-                235,
-                55,
-                55,
-                255,
-            )
-        }
+        0 => Color::new(
+            235,
+            55,
+            55,
+            255,
+        ),
 
-        1 => {
-            Color::new(
-                70,
-                220,
-                90,
-                255,
-            )
-        }
+        1 => Color::new(
+            70,
+            220,
+            90,
+            255,
+        ),
 
-        2 => {
-            Color::new(
-                65,
-                135,
-                255,
-                255,
-            )
-        }
+        2 => Color::new(
+            65,
+            135,
+            255,
+            255,
+        ),
 
-        3 => {
-            Color::new(
-                170,
-                80,
-                235,
-                255,
-            )
-        }
+        3 => Color::new(
+            170,
+            80,
+            235,
+            255,
+        ),
 
-        4 => {
-            Color::new(
-                210,
-                220,
-                230,
-                255,
-            )
-        }
+        4 => Color::new(
+            210,
+            220,
+            230,
+            255,
+        ),
 
-        _ => {
-            Color::new(
-                255,
-                220,
-                55,
-                255,
-            )
-        }
+        _ => Color::new(
+            255,
+            220,
+            55,
+            255,
+        ),
     }
 }
 
@@ -2029,9 +2529,6 @@ fn update_sparkles(
                     .x
                     .abs()
                     * 0.72;
-
-            sparkle.rotation_speed +=
-                1.0;
         }
 
         if sparkle.position.x
@@ -2045,9 +2542,6 @@ fn update_sparkles(
                     .x
                     .abs()
                     * 0.72;
-
-            sparkle.rotation_speed -=
-                1.0;
         }
 
         if sparkle.position.y
@@ -2154,16 +2648,6 @@ fn collide_sparkle_planet(
 
     sparkle.velocity.y *=
         0.97;
-
-    let tangent_velocity =
-        -sparkle.velocity.x
-            * normal.y
-            + sparkle.velocity.y
-                * normal.x;
-
-    sparkle.rotation_speed +=
-        tangent_velocity
-            * 0.015;
 }
 
 fn collect_sparkles(
@@ -2270,7 +2754,6 @@ fn draw_sparkle(
                 sparkle.position.x
                     + angle.cos()
                         * radius,
-
                 sparkle.position.y
                     + angle.sin()
                         * radius,
@@ -2359,7 +2842,6 @@ fn draw_star_cursor(
                 mouse.x
                     + angle.cos()
                         * radius,
-
                 mouse.y
                     + angle.sin()
                         * radius,
@@ -2412,7 +2894,6 @@ fn draw_star_cursor(
                 mouse.x
                     + angle.cos()
                         * radius,
-
                 mouse.y
                     + angle.sin()
                         * radius,
@@ -2577,214 +3058,187 @@ fn transform_objects_rotated(
 ) -> Vec<Object> {
     objects
         .into_iter()
-        .map(
-            |object| {
-                match object {
+        .map(|object| {
+            match object {
+                Object::Sphere(sphere) => {
                     Object::Sphere(
-                        sphere,
-                    ) => {
-                        Object::Sphere(
-                            Sphere::new(
-                                rotate_y(
-                                    sphere.center
-                                        * scale,
-                                    rotation,
-                                )
-                                    + offset,
-
-                                sphere.radius
+                        Sphere::new(
+                            rotate_y(
+                                sphere.center
                                     * scale,
+                                rotation,
+                            ) + offset,
 
-                                sphere.material,
-                            ),
-                        )
-                    }
+                            sphere.radius
+                                * scale,
 
-                    Object::Cylinder(
-                        cylinder,
-                    ) => {
-                        Object::Cylinder(
-                            Cylinder::new_oriented(
-                                rotate_y(
-                                    cylinder.center
-                                        * scale,
-                                    rotation,
-                                )
-                                    + offset,
-
-                                rotate_y(
-                                    cylinder.axis,
-                                    rotation,
-                                ),
-
-                                cylinder.radius
-                                    * scale,
-
-                                cylinder.height
-                                    * scale,
-
-                                cylinder.material,
-                            ),
-                        )
-                    }
-
-                    Object::Cone(
-                        cone,
-                    ) => {
-                        Object::Cone(
-                            Cone::new_oriented(
-                                rotate_y(
-                                    cone.center
-                                        * scale,
-                                    rotation,
-                                )
-                                    + offset,
-
-                                rotate_y(
-                                    cone.axis,
-                                    rotation,
-                                ),
-
-                                cone.radius
-                                    * scale,
-
-                                cone.height
-                                    * scale,
-
-                                cone.material,
-                            ),
-                        )
-                    }
-
-                    Object::Plane(
-                        plane,
-                    ) => {
-                        Object::Plane(
-                            Plane::new(
-                                rotate_y(
-                                    plane.point
-                                        * scale,
-                                    rotation,
-                                )
-                                    + offset,
-
-                                rotate_y(
-                                    plane.normal,
-                                    rotation,
-                                ),
-
-                                plane.material,
-                            ),
-                        )
-                    }
-
-                    Object::Cube(
-                        cube,
-                    ) => {
-                        Object::Cube(
-                            Cube::from_basis(
-                                rotate_y(
-                                    cube.center
-                                        * scale,
-                                    rotation,
-                                )
-                                    + offset,
-
-                                cube.half_size
-                                    * 2.0
-                                    * scale,
-
-                                rotate_y(
-                                    cube.right,
-                                    rotation,
-                                ),
-
-                                rotate_y(
-                                    cube.up,
-                                    rotation,
-                                ),
-
-                                rotate_y(
-                                    cube.forward,
-                                    rotation,
-                                ),
-
-                                cube.material,
-                            ),
-                        )
-                    }
-
-                    Object::Hemisphere(
-                        hemisphere,
-                    ) => {
-                        Object::Hemisphere(
-                            Hemisphere::new_with_materials(
-                                rotate_y(
-                                    hemisphere.center
-                                        * scale,
-                                    rotation,
-                                )
-                                    + offset,
-
-                                hemisphere.radius
-                                    * scale,
-
-                                rotate_y(
-                                    hemisphere.normal,
-                                    rotation,
-                                ),
-
-                                hemisphere.material,
-
-                                hemisphere.flat_material,
-                            ),
-                        )
-                    }
-
-                    Object::Torus(
-                        torus,
-                    ) => {
-                        Object::Torus(
-                            Torus::new(
-                                rotate_y(
-                                    torus.center
-                                        * scale,
-                                    rotation,
-                                )
-                                    + offset,
-
-                                torus.major_radius
-                                    * scale,
-
-                                torus.minor_radius
-                                    * scale,
-
-                                torus.material,
-                            ),
-                        )
-                    }
-
-                    Object::Ellipsoid(
-                        ellipsoid,
-                    ) => {
-                        Object::Ellipsoid(
-                            Ellipsoid::new(
-                                rotate_y(
-                                    ellipsoid.center
-                                        * scale,
-                                    rotation,
-                                )
-                                    + offset,
-
-                                ellipsoid.radii
-                                    * scale,
-
-                                ellipsoid.material,
-                            ),
-                        )
-                    }
+                            sphere.material,
+                        ),
+                    )
                 }
-            },
-        )
+
+                Object::Cylinder(cylinder) => {
+                    Object::Cylinder(
+                        Cylinder::new_oriented(
+                            rotate_y(
+                                cylinder.center
+                                    * scale,
+                                rotation,
+                            ) + offset,
+
+                            rotate_y(
+                                cylinder.axis,
+                                rotation,
+                            ),
+
+                            cylinder.radius
+                                * scale,
+
+                            cylinder.height
+                                * scale,
+
+                            cylinder.material,
+                        ),
+                    )
+                }
+
+                Object::Cone(cone) => {
+                    Object::Cone(
+                        Cone::new_oriented(
+                            rotate_y(
+                                cone.center
+                                    * scale,
+                                rotation,
+                            ) + offset,
+
+                            rotate_y(
+                                cone.axis,
+                                rotation,
+                            ),
+
+                            cone.radius
+                                * scale,
+
+                            cone.height
+                                * scale,
+
+                            cone.material,
+                        ),
+                    )
+                }
+
+                Object::Plane(plane) => {
+                    Object::Plane(
+                        Plane::new(
+                            rotate_y(
+                                plane.point
+                                    * scale,
+                                rotation,
+                            ) + offset,
+
+                            rotate_y(
+                                plane.normal,
+                                rotation,
+                            ),
+
+                            plane.material,
+                        ),
+                    )
+                }
+
+                Object::Cube(cube) => {
+                    Object::Cube(
+                        Cube::from_basis(
+                            rotate_y(
+                                cube.center
+                                    * scale,
+                                rotation,
+                            ) + offset,
+
+                            cube.half_size
+                                * 2.0
+                                * scale,
+
+                            rotate_y(
+                                cube.right,
+                                rotation,
+                            ),
+
+                            rotate_y(
+                                cube.up,
+                                rotation,
+                            ),
+
+                            rotate_y(
+                                cube.forward,
+                                rotation,
+                            ),
+
+                            cube.material,
+                        ),
+                    )
+                }
+
+                Object::Hemisphere(hemisphere) => {
+                    Object::Hemisphere(
+                        Hemisphere::new_with_materials(
+                            rotate_y(
+                                hemisphere.center
+                                    * scale,
+                                rotation,
+                            ) + offset,
+
+                            hemisphere.radius
+                                * scale,
+
+                            rotate_y(
+                                hemisphere.normal,
+                                rotation,
+                            ),
+
+                            hemisphere.material,
+                            hemisphere.flat_material,
+                        ),
+                    )
+                }
+
+                Object::Torus(torus) => {
+                    Object::Torus(
+                        Torus::new(
+                            rotate_y(
+                                torus.center
+                                    * scale,
+                                rotation,
+                            ) + offset,
+
+                            torus.major_radius
+                                * scale,
+
+                            torus.minor_radius
+                                * scale,
+
+                            torus.material,
+                        ),
+                    )
+                }
+
+                Object::Ellipsoid(ellipsoid) => {
+                    Object::Ellipsoid(
+                        Ellipsoid::new(
+                            rotate_y(
+                                ellipsoid.center
+                                    * scale,
+                                rotation,
+                            ) + offset,
+
+                            ellipsoid.radii
+                                * scale,
+
+                            ellipsoid.material,
+                        ),
+                    )
+                }
+            }
+        })
         .collect()
 }
