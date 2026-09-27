@@ -41,7 +41,30 @@ pub fn render(
     light: &Light,
     camera: &Camera,
 ) {
-    render_rotated(framebuffer, scene, light, camera, 0.0);
+    render_with_skybox(
+        framebuffer,
+        scene,
+        light,
+        camera,
+        0,
+    );
+}
+
+pub fn render_with_skybox(
+    framebuffer: &mut Framebuffer,
+    scene: &Scene,
+    light: &Light,
+    camera: &Camera,
+    skybox_id: usize,
+) {
+    render_rotated_with_skybox(
+        framebuffer,
+        scene,
+        light,
+        camera,
+        0.0,
+        skybox_id,
+    );
 }
 
 pub fn render_rotated(
@@ -51,179 +74,118 @@ pub fn render_rotated(
     camera: &Camera,
     rotation_y: f32,
 ) {
+    render_rotated_with_skybox(
+        framebuffer,
+        scene,
+        light,
+        camera,
+        rotation_y,
+        0,
+    );
+}
 
+pub fn render_rotated_with_skybox(
+    framebuffer: &mut Framebuffer,
+    scene: &Scene,
+    light: &Light,
+    camera: &Camera,
+    rotation_y: f32,
+    skybox_id: usize,
+) {
     let width =
-
         framebuffer.width as usize;
 
     let height =
-
         framebuffer.height as usize;
 
     let thread_count =
-
         thread::available_parallelism()
-
-            .map(
-
-                |n| n.get(),
-
-            )
-
-            .unwrap_or(
-
-                4,
-
-            )
-
-            .max(
-
-                1,
-
-            );
+            .map(|n| n.get())
+            .unwrap_or(4)
+            .max(1);
 
     let rows_per_thread =
-
         (
-
             height
-
                 + thread_count
-
                 - 1
-
         )
-
             / thread_count;
 
     let chunk_size =
-
         rows_per_thread
-
             * width;
 
     let pixels =
-
         framebuffer.pixels_mut();
 
     thread::scope(
-
         |scope| {
-
             for (
-
                 chunk_index,
-
                 chunk,
-
             ) in pixels
-
                 .chunks_mut(
-
                     chunk_size,
-
                 )
-
                 .enumerate()
-
             {
-
                 scope.spawn(
-
                     move || {
-
                         let start_row =
-
                             chunk_index
-
                                 * rows_per_thread;
 
                         for local_index in
-
                             0..chunk.len()
-
                         {
-
                             let local_y =
-
                                 local_index
-
                                     / width;
 
                             let x =
-
                                 local_index
-
                                     % width;
 
                             let y =
-
                                 start_row
-
                                     + local_y;
 
                             if y >= height {
-
                                 continue;
-
                             }
 
                             let ray =
-
                                 camera.get_ray(
-
                                     x as f32 + 0.5,
-
                                     y as f32 + 0.5,
-
                                     width as f32,
-
                                     height as f32,
-
                                 );
 
                             let color =
-
                                 cast_ray(
-
                                     &ray.origin,
-
                                     &ray.direction,
-
                                     scene,
-
                                     light,
-
                                     0,
-
                                     rotation_y,
-
+                                    skybox_id,
                                 );
 
                             chunk[
-
                                 local_index
-
                             ] =
-
                                 to_color(
-
                                     color,
-
                                 );
-
                         }
-
                     },
-
                 );
-
             }
-
         },
-
     );
-
 }
 
 fn cast_ray(
@@ -233,14 +195,14 @@ fn cast_ray(
     light: &Light,
     depth: u32,
     rotation_y: f32,
+    skybox_id: usize,
 ) -> Vec3 {
 
     if depth >= MAX_DEPTH {
 
         return skybox_color(
-
             direction,
-
+            skybox_id,
         );
 
     }
@@ -284,9 +246,8 @@ fn cast_ray(
             None => {
 
                 return skybox_color(
-
                     direction,
-
+                    skybox_id,
                 );
 
             }
@@ -859,20 +820,14 @@ fn cast_ray(
                     * EPSILON;
 
         let reflected_color =
-
             cast_ray(
-
                 &reflected_origin,
-
                 &reflected_direction,
-
                 scene,
-
                 light,
-
                 depth + 1,
                 rotation_y,
-
+                skybox_id,
             );
 
         final_color =
@@ -960,20 +915,14 @@ fn cast_ray(
                     );
 
         let refracted_color =
-
             cast_ray(
-
                 &refracted_origin,
-
                 &refracted_direction,
-
                 scene,
-
                 light,
-
                 depth + 1,
                 rotation_y,
-
+                skybox_id,
             );
 
         final_color =
@@ -1921,6 +1870,25 @@ fn refract(
 }
 
 fn skybox_color(
+    direction: &Vec3,
+    skybox_id: usize,
+) -> Vec3 {
+    match skybox_id {
+        1 => {
+            skybox_galaxy_2(
+                direction,
+            )
+        }
+
+        _ => {
+            skybox_galaxy_1(
+                direction,
+            )
+        }
+    }
+}
+
+fn skybox_galaxy_1(
 
     direction: &Vec3,
 
@@ -2428,6 +2396,397 @@ fn skybox_color(
 
     color
 
+}
+
+fn skybox_galaxy_2(
+    direction: &Vec3,
+) -> Vec3 {
+    let dir =
+        direction.normalize();
+
+    let vertical =
+        (
+            dir.y
+                * 0.5
+                + 0.5
+        )
+            .clamp(
+                0.0,
+                1.0,
+            );
+
+    let bottom =
+        Vec3::new(
+            0.008,
+            0.003,
+            0.025,
+        );
+
+    let top =
+        Vec3::new(
+            0.055,
+            0.015,
+            0.11,
+        );
+
+    let mut color =
+        bottom
+            * (
+                1.0
+                    - vertical
+            )
+            + top
+                * vertical;
+
+    let wave_1 =
+        (
+            dir.x
+                * 4.0
+                + dir.z
+                    * 7.0
+                + (
+                    dir.y
+                        * 3.0
+                )
+                    .sin()
+                    * 2.0
+        )
+            .sin()
+            * 0.5
+            + 0.5;
+
+    let wave_2 =
+        (
+            dir.z
+                * 5.0
+                - dir.x
+                    * 6.0
+                + (
+                    dir.y
+                        * 8.0
+                )
+                    .cos()
+        )
+            .cos()
+            * 0.5
+            + 0.5;
+
+    let wave_3 =
+        (
+            dir.x
+                * 13.0
+                + dir.y
+                    * 9.0
+                + dir.z
+                    * 4.0
+        )
+            .sin()
+            * 0.5
+            + 0.5;
+
+    let purple_nebula =
+        (
+            wave_1
+                * wave_2
+        )
+            .powf(
+                1.6,
+            );
+
+    color =
+        color
+            + Vec3::new(
+                0.13,
+                0.025,
+                0.25,
+            )
+                * purple_nebula
+                * 1.2;
+
+    let magenta_nebula =
+        (
+            wave_2
+                * wave_3
+        )
+            .powf(
+                2.4,
+            );
+
+    color =
+        color
+            + Vec3::new(
+                0.22,
+                0.015,
+                0.16,
+            )
+                * magenta_nebula;
+
+    let blue_nebula =
+        (
+            wave_1
+                * (
+                    1.0
+                        - wave_3
+                )
+        )
+            .powf(
+                2.0,
+            );
+
+    color =
+        color
+            + Vec3::new(
+                0.015,
+                0.055,
+                0.20,
+            )
+                * blue_nebula;
+
+    let galaxy_band =
+        (
+            1.0
+                - (
+                    dir.y
+                        + (
+                            dir.x
+                                * 2.7
+                        )
+                            .sin()
+                            * 0.16
+                )
+                    .abs()
+                    * 3.7
+        )
+            .clamp(
+                0.0,
+                1.0,
+            )
+            .powf(
+                2.0,
+            );
+
+    color =
+        color
+            + Vec3::new(
+                0.12,
+                0.04,
+                0.18,
+            )
+                * galaxy_band;
+
+    let cloud_detail =
+        (
+            (
+                dir.x
+                    * 25.0
+                + dir.z
+                    * 17.0
+            )
+                .sin()
+            * (
+                dir.y
+                    * 21.0
+                - dir.x
+                    * 9.0
+            )
+                .cos()
+            * 0.5
+            + 0.5
+        )
+            .powf(
+                3.0,
+            );
+
+    color =
+        color
+            + Vec3::new(
+                0.08,
+                0.025,
+                0.14,
+            )
+                * cloud_detail
+                * galaxy_band;
+
+    let glow_direction =
+        Vec3::new(
+            0.75,
+            0.08,
+            -0.65,
+        )
+            .normalize();
+
+    let glow =
+        dir
+            .dot(
+                &glow_direction,
+            )
+            .max(
+                0.0,
+            );
+
+    let broad_glow =
+        glow.powf(
+            8.0,
+        );
+
+    let center_glow =
+        glow.powf(
+            45.0,
+        );
+
+    color =
+        color
+            + Vec3::new(
+                0.25,
+                0.04,
+                0.32,
+            )
+                * broad_glow;
+
+    color =
+        color
+            + Vec3::new(
+                0.85,
+                0.28,
+                1.0,
+            )
+                * center_glow
+                * 1.4;
+
+    let blue_glow_direction =
+        Vec3::new(
+            -0.8,
+            0.25,
+            0.45,
+        )
+            .normalize();
+
+    let blue_glow =
+        dir
+            .dot(
+                &blue_glow_direction,
+            )
+            .max(
+                0.0,
+            )
+            .powf(
+                18.0,
+            );
+
+    color =
+        color
+            + Vec3::new(
+                0.08,
+                0.28,
+                0.70,
+            )
+                * blue_glow;
+
+    let star_x =
+        (
+            dir.x
+                * 813.0
+        )
+            .floor();
+
+    let star_y =
+        (
+            dir.y
+                * 991.0
+        )
+            .floor();
+
+    let star_z =
+        (
+            dir.z
+                * 677.0
+        )
+            .floor();
+
+    let star_hash =
+        procedural_hash(
+            star_x
+                + star_z
+                    * 0.17,
+            star_y
+                + star_x
+                    * 0.23,
+        );
+
+    if star_hash > 0.992 {
+        let intensity =
+            (
+                star_hash
+                    - 0.992
+            )
+                / 0.008;
+
+        let cold =
+            procedural_hash(
+                star_x
+                    * 0.31,
+                star_z
+                    * 0.73,
+            );
+
+        let star_color =
+            if cold < 0.35 {
+                Vec3::new(
+                    0.55,
+                    0.70,
+                    1.0,
+                )
+            } else if cold < 0.70 {
+                Vec3::new(
+                    1.0,
+                    0.72,
+                    0.95,
+                )
+            } else {
+                Vec3::new(
+                    1.0,
+                    1.0,
+                    1.0,
+                )
+            };
+
+        color =
+            color
+                + star_color
+                    * intensity
+                    * 1.8;
+    }
+
+    let bright_star_hash =
+        procedural_hash(
+            star_x
+                * 1.91
+                + 7.0,
+            star_z
+                * 2.17
+                + star_y,
+        );
+
+    if bright_star_hash > 0.9985 {
+        let intensity =
+            (
+                bright_star_hash
+                    - 0.9985
+            )
+                / 0.0015;
+
+        color =
+            color
+                + Vec3::new(
+                    0.70,
+                    0.82,
+                    1.0,
+                )
+                    * intensity
+                    * 2.5;
+    }
+
+    color
 }
 
 fn procedural_hash(
