@@ -39,6 +39,7 @@ struct Sparkle {
     active: bool,
     rotation: f32,
     rotation_speed: f32,
+    color: Color,
 }
 
 struct PlanetCollider {
@@ -1055,6 +1056,11 @@ fn spawn_sparkle(
             seed * 77.11,
         );
 
+    let color_random =
+        pseudo_random(
+            seed * 91.37,
+        );
+
     let x =
         viewport.x
             + 35.0
@@ -1105,6 +1111,11 @@ fn spawn_sparkle(
                 -4.0
                     + spin_random
                         * 8.0,
+
+            color:
+                sparkle_color(
+                    color_random,
+                ),
         },
     );
 }
@@ -1412,14 +1423,6 @@ fn draw_sparkle(
             );
     }
 
-    let color =
-        Color::new(
-            255,
-            226,
-            50,
-            255,
-        );
-
     for i in 0..POINTS {
         let next =
             (
@@ -1431,20 +1434,23 @@ fn draw_sparkle(
             vertices[next],
             vertices[i],
             sparkle.position,
-            color,
+            sparkle.color,
         );
     }
+
+    let highlight =
+        Color::new(
+            255,
+            255,
+            255,
+            220,
+        );
 
     d.draw_circle_v(
         sparkle.position,
         sparkle.radius
             * 0.18,
-        Color::new(
-            255,
-            255,
-            220,
-            255,
-        ),
+        highlight,
     );
 }
 
@@ -1580,6 +1586,73 @@ fn draw_star_cursor(
             mouse,
             fill,
         );
+    }
+}
+
+fn sparkle_color(
+    value: f32,
+) -> Color {
+    let index =
+        (
+            value * 6.0
+        )
+            .floor()
+            as i32;
+
+    match index {
+        0 => {
+            Color::new(
+                235,
+                55,
+                55,
+                255,
+            )
+        }
+
+        1 => {
+            Color::new(
+                70,
+                220,
+                90,
+                255,
+            )
+        }
+
+        2 => {
+            Color::new(
+                65,
+                135,
+                255,
+                255,
+            )
+        }
+
+        3 => {
+            Color::new(
+                170,
+                80,
+                235,
+                255,
+            )
+        }
+
+        4 => {
+            Color::new(
+                210,
+                220,
+                230,
+                255,
+            )
+        }
+
+        _ => {
+            Color::new(
+                255,
+                220,
+                55,
+                255,
+            )
+        }
     }
 }
 
