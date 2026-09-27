@@ -74,6 +74,15 @@ fn main() {
                 "No se pudo cargar starbit.mp3",
             );
 
+    let level_music =
+    audio
+        .new_music(
+            "assets/sounds/level.mp3",
+        )
+        .expect(
+            "No se pudo cargar level.mp3",
+        );
+
     let monitor =
         raylib::core::window::get_current_monitor();
 
@@ -347,6 +356,8 @@ fn main() {
                                     60.0,
                                 );
 
+                            level_music.play_stream();
+
                             state =
                                 SceneState::Focused;
                         }
@@ -370,6 +381,8 @@ fn main() {
                 if rl.is_key_pressed(
                     KeyboardKey::KEY_BACKSPACE,
                 ) {
+                    level_music.stop_stream();
+
                     state =
                         SceneState::Galaxy;
 
@@ -450,6 +463,16 @@ fn main() {
                 &mut sparkle_score,
                 &starbit_sound,
             );
+        }
+
+        if state
+            == SceneState::Focused
+        {
+            level_music.update_stream();
+
+            if !level_music.is_stream_playing() {
+                level_music.play_stream();
+            }
         }
 
         match state {
