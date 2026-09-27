@@ -224,6 +224,46 @@ fn main() {
             0.0,
         );
 
+    let forest_node =
+        forest_position
+            + Vec3::new(
+                0.0,
+                -0.95,
+                0.12,
+            );
+
+    let water_node =
+        water_position
+            + Vec3::new(
+                0.0,
+                -0.95,
+                0.12,
+            );
+
+    let crystal_node =
+        crystal_position
+            + Vec3::new(
+                0.0,
+                -0.95,
+                0.12,
+            );
+
+    let egg_node =
+        egg_position
+            + Vec3::new(
+                0.0,
+                -0.90,
+                0.12,
+            );
+
+    let tree_node =
+        tree_position
+            + Vec3::new(
+                0.0,
+                -0.95,
+                0.12,
+            );
+
     let galaxy_hit_objects =
         vec![
             Object::Sphere(
@@ -267,205 +307,29 @@ fn main() {
             ),
         ];
 
-    let forest_objects =
-        create_forest_diorama();
-
-    let water_objects =
-        create_water_diorama();
-
-    let crystal_objects =
-        create_ice_lava_diorama();
-
-    let egg_objects =
-        create_egg_diorama();
-
-    let tree_objects =
-        create_tree_planet_world();
-
-    let forest_preview =
-        transform_objects(
-            create_forest_diorama(),
-            forest_position,
-            0.42,
-        );
-
-    let water_preview =
-        transform_objects(
-            create_water_diorama(),
-            water_position,
-            0.42,
-        );
-
-    let crystal_preview =
-        transform_objects(
-            create_ice_lava_diorama(),
-            crystal_position,
-            0.42,
-        );
-
-    let egg_preview =
-        transform_objects(
-            create_egg_diorama(),
-            egg_position,
-            0.42,
-        );
-
-    let tree_preview =
-        transform_objects(
-            create_tree_planet_world(),
-            tree_position,
-            0.34,
-        );
-
     let forest_scene =
         Scene::new(
-            forest_objects,
+            create_forest_diorama(),
         );
 
     let water_scene =
         Scene::new(
-            water_objects,
+            create_water_diorama(),
         );
 
     let crystal_scene =
         Scene::new(
-            crystal_objects,
+            create_ice_lava_diorama(),
         );
 
     let egg_scene =
         Scene::new(
-            egg_objects,
+            create_egg_diorama(),
         );
 
     let tree_scene =
         Scene::new(
-            tree_objects,
-        );
-
-    let mut galaxy_objects =
-        Vec::new();
-
-    let forest_node =
-        forest_position
-            + Vec3::new(
-                0.0,
-                -0.95,
-                0.12,
-            );
-
-    let water_node =
-        water_position
-            + Vec3::new(
-                0.0,
-                -0.95,
-                0.12,
-            );
-
-    let crystal_node =
-        crystal_position
-            + Vec3::new(
-                0.0,
-                -0.95,
-                0.12,
-            );
-
-    let egg_node =
-        egg_position
-            + Vec3::new(
-                0.0,
-                -1.00,
-                0.12,
-            );
-
-    let tree_node =
-        tree_position
-            + Vec3::new(
-                0.0,
-                -0.95,
-                0.12,
-            );
-
-    add_path(
-        &mut galaxy_objects,
-        forest_node,
-        water_node,
-        path_yellow_material,
-    );
-
-    add_path(
-        &mut galaxy_objects,
-        water_node,
-        crystal_node,
-        path_yellow_material,
-    );
-
-    add_path(
-        &mut galaxy_objects,
-        crystal_node,
-        egg_node,
-        path_yellow_material,
-    );
-
-    add_path(
-        &mut galaxy_objects,
-        egg_node,
-        tree_node,
-        path_yellow_material,
-    );
-
-    add_planet_node(
-        &mut galaxy_objects,
-        forest_node,
-        path_yellow_material,
-    );
-
-    add_planet_node(
-        &mut galaxy_objects,
-        water_node,
-        path_yellow_material,
-    );
-
-    add_planet_node(
-        &mut galaxy_objects,
-        crystal_node,
-        path_yellow_material,
-    );
-
-    add_planet_node(
-        &mut galaxy_objects,
-        egg_node,
-        path_yellow_material,
-    );
-
-    add_planet_node(
-        &mut galaxy_objects,
-        tree_node,
-        path_yellow_material,
-    );
-
-    galaxy_objects.extend(
-        forest_preview,
-    );
-
-    galaxy_objects.extend(
-        water_preview,
-    );
-
-    galaxy_objects.extend(
-        crystal_preview,
-    );
-
-    galaxy_objects.extend(
-        egg_preview,
-    );
-
-    galaxy_objects.extend(
-        tree_preview,
-    );
-
-    let galaxy_scene =
-        Scene::new(
-            galaxy_objects,
+            create_tree_planet_world(),
         );
 
     let light =
@@ -576,9 +440,7 @@ fn main() {
                         }
                     }
 
-                    if let Some(
-                        index,
-                    ) =
+                    if let Some(index) =
                         selected_index
                     {
                         selected_planet =
@@ -694,6 +556,140 @@ fn main() {
 
         match state {
             SceneState::Galaxy => {
+                let time =
+                    rl.get_time()
+                        as f32;
+
+                let rotation =
+                    time
+                        * 0.30;
+
+                let forest_preview =
+                    transform_objects_rotated(
+                        create_forest_diorama(),
+                        forest_position,
+                        0.42,
+                        rotation,
+                    );
+
+                let water_preview =
+                    transform_objects_rotated(
+                        create_water_diorama(),
+                        water_position,
+                        0.42,
+                        rotation * 0.80,
+                    );
+
+                let crystal_preview =
+                    transform_objects_rotated(
+                        create_ice_lava_diorama(),
+                        crystal_position,
+                        0.42,
+                        rotation * 1.10,
+                    );
+
+                let egg_preview =
+                    transform_objects_rotated(
+                        create_egg_diorama(),
+                        egg_position,
+                        0.42,
+                        rotation * 0.70,
+                    );
+
+                let tree_preview =
+                    transform_objects_rotated(
+                        create_tree_planet_world(),
+                        tree_position,
+                        0.34,
+                        rotation * 0.90,
+                    );
+
+                let mut galaxy_objects =
+                    Vec::new();
+
+                add_path(
+                    &mut galaxy_objects,
+                    forest_node,
+                    water_node,
+                    path_yellow_material,
+                );
+
+                add_path(
+                    &mut galaxy_objects,
+                    water_node,
+                    crystal_node,
+                    path_yellow_material,
+                );
+
+                add_path(
+                    &mut galaxy_objects,
+                    crystal_node,
+                    egg_node,
+                    path_yellow_material,
+                );
+
+                add_path(
+                    &mut galaxy_objects,
+                    egg_node,
+                    tree_node,
+                    path_yellow_material,
+                );
+
+                add_planet_node(
+                    &mut galaxy_objects,
+                    forest_node,
+                    path_yellow_material,
+                );
+
+                add_planet_node(
+                    &mut galaxy_objects,
+                    water_node,
+                    path_yellow_material,
+                );
+
+                add_planet_node(
+                    &mut galaxy_objects,
+                    crystal_node,
+                    path_yellow_material,
+                );
+
+                add_planet_node(
+                    &mut galaxy_objects,
+                    egg_node,
+                    path_yellow_material,
+                );
+
+                add_planet_node(
+                    &mut galaxy_objects,
+                    tree_node,
+                    path_yellow_material,
+                );
+
+                galaxy_objects.extend(
+                    forest_preview,
+                );
+
+                galaxy_objects.extend(
+                    water_preview,
+                );
+
+                galaxy_objects.extend(
+                    crystal_preview,
+                );
+
+                galaxy_objects.extend(
+                    egg_preview,
+                );
+
+                galaxy_objects.extend(
+                    tree_preview,
+                );
+
+                let galaxy_scene =
+                    Scene::new(
+                        galaxy_objects,
+                    );
+
                 renderer::raytracer::render(
                     &mut framebuffer,
                     &galaxy_scene,
@@ -763,8 +759,10 @@ fn main() {
                 as f32;
 
         let render_aspect =
-            RENDER_WIDTH as f32
-                / RENDER_HEIGHT as f32;
+            RENDER_WIDTH
+                as f32
+                / RENDER_HEIGHT
+                    as f32;
 
         let screen_aspect =
             actual_screen_width
@@ -1099,10 +1097,36 @@ fn add_path(
     );
 }
 
-fn transform_objects(
+fn rotate_y(
+    point: Vec3,
+    angle: f32,
+) -> Vec3 {
+    let cos_a =
+        angle.cos();
+
+    let sin_a =
+        angle.sin();
+
+    Vec3::new(
+        point.x
+            * cos_a
+            + point.z
+                * sin_a,
+
+        point.y,
+
+        -point.x
+            * sin_a
+            + point.z
+                * cos_a,
+    )
+}
+
+fn transform_objects_rotated(
     objects: Vec<Object>,
     offset: Vec3,
     scale: f32,
+    rotation: f32,
 ) -> Vec<Object> {
     objects
         .into_iter()
@@ -1114,9 +1138,11 @@ fn transform_objects(
                     ) => {
                         Object::Sphere(
                             Sphere::new(
-                                sphere.center
-                                    * scale
-                                    + offset,
+                                rotate_y(
+                                    sphere.center
+                                        * scale,
+                                    rotation,
+                                ) + offset,
 
                                 sphere.radius
                                     * scale,
@@ -1131,11 +1157,16 @@ fn transform_objects(
                     ) => {
                         Object::Cylinder(
                             Cylinder::new_oriented(
-                                cylinder.center
-                                    * scale
-                                    + offset,
+                                rotate_y(
+                                    cylinder.center
+                                        * scale,
+                                    rotation,
+                                ) + offset,
 
-                                cylinder.axis,
+                                rotate_y(
+                                    cylinder.axis,
+                                    rotation,
+                                ),
 
                                 cylinder.radius
                                     * scale,
@@ -1153,11 +1184,16 @@ fn transform_objects(
                     ) => {
                         Object::Cone(
                             Cone::new_oriented(
-                                cone.center
-                                    * scale
-                                    + offset,
+                                rotate_y(
+                                    cone.center
+                                        * scale,
+                                    rotation,
+                                ) + offset,
 
-                                cone.axis,
+                                rotate_y(
+                                    cone.axis,
+                                    rotation,
+                                ),
 
                                 cone.radius
                                     * scale,
@@ -1175,11 +1211,16 @@ fn transform_objects(
                     ) => {
                         Object::Plane(
                             Plane::new(
-                                plane.point
-                                    * scale
-                                    + offset,
+                                rotate_y(
+                                    plane.point
+                                        * scale,
+                                    rotation,
+                                ) + offset,
 
-                                plane.normal,
+                                rotate_y(
+                                    plane.normal,
+                                    rotation,
+                                ),
 
                                 plane.material,
                             ),
@@ -1191,19 +1232,30 @@ fn transform_objects(
                     ) => {
                         Object::Cube(
                             Cube::from_basis(
-                                cube.center
-                                    * scale
-                                    + offset,
+                                rotate_y(
+                                    cube.center
+                                        * scale,
+                                    rotation,
+                                ) + offset,
 
                                 cube.half_size
                                     * 2.0
                                     * scale,
 
-                                cube.right,
+                                rotate_y(
+                                    cube.right,
+                                    rotation,
+                                ),
 
-                                cube.up,
+                                rotate_y(
+                                    cube.up,
+                                    rotation,
+                                ),
 
-                                cube.forward,
+                                rotate_y(
+                                    cube.forward,
+                                    rotation,
+                                ),
 
                                 cube.material,
                             ),
@@ -1215,14 +1267,19 @@ fn transform_objects(
                     ) => {
                         Object::Hemisphere(
                             Hemisphere::new_with_materials(
-                                hemisphere.center
-                                    * scale
-                                    + offset,
+                                rotate_y(
+                                    hemisphere.center
+                                        * scale,
+                                    rotation,
+                                ) + offset,
 
                                 hemisphere.radius
                                     * scale,
 
-                                hemisphere.normal,
+                                rotate_y(
+                                    hemisphere.normal,
+                                    rotation,
+                                ),
 
                                 hemisphere.material,
 
@@ -1236,9 +1293,11 @@ fn transform_objects(
                     ) => {
                         Object::Torus(
                             Torus::new(
-                                torus.center
-                                    * scale
-                                    + offset,
+                                rotate_y(
+                                    torus.center
+                                        * scale,
+                                    rotation,
+                                ) + offset,
 
                                 torus.major_radius
                                     * scale,
@@ -1256,9 +1315,11 @@ fn transform_objects(
                     ) => {
                         Object::Ellipsoid(
                             Ellipsoid::new(
-                                ellipsoid.center
-                                    * scale
-                                    + offset,
+                                rotate_y(
+                                    ellipsoid.center
+                                        * scale,
+                                    rotation,
+                                ) + offset,
 
                                 ellipsoid.radii
                                     * scale,
