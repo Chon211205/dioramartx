@@ -18,10 +18,11 @@ use materials::material::Material;
 use objects::cone::Cone;
 use objects::cube::Cube;
 use objects::cylinder::Cylinder;
+use objects::ellipsoid::Ellipsoid;
+use objects::hemisphere::Hemisphere;
 use objects::object::Object;
 use objects::plane::Plane;
 use objects::sphere::Sphere;
-use objects::hemisphere::Hemisphere;
 use objects::torus::Torus;
 
 use scene::light::Light;
@@ -31,9 +32,10 @@ use scene::state::{
     SceneState,
 };
 
+use worlds::egg::create_egg_diorama;
 use worlds::forest::create_forest_diorama;
-use worlds::water::create_water_diorama;
 use worlds::ice_lava::create_ice_lava_diorama;
+use worlds::water::create_water_diorama;
 
 fn main() {
     const RENDER_WIDTH: i32 = 1280;
@@ -108,7 +110,6 @@ fn main() {
         TextureFilter::TEXTURE_FILTER_BILINEAR,
     );
 
-
     let forest_material =
         Material::new(
             Vec3::new(
@@ -148,25 +149,45 @@ fn main() {
             0.3,
         );
 
+    let egg_material =
+        Material::new(
+            Vec3::new(
+                0.90,
+                0.88,
+                0.80,
+            ),
+            0.88,
+            0.30,
+            0.0,
+            0.06,
+        );
+
     let forest_position =
         Vec3::new(
-            -2.7,
-            0.8,
+            -2.8,
+            0.65,
             0.0,
         );
 
     let water_position =
         Vec3::new(
-            0.0,
-            -0.8,
-            -0.6,
+            -0.90,
+            -1.25,
+            -0.45,
         );
 
     let crystal_position =
         Vec3::new(
-            2.7,
-            0.9,
-            0.2,
+            2.70,
+            0.65,
+            0.15,
+        );
+
+    let egg_position =
+        Vec3::new(
+            0.65,
+            1.65,
+            -0.30,
         );
 
     let galaxy_hit_objects =
@@ -190,8 +211,16 @@ fn main() {
             Object::Sphere(
                 Sphere::new(
                     crystal_position,
-                    1.0,
+                    1.15,
                     crystal_material,
+                ),
+            ),
+
+            Object::Sphere(
+                Sphere::new(
+                    egg_position,
+                    0.95,
+                    egg_material,
                 ),
             ),
         ];
@@ -204,6 +233,9 @@ fn main() {
 
     let crystal_objects =
         create_ice_lava_diorama();
+
+    let egg_objects =
+        create_egg_diorama();
 
     let forest_preview =
         transform_objects(
@@ -220,11 +252,18 @@ fn main() {
         );
 
     let crystal_preview =
-    transform_objects(
-        create_ice_lava_diorama(),
-        crystal_position,
-        0.56,
-    );
+        transform_objects(
+            create_ice_lava_diorama(),
+            crystal_position,
+            0.56,
+        );
+
+    let egg_preview =
+        transform_objects(
+            create_egg_diorama(),
+            egg_position,
+            0.56,
+        );
 
     let forest_scene =
         Scene::new(
@@ -241,6 +280,11 @@ fn main() {
             crystal_objects,
         );
 
+    let egg_scene =
+        Scene::new(
+            egg_objects,
+        );
+
     let mut galaxy_objects =
         Vec::new();
 
@@ -254,6 +298,10 @@ fn main() {
 
     galaxy_objects.extend(
         crystal_preview,
+    );
+
+    galaxy_objects.extend(
+        egg_preview,
     );
 
     let galaxy_scene =
@@ -275,21 +323,6 @@ fn main() {
             ),
             1.35,
         );
-
-    let mistery_block_light =
-        Light::new(
-            Vec3::new(
-                2.02,
-                1.71,
-                -0.78,
-            ),
-            Vec3::new(
-                1.0,
-                0.82,
-                0.22,
-            ),
-            3.0
-        );        
 
     let mut camera =
         Camera::new(
@@ -409,6 +442,12 @@ fn main() {
                                     )
                                 }
 
+                                3 => {
+                                    Some(
+                                        PlanetType::Egg,
+                                    )
+                                }
+
                                 _ => {
                                     None
                                 }
@@ -505,25 +544,15 @@ fn main() {
                         &forest_scene,
                         &water_scene,
                         &crystal_scene,
+                        &egg_scene,
                     );
 
-            let active_light =
-                match selected_planet {
-                    Some(PlanetType::Water) => {
-                        &mistery_block_light
-                    }
-
-                    _ => {
-                        &light
-                    }
-                };
-
-            renderer::raytracer::render(
-                &mut framebuffer,
-                selected_scene,
-                active_light,
-                &camera,
-            );
+                renderer::raytracer::render(
+                    &mut framebuffer,
+                    selected_scene,
+                    &light,
+                    &camera,
+                );
             }
         }
 
@@ -726,6 +755,7 @@ fn get_selected_scene<'a>(
     forest: &'a Scene,
     water: &'a Scene,
     crystal: &'a Scene,
+    egg: &'a Scene,
 ) -> &'a Scene {
     match planet {
         Some(
@@ -744,6 +774,12 @@ fn get_selected_scene<'a>(
             PlanetType::Crystal,
         ) => {
             crystal
+        }
+
+        Some(
+            PlanetType::Egg,
+        ) => {
+            egg
         }
 
         None => {
@@ -771,31 +807,19 @@ fn planet_name(
         Some(
             PlanetType::Crystal,
         ) => {
-            "Crystal Planet"
+            "Ice & Lava Planet"
+        }
+
+        Some(
+            PlanetType::Egg,
+        ) => {
+            "Egg Planet"
         }
 
         None => {
             ""
         }
     }
-}
-
-fn create_test_diorama(
-    material: Material,
-) -> Vec<Object> {
-    vec![
-        Object::Sphere(
-            Sphere::new(
-                Vec3::new(
-                    0.0,
-                    0.0,
-                    0.0,
-                ),
-                1.8,
-                material,
-            ),
-        ),
-    ]
 }
 
 fn transform_objects(
@@ -930,21 +954,42 @@ fn transform_objects(
                         )
                     }
 
-                    Object::Torus(torus) => {
+                    Object::Torus(
+                        torus,
+                    ) => {
                         Object::Torus(
                             Torus::new(
                                 torus.center
                                     * scale
                                     + offset,
+
                                 torus.major_radius
                                     * scale,
+
                                 torus.minor_radius
                                     * scale,
+
                                 torus.material,
                             ),
                         )
                     }
 
+                    Object::Ellipsoid(
+                        ellipsoid,
+                    ) => {
+                        Object::Ellipsoid(
+                            Ellipsoid::new(
+                                ellipsoid.center
+                                    * scale
+                                    + offset,
+
+                                ellipsoid.radii
+                                    * scale,
+
+                                ellipsoid.material,
+                            ),
+                        )
+                    }
                 }
             },
         )

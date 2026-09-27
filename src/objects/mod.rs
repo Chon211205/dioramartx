@@ -7,3 +7,4 @@ pub mod cone;
 pub mod cube;
 pub mod hemisphere;
 pub mod torus;
+pub mod ellipsoid;
