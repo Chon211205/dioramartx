@@ -68,6 +68,8 @@ fn main() {
         60,
     );
 
+    rl.hide_cursor();
+
     let mut framebuffer =
         Framebuffer::new(
             RENDER_WIDTH,
@@ -466,10 +468,14 @@ fn main() {
                 "No se pudo actualizar la textura",
             );
 
+        let mouse_position =
+            rl.get_mouse_position();
+
         let mut d =
             rl.begin_drawing(
                 &thread,
             );
+
 
         d.clear_background(
             Color::BLACK,
@@ -641,6 +647,12 @@ fn main() {
                 - 110,
             20,
         );
+
+        draw_star_cursor(
+            &mut d,
+            mouse_position,
+        );
+
     }
 }
 
@@ -988,4 +1000,134 @@ fn transform_objects_rotated(
             },
         )
         .collect()
+}
+
+fn draw_star_cursor(
+    d: &mut RaylibDrawHandle,
+    mouse: Vector2,
+) {
+    const POINTS: usize = 10;
+
+    let outer_radius =
+        25.0;
+
+    let inner_radius =
+        12.0;
+
+    let inner_outer_radius =
+        19.0;
+
+    let inner_inner_radius =
+        8.5;
+
+    let rotation =
+        -std::f32::consts::PI
+            / 2.0
+            + 0.15;
+
+    let border =
+        Color::new(
+            151,
+            242,
+            248,
+            255,
+        );
+
+    let fill =
+        Color::new(
+            13,
+            83,
+            198,
+            255,
+        );
+
+    let mut outer =
+        [Vector2::new(
+            0.0,
+            0.0,
+        ); POINTS];
+
+    for i in 0..POINTS {
+        let radius =
+            if i % 2 == 0 {
+                outer_radius
+            } else {
+                inner_radius
+            };
+
+        let angle =
+            rotation
+                + i as f32
+                    * std::f32::consts::PI
+                    / 5.0;
+
+        outer[i] =
+            Vector2::new(
+                mouse.x
+                    + angle.cos()
+                        * radius,
+
+                mouse.y
+                    + angle.sin()
+                        * radius,
+            );
+    }
+
+    for i in 0..POINTS {
+        let next =
+            (i + 1)
+                % POINTS;
+
+        d.draw_triangle(
+            outer[next],
+            outer[i],
+            mouse,
+            border,
+        );
+    }
+
+    let mut inner =
+        [Vector2::new(
+            0.0,
+            0.0,
+        ); POINTS];
+
+    for i in 0..POINTS {
+        let radius =
+            if i % 2 == 0 {
+                inner_outer_radius
+            } else {
+                inner_inner_radius
+            };
+
+        let angle =
+            rotation
+                + i as f32
+                    * std::f32::consts::PI
+                    / 5.0;
+
+        inner[i] =
+            Vector2::new(
+                mouse.x
+                    + angle.cos()
+                        * radius,
+
+                mouse.y
+                    + angle.sin()
+                        * radius,
+            );
+    }
+
+    for i in 0..POINTS {
+        let next =
+            (i + 1)
+                % POINTS;
+
+        d.draw_triangle(
+            inner[next],
+            inner[i],
+            mouse,
+            fill,
+        );
+    }
 }
