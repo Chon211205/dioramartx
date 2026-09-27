@@ -61,6 +61,19 @@ fn main() {
             .title("Galaxy Diorama")
             .build();
 
+    let audio =
+    RaylibAudio::init_audio_device()
+        .expect("No se pudo iniciar el audio");
+
+    let starbit_sound =
+        audio
+            .new_sound(
+                "assets/sounds/starbit.mp3",
+            )
+            .expect(
+                "No se pudo cargar starbit.mp3",
+            );
+
     let monitor =
         raylib::core::window::get_current_monitor();
 
@@ -435,6 +448,7 @@ fn main() {
                 &mut sparkles,
                 mouse_position,
                 &mut sparkle_score,
+                &starbit_sound,
             );
         }
 
@@ -1320,6 +1334,7 @@ fn collect_sparkles(
     sparkles: &mut Vec<Sparkle>,
     mouse: Vector2,
     score: &mut u32,
+    starbit_sound: &Sound,
 ) {
     let cursor_radius =
         21.0;
@@ -1351,8 +1366,9 @@ fn collect_sparkles(
             sparkle.active =
                 false;
 
-            *score +=
-                1;
+            *score += 1;
+
+            starbit_sound.play();
         }
     }
 
