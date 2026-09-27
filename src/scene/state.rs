@@ -10,4 +10,5 @@ pub enum PlanetType {
     Water,
     Crystal,
     Egg,
+    Tree,
 }
