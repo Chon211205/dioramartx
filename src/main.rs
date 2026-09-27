@@ -176,39 +176,52 @@ fn main() {
             0.05,
         );
 
+    let path_yellow_material =
+        Material::new(
+            Vec3::new(
+                1.0,
+                0.82,
+                0.05,
+            ),
+            0.95,
+            0.80,
+            0.0,
+            0.15,
+        );
+
     let forest_position =
         Vec3::new(
-            -3.0,
-            0.85,
+            -4.2,
+            0.55,
             0.0,
         );
 
     let water_position =
         Vec3::new(
-            -1.45,
-            -1.45,
-            -0.50,
+            -2.2,
+            1.15,
+            -0.15,
         );
 
     let crystal_position =
         Vec3::new(
-            3.0,
-            0.75,
-            0.15,
+            0.0,
+            0.35,
+            0.10,
         );
 
     let egg_position =
         Vec3::new(
-            0.25,
-            1.90,
-            -0.45,
+            2.1,
+            1.00,
+            -0.10,
         );
 
     let tree_position =
         Vec3::new(
-            1.55,
-            -1.55,
-            -0.20,
+            4.2,
+            0.50,
+            0.0,
         );
 
     let galaxy_hit_objects =
@@ -224,7 +237,7 @@ fn main() {
             Object::Sphere(
                 Sphere::new(
                     water_position,
-                    1.15,
+                    1.05,
                     water_material,
                 ),
             ),
@@ -232,7 +245,7 @@ fn main() {
             Object::Sphere(
                 Sphere::new(
                     crystal_position,
-                    1.15,
+                    1.10,
                     crystal_material,
                 ),
             ),
@@ -273,35 +286,35 @@ fn main() {
         transform_objects(
             create_forest_diorama(),
             forest_position,
-            0.56,
+            0.42,
         );
 
     let water_preview =
         transform_objects(
             create_water_diorama(),
             water_position,
-            0.56,
+            0.42,
         );
 
     let crystal_preview =
         transform_objects(
             create_ice_lava_diorama(),
             crystal_position,
-            0.56,
+            0.42,
         );
 
     let egg_preview =
         transform_objects(
             create_egg_diorama(),
             egg_position,
-            0.50,
+            0.42,
         );
 
     let tree_preview =
         transform_objects(
             create_tree_planet_world(),
             tree_position,
-            0.38,
+            0.34,
         );
 
     let forest_scene =
@@ -331,6 +344,104 @@ fn main() {
 
     let mut galaxy_objects =
         Vec::new();
+
+    let forest_node =
+        forest_position
+            + Vec3::new(
+                0.0,
+                -0.95,
+                0.12,
+            );
+
+    let water_node =
+        water_position
+            + Vec3::new(
+                0.0,
+                -0.95,
+                0.12,
+            );
+
+    let crystal_node =
+        crystal_position
+            + Vec3::new(
+                0.0,
+                -0.95,
+                0.12,
+            );
+
+    let egg_node =
+        egg_position
+            + Vec3::new(
+                0.0,
+                -1.00,
+                0.12,
+            );
+
+    let tree_node =
+        tree_position
+            + Vec3::new(
+                0.0,
+                -0.95,
+                0.12,
+            );
+
+    add_path(
+        &mut galaxy_objects,
+        forest_node,
+        water_node,
+        path_yellow_material,
+    );
+
+    add_path(
+        &mut galaxy_objects,
+        water_node,
+        crystal_node,
+        path_yellow_material,
+    );
+
+    add_path(
+        &mut galaxy_objects,
+        crystal_node,
+        egg_node,
+        path_yellow_material,
+    );
+
+    add_path(
+        &mut galaxy_objects,
+        egg_node,
+        tree_node,
+        path_yellow_material,
+    );
+
+    add_planet_node(
+        &mut galaxy_objects,
+        forest_node,
+        path_yellow_material,
+    );
+
+    add_planet_node(
+        &mut galaxy_objects,
+        water_node,
+        path_yellow_material,
+    );
+
+    add_planet_node(
+        &mut galaxy_objects,
+        crystal_node,
+        path_yellow_material,
+    );
+
+    add_planet_node(
+        &mut galaxy_objects,
+        egg_node,
+        path_yellow_material,
+    );
+
+    add_planet_node(
+        &mut galaxy_objects,
+        tree_node,
+        path_yellow_material,
+    );
 
     galaxy_objects.extend(
         forest_preview,
@@ -379,7 +490,7 @@ fn main() {
                 0.0,
                 0.0,
             ),
-            8.5,
+            9.5,
             60.0,
         );
 
@@ -553,7 +664,7 @@ fn main() {
                                 0.0,
                                 0.0,
                             ),
-                            8.5,
+                            9.5,
                             60.0,
                         );
                 }
@@ -888,6 +999,104 @@ fn planet_name(
             ""
         }
     }
+}
+
+fn add_planet_node(
+    objects: &mut Vec<Object>,
+    position: Vec3,
+    material: Material,
+) {
+    objects.push(
+        Object::Cylinder(
+            Cylinder::new_oriented(
+                position,
+                Vec3::new(
+                    0.0,
+                    1.0,
+                    0.0,
+                ),
+                0.55,
+                0.10,
+                material,
+            ),
+        ),
+    );
+
+    objects.push(
+        Object::Cylinder(
+            Cylinder::new_oriented(
+                position
+                    + Vec3::new(
+                        0.0,
+                        0.07,
+                        0.0,
+                    ),
+                Vec3::new(
+                    0.0,
+                    1.0,
+                    0.0,
+                ),
+                0.40,
+                0.08,
+                material,
+            ),
+        ),
+    );
+}
+
+fn add_path(
+    objects: &mut Vec<Object>,
+    start: Vec3,
+    end: Vec3,
+    material: Material,
+) {
+    let start =
+        start
+            + Vec3::new(
+                0.0,
+                -0.02,
+                0.0,
+            );
+
+    let end =
+        end
+            + Vec3::new(
+                0.0,
+                -0.02,
+                0.0,
+            );
+
+    let direction =
+        end - start;
+
+    let length =
+        direction.length();
+
+    if length < 0.001 {
+        return;
+    }
+
+    let axis =
+        direction.normalize();
+
+    let center =
+        (
+            start
+                + end
+        )
+            * 0.5;
+
+    objects.push(
+        Object::Cylinder(
+            Cylinder::new_oriented(
+                center,
+                axis,
+                0.075,
+                length,
+                material,
+            ),
+        ),
+    );
 }
 
 fn transform_objects(
