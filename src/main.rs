@@ -7,6 +7,7 @@ mod scene;
 mod textures;
 mod worlds;
 
+use raylib::audio::RaylibAudio;
 use raylib::prelude::*;
 
 use crate::core::camera::Camera;
@@ -62,26 +63,20 @@ fn main() {
             .build();
 
     let audio =
-    RaylibAudio::init_audio_device()
-        .expect("No se pudo iniciar el audio");
+        RaylibAudio::init_audio_device()
+            .expect("No se pudo iniciar el audio");
 
     let starbit_sound =
         audio
-            .new_sound(
-                "assets/sounds/starbit.mp3",
-            )
-            .expect(
-                "No se pudo cargar starbit.mp3",
-            );
+            .new_sound("assets/sounds/starbit.mp3")
+            .expect("No se pudo cargar starbit.mp3");
 
-    let level_music =
-    audio
-        .new_music(
-            "assets/sounds/level.mp3",
-        )
-        .expect(
-            "No se pudo cargar level.mp3",
-        );
+    let mut level_music =
+        audio
+            .new_music("assets/sounds/level.mp3")
+            .expect("No se pudo cargar level.mp3");
+
+    level_music.set_looping(true);
 
     let monitor =
         raylib::core::window::get_current_monitor();
@@ -104,7 +99,6 @@ fn main() {
     rl.toggle_fullscreen();
 
     rl.set_target_fps(60);
-
     rl.hide_cursor();
 
     let mut framebuffer =
@@ -144,13 +138,11 @@ fn main() {
     let focused_scenes: Vec<Scene> =
         planets
             .iter()
-            .map(
-                |planet| {
-                    Scene::new(
-                        (planet.create)(),
-                    )
-                },
-            )
+            .map(|planet| {
+                Scene::new(
+                    (planet.create)(),
+                )
+            })
             .collect();
 
     let hit_material =
@@ -169,28 +161,24 @@ fn main() {
     let galaxy_hit_objects: Vec<Object> =
         planets
             .iter()
-            .map(
-                |planet| {
-                    Object::Sphere(
-                        Sphere::new(
-                            planet.position,
-                            planet.hit_radius,
-                            hit_material,
-                        ),
-                    )
-                },
-            )
+            .map(|planet| {
+                Object::Sphere(
+                    Sphere::new(
+                        planet.position,
+                        planet.hit_radius,
+                        hit_material,
+                    ),
+                )
+            })
             .collect();
 
     let nodes: Vec<Vec3> =
         planets
             .iter()
-            .map(
-                |planet| {
-                    planet.position
-                        + planet.node_offset
-                },
-            )
+            .map(|planet| {
+                planet.position
+                    + planet.node_offset
+            })
             .collect();
 
     let path_yellow_material =
@@ -253,6 +241,14 @@ fn main() {
     let mut sparkle_spawn_id:
         u32 =
         0;
+
+    let mut focused_velocity_x:
+        f32 =
+        50.0;
+
+    let mut focused_velocity_y:
+        f32 =
+        0.0;
 
     while !rl.window_should_close() {
         let current_screen_width =
@@ -345,6 +341,12 @@ fn main() {
                             selected_planet =
                                 Some(index);
 
+                            focused_velocity_x =
+                                50.0;
+
+                            focused_velocity_y =
+                                0.0;
+
                             camera =
                                 Camera::new(
                                     Vec3::new(
@@ -356,7 +358,8 @@ fn main() {
                                     60.0,
                                 );
 
-                            level_music.play_stream();
+                            level_music
+                                .play_stream();
 
                             state =
                                 SceneState::Focused;
@@ -381,13 +384,20 @@ fn main() {
                 if rl.is_key_pressed(
                     KeyboardKey::KEY_BACKSPACE,
                 ) {
-                    level_music.stop_stream();
+                    level_music
+                        .stop_stream();
 
                     state =
                         SceneState::Galaxy;
 
                     selected_planet =
                         None;
+
+                    focused_velocity_x =
+                        50.0;
+
+                    focused_velocity_y =
+                        0.0;
 
                     camera =
                         Camera::new(
@@ -399,18 +409,84 @@ fn main() {
                             9.5,
                             60.0,
                         );
-                }
+                } else {
+                    if rl.is_mouse_button_down(
+                        MouseButton::MOUSE_BUTTON_LEFT,
+                    ) {
+                        let delta =
+                            rl.get_mouse_delta();
 
-                if rl.is_mouse_button_down(
-                    MouseButton::MOUSE_BUTTON_LEFT,
-                ) {
-                    let delta =
-                        rl.get_mouse_delta();
+                        camera.rotate(
+                            delta.x,
+                            delta.y,
+                        );
 
-                    camera.rotate(
-                        delta.x,
-                        delta.y,
-                    );
+                        if dt > 0.0001 {
+                            focused_velocity_x =
+                                delta.x
+                                    / dt;
+
+                            focused_velocity_y =
+                                delta.y
+                                    / dt;
+                        }
+                    } else {
+                        camera.rotate(
+                            focused_velocity_x
+                                * dt,
+                            focused_velocity_y
+                                * dt,
+                        );
+
+                        let damping =
+                            0.985_f32
+                                .powf(
+                                    dt * 60.0,
+                                );
+
+                        focused_velocity_x *=
+                            damping;
+
+                        focused_velocity_y *=
+                            damping;
+
+                        let automatic_speed =
+                            50.0;
+
+                        if focused_velocity_x
+                            .abs()
+                            < automatic_speed
+                        {
+                            let direction =
+                                if focused_velocity_x
+                                    < 0.0
+                                {
+                                    -1.0
+                                } else {
+                                    1.0
+                                };
+
+                            let target =
+                                direction
+                                    * automatic_speed;
+
+                            focused_velocity_x +=
+                                (
+                                    target
+                                        - focused_velocity_x
+                                )
+                                    * 0.8
+                                    * dt;
+                        }
+
+                        if focused_velocity_y
+                            .abs()
+                            < 0.5
+                        {
+                            focused_velocity_y =
+                                0.0;
+                        }
+                    }
                 }
             }
         }
@@ -419,10 +495,14 @@ fn main() {
             rl.get_mouse_wheel_move();
 
         if wheel != 0.0 {
-            camera.zoom(wheel);
+            camera.zoom(
+                wheel,
+            );
         }
 
-        if state == SceneState::Galaxy {
+        if state
+            == SceneState::Galaxy
+        {
             sparkle_spawn_timer +=
                 dt;
 
@@ -468,10 +548,14 @@ fn main() {
         if state
             == SceneState::Focused
         {
-            level_music.update_stream();
+            level_music
+                .update_stream();
 
-            if !level_music.is_stream_playing() {
-                level_music.play_stream();
+            if !level_music
+                .is_stream_playing()
+            {
+                level_music
+                    .play_stream();
             }
         }
 
@@ -514,9 +598,10 @@ fn main() {
                             rotation,
                         );
 
-                    galaxy_objects.extend(
-                        preview,
-                    );
+                    galaxy_objects
+                        .extend(
+                            preview,
+                        );
                 }
 
                 let galaxy_scene =
@@ -679,7 +764,7 @@ fn main() {
                 }
 
                 d.draw_text(
-                    "Click izquierdo - Rotar",
+                    "Click izquierdo - Girar libremente",
                     30,
                     75,
                     20,
@@ -687,7 +772,7 @@ fn main() {
                 );
 
                 d.draw_text(
-                    "Rueda - Zoom",
+                    "Suelta - Mantener inercia",
                     30,
                     105,
                     20,
@@ -695,9 +780,17 @@ fn main() {
                 );
 
                 d.draw_text(
-                    "BACKSPACE - Regresar",
+                    "Rueda - Zoom",
                     30,
                     135,
+                    20,
+                    Color::LIGHTGRAY,
+                );
+
+                d.draw_text(
+                    "BACKSPACE - Regresar",
+                    30,
+                    165,
                     20,
                     Color::LIGHTGRAY,
                 );
@@ -991,10 +1084,14 @@ fn create_planet_colliders(
                 None => continue,
             };
 
+        let collider_world_radius =
+            planet.hit_radius
+                * planet.preview_scale;
+
         let edge_world =
             planet.position
                 + camera_right
-                    * planet.hit_radius;
+                    * collider_world_radius;
 
         let edge =
             match world_to_screen(
@@ -1020,7 +1117,7 @@ fn create_planet_colliders(
                     + dy * dy
             )
                 .sqrt()
-                * 0.90;
+                * 0.92;
 
         if radius > 2.0 {
             colliders.push(
@@ -1048,6 +1145,73 @@ fn pseudo_random(
 
     value
         - value.floor()
+}
+
+fn sparkle_color(
+    value: f32,
+) -> Color {
+    let index =
+        (
+            value * 6.0
+        )
+            .floor()
+            as i32;
+
+    match index {
+        0 => {
+            Color::new(
+                235,
+                55,
+                55,
+                255,
+            )
+        }
+
+        1 => {
+            Color::new(
+                70,
+                220,
+                90,
+                255,
+            )
+        }
+
+        2 => {
+            Color::new(
+                65,
+                135,
+                255,
+                255,
+            )
+        }
+
+        3 => {
+            Color::new(
+                170,
+                80,
+                235,
+                255,
+            )
+        }
+
+        4 => {
+            Color::new(
+                210,
+                220,
+                230,
+                255,
+            )
+        }
+
+        _ => {
+            Color::new(
+                255,
+                220,
+                55,
+                255,
+            )
+        }
+    }
 }
 
 fn spawn_sparkle(
@@ -1357,7 +1521,7 @@ fn collect_sparkles(
     sparkles: &mut Vec<Sparkle>,
     mouse: Vector2,
     score: &mut u32,
-    starbit_sound: &Sound,
+    starbit_sound: &raylib::audio::Sound<'_>,
 ) {
     let cursor_radius =
         21.0;
@@ -1389,9 +1553,11 @@ fn collect_sparkles(
             sparkle.active =
                 false;
 
-            *score += 1;
+            *score +=
+                1;
 
-            starbit_sound.play();
+            starbit_sound
+                .play();
         }
     }
 
@@ -1403,7 +1569,7 @@ fn collect_sparkles(
 }
 
 fn draw_sparkles(
-    d: &mut RaylibDrawHandle,
+    d: &mut RaylibDrawHandle<'_>,
     sparkles: &[Sparkle],
 ) {
     for sparkle in sparkles {
@@ -1417,7 +1583,7 @@ fn draw_sparkles(
 }
 
 fn draw_sparkle(
-    d: &mut RaylibDrawHandle,
+    d: &mut RaylibDrawHandle<'_>,
     sparkle: &Sparkle,
 ) {
     const POINTS: usize =
@@ -1477,24 +1643,16 @@ fn draw_sparkle(
         );
     }
 
-    let highlight =
-        Color::new(
-            255,
-            255,
-            255,
-            220,
-        );
-
     d.draw_circle_v(
         sparkle.position,
         sparkle.radius
             * 0.18,
-        highlight,
+        Color::WHITE,
     );
 }
 
 fn draw_star_cursor(
-    d: &mut RaylibDrawHandle,
+    d: &mut RaylibDrawHandle<'_>,
     mouse: Vector2,
 ) {
     const POINTS: usize =
@@ -1628,73 +1786,6 @@ fn draw_star_cursor(
     }
 }
 
-fn sparkle_color(
-    value: f32,
-) -> Color {
-    let index =
-        (
-            value * 6.0
-        )
-            .floor()
-            as i32;
-
-    match index {
-        0 => {
-            Color::new(
-                235,
-                55,
-                55,
-                255,
-            )
-        }
-
-        1 => {
-            Color::new(
-                70,
-                220,
-                90,
-                255,
-            )
-        }
-
-        2 => {
-            Color::new(
-                65,
-                135,
-                255,
-                255,
-            )
-        }
-
-        3 => {
-            Color::new(
-                170,
-                80,
-                235,
-                255,
-            )
-        }
-
-        4 => {
-            Color::new(
-                210,
-                220,
-                230,
-                255,
-            )
-        }
-
-        _ => {
-            Color::new(
-                255,
-                220,
-                55,
-                255,
-            )
-        }
-    }
-}
-
 fn add_planet_node(
     objects: &mut Vec<Object>,
     position: Vec3,
@@ -1767,9 +1858,7 @@ fn add_path(
     let length =
         direction.length();
 
-    if length
-        < 0.001
-    {
+    if length < 0.001 {
         return;
     }
 
@@ -1829,214 +1918,212 @@ fn transform_objects_rotated(
 ) -> Vec<Object> {
     objects
         .into_iter()
-        .map(
-            |object| {
-                match object {
+        .map(|object| {
+            match object {
+                Object::Sphere(
+                    sphere,
+                ) => {
                     Object::Sphere(
-                        sphere,
-                    ) => {
-                        Object::Sphere(
-                            Sphere::new(
-                                rotate_y(
-                                    sphere.center
-                                        * scale,
-                                    rotation,
-                                )
-                                    + offset,
-
-                                sphere.radius
+                        Sphere::new(
+                            rotate_y(
+                                sphere.center
                                     * scale,
+                                rotation,
+                            )
+                                + offset,
 
-                                sphere.material,
-                            ),
-                        )
-                    }
+                            sphere.radius
+                                * scale,
 
-                    Object::Cylinder(
-                        cylinder,
-                    ) => {
-                        Object::Cylinder(
-                            Cylinder::new_oriented(
-                                rotate_y(
-                                    cylinder.center
-                                        * scale,
-                                    rotation,
-                                )
-                                    + offset,
-
-                                rotate_y(
-                                    cylinder.axis,
-                                    rotation,
-                                ),
-
-                                cylinder.radius
-                                    * scale,
-
-                                cylinder.height
-                                    * scale,
-
-                                cylinder.material,
-                            ),
-                        )
-                    }
-
-                    Object::Cone(
-                        cone,
-                    ) => {
-                        Object::Cone(
-                            Cone::new_oriented(
-                                rotate_y(
-                                    cone.center
-                                        * scale,
-                                    rotation,
-                                )
-                                    + offset,
-
-                                rotate_y(
-                                    cone.axis,
-                                    rotation,
-                                ),
-
-                                cone.radius
-                                    * scale,
-
-                                cone.height
-                                    * scale,
-
-                                cone.material,
-                            ),
-                        )
-                    }
-
-                    Object::Plane(
-                        plane,
-                    ) => {
-                        Object::Plane(
-                            Plane::new(
-                                rotate_y(
-                                    plane.point
-                                        * scale,
-                                    rotation,
-                                )
-                                    + offset,
-
-                                rotate_y(
-                                    plane.normal,
-                                    rotation,
-                                ),
-
-                                plane.material,
-                            ),
-                        )
-                    }
-
-                    Object::Cube(
-                        cube,
-                    ) => {
-                        Object::Cube(
-                            Cube::from_basis(
-                                rotate_y(
-                                    cube.center
-                                        * scale,
-                                    rotation,
-                                )
-                                    + offset,
-
-                                cube.half_size
-                                    * 2.0
-                                    * scale,
-
-                                rotate_y(
-                                    cube.right,
-                                    rotation,
-                                ),
-
-                                rotate_y(
-                                    cube.up,
-                                    rotation,
-                                ),
-
-                                rotate_y(
-                                    cube.forward,
-                                    rotation,
-                                ),
-
-                                cube.material,
-                            ),
-                        )
-                    }
-
-                    Object::Hemisphere(
-                        hemisphere,
-                    ) => {
-                        Object::Hemisphere(
-                            Hemisphere::new_with_materials(
-                                rotate_y(
-                                    hemisphere.center
-                                        * scale,
-                                    rotation,
-                                )
-                                    + offset,
-
-                                hemisphere.radius
-                                    * scale,
-
-                                rotate_y(
-                                    hemisphere.normal,
-                                    rotation,
-                                ),
-
-                                hemisphere.material,
-
-                                hemisphere.flat_material,
-                            ),
-                        )
-                    }
-
-                    Object::Torus(
-                        torus,
-                    ) => {
-                        Object::Torus(
-                            Torus::new(
-                                rotate_y(
-                                    torus.center
-                                        * scale,
-                                    rotation,
-                                )
-                                    + offset,
-
-                                torus.major_radius
-                                    * scale,
-
-                                torus.minor_radius
-                                    * scale,
-
-                                torus.material,
-                            ),
-                        )
-                    }
-
-                    Object::Ellipsoid(
-                        ellipsoid,
-                    ) => {
-                        Object::Ellipsoid(
-                            Ellipsoid::new(
-                                rotate_y(
-                                    ellipsoid.center
-                                        * scale,
-                                    rotation,
-                                )
-                                    + offset,
-
-                                ellipsoid.radii
-                                    * scale,
-
-                                ellipsoid.material,
-                            ),
-                        )
-                    }
+                            sphere.material,
+                        ),
+                    )
                 }
-            },
-        )
+
+                Object::Cylinder(
+                    cylinder,
+                ) => {
+                    Object::Cylinder(
+                        Cylinder::new_oriented(
+                            rotate_y(
+                                cylinder.center
+                                    * scale,
+                                rotation,
+                            )
+                                + offset,
+
+                            rotate_y(
+                                cylinder.axis,
+                                rotation,
+                            ),
+
+                            cylinder.radius
+                                * scale,
+
+                            cylinder.height
+                                * scale,
+
+                            cylinder.material,
+                        ),
+                    )
+                }
+
+                Object::Cone(
+                    cone,
+                ) => {
+                    Object::Cone(
+                        Cone::new_oriented(
+                            rotate_y(
+                                cone.center
+                                    * scale,
+                                rotation,
+                            )
+                                + offset,
+
+                            rotate_y(
+                                cone.axis,
+                                rotation,
+                            ),
+
+                            cone.radius
+                                * scale,
+
+                            cone.height
+                                * scale,
+
+                            cone.material,
+                        ),
+                    )
+                }
+
+                Object::Plane(
+                    plane,
+                ) => {
+                    Object::Plane(
+                        Plane::new(
+                            rotate_y(
+                                plane.point
+                                    * scale,
+                                rotation,
+                            )
+                                + offset,
+
+                            rotate_y(
+                                plane.normal,
+                                rotation,
+                            ),
+
+                            plane.material,
+                        ),
+                    )
+                }
+
+                Object::Cube(
+                    cube,
+                ) => {
+                    Object::Cube(
+                        Cube::from_basis(
+                            rotate_y(
+                                cube.center
+                                    * scale,
+                                rotation,
+                            )
+                                + offset,
+
+                            cube.half_size
+                                * 2.0
+                                * scale,
+
+                            rotate_y(
+                                cube.right,
+                                rotation,
+                            ),
+
+                            rotate_y(
+                                cube.up,
+                                rotation,
+                            ),
+
+                            rotate_y(
+                                cube.forward,
+                                rotation,
+                            ),
+
+                            cube.material,
+                        ),
+                    )
+                }
+
+                Object::Hemisphere(
+                    hemisphere,
+                ) => {
+                    Object::Hemisphere(
+                        Hemisphere::new_with_materials(
+                            rotate_y(
+                                hemisphere.center
+                                    * scale,
+                                rotation,
+                            )
+                                + offset,
+
+                            hemisphere.radius
+                                * scale,
+
+                            rotate_y(
+                                hemisphere.normal,
+                                rotation,
+                            ),
+
+                            hemisphere.material,
+
+                            hemisphere.flat_material,
+                        ),
+                    )
+                }
+
+                Object::Torus(
+                    torus,
+                ) => {
+                    Object::Torus(
+                        Torus::new(
+                            rotate_y(
+                                torus.center
+                                    * scale,
+                                rotation,
+                            )
+                                + offset,
+
+                            torus.major_radius
+                                * scale,
+
+                            torus.minor_radius
+                                * scale,
+
+                            torus.material,
+                        ),
+                    )
+                }
+
+                Object::Ellipsoid(
+                    ellipsoid,
+                ) => {
+                    Object::Ellipsoid(
+                        Ellipsoid::new(
+                            rotate_y(
+                                ellipsoid.center
+                                    * scale,
+                                rotation,
+                            )
+                                + offset,
+
+                            ellipsoid.radii
+                                * scale,
+
+                            ellipsoid.material,
+                        ),
+                    )
+                }
+            }
+        })
         .collect()
 }
