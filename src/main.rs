@@ -35,6 +35,7 @@ use scene::state::{
 use worlds::egg::create_egg_diorama;
 use worlds::forest::create_forest_diorama;
 use worlds::ice_lava::create_ice_lava_diorama;
+use worlds::tree_planet::create_tree_planet_world;
 use worlds::water::create_water_diorama;
 
 fn main() {
@@ -162,32 +163,52 @@ fn main() {
             0.06,
         );
 
+    let tree_material =
+        Material::new(
+            Vec3::new(
+                0.45,
+                0.30,
+                0.18,
+            ),
+            0.85,
+            0.30,
+            0.0,
+            0.05,
+        );
+
     let forest_position =
         Vec3::new(
-            -2.8,
-            0.65,
+            -3.0,
+            0.85,
             0.0,
         );
 
     let water_position =
         Vec3::new(
-            -0.90,
-            -1.25,
-            -0.45,
+            -1.45,
+            -1.45,
+            -0.50,
         );
 
     let crystal_position =
         Vec3::new(
-            2.70,
-            0.65,
+            3.0,
+            0.75,
             0.15,
         );
 
     let egg_position =
         Vec3::new(
-            0.65,
-            1.65,
-            -0.30,
+            0.25,
+            1.90,
+            -0.45,
+        );
+
+    let tree_position =
+        Vec3::new(
+            1.55,
+            -1.55,
+            -0.20,
         );
 
     let galaxy_hit_objects =
@@ -223,6 +244,14 @@ fn main() {
                     egg_material,
                 ),
             ),
+
+            Object::Sphere(
+                Sphere::new(
+                    tree_position,
+                    1.10,
+                    tree_material,
+                ),
+            ),
         ];
 
     let forest_objects =
@@ -236,6 +265,9 @@ fn main() {
 
     let egg_objects =
         create_egg_diorama();
+
+    let tree_objects =
+        create_tree_planet_world();
 
     let forest_preview =
         transform_objects(
@@ -262,7 +294,14 @@ fn main() {
         transform_objects(
             create_egg_diorama(),
             egg_position,
-            0.56,
+            0.50,
+        );
+
+    let tree_preview =
+        transform_objects(
+            create_tree_planet_world(),
+            tree_position,
+            0.38,
         );
 
     let forest_scene =
@@ -285,6 +324,11 @@ fn main() {
             egg_objects,
         );
 
+    let tree_scene =
+        Scene::new(
+            tree_objects,
+        );
+
     let mut galaxy_objects =
         Vec::new();
 
@@ -302,6 +346,10 @@ fn main() {
 
     galaxy_objects.extend(
         egg_preview,
+    );
+
+    galaxy_objects.extend(
+        tree_preview,
     );
 
     let galaxy_scene =
@@ -331,7 +379,7 @@ fn main() {
                 0.0,
                 0.0,
             ),
-            8.0,
+            8.5,
             60.0,
         );
 
@@ -448,6 +496,12 @@ fn main() {
                                     )
                                 }
 
+                                4 => {
+                                    Some(
+                                        PlanetType::Tree,
+                                    )
+                                }
+
                                 _ => {
                                     None
                                 }
@@ -499,7 +553,7 @@ fn main() {
                                 0.0,
                                 0.0,
                             ),
-                            8.0,
+                            8.5,
                             60.0,
                         );
                 }
@@ -545,6 +599,7 @@ fn main() {
                         &water_scene,
                         &crystal_scene,
                         &egg_scene,
+                        &tree_scene,
                     );
 
                 renderer::raytracer::render(
@@ -756,6 +811,7 @@ fn get_selected_scene<'a>(
     water: &'a Scene,
     crystal: &'a Scene,
     egg: &'a Scene,
+    tree: &'a Scene,
 ) -> &'a Scene {
     match planet {
         Some(
@@ -780,6 +836,12 @@ fn get_selected_scene<'a>(
             PlanetType::Egg,
         ) => {
             egg
+        }
+
+        Some(
+            PlanetType::Tree,
+        ) => {
+            tree
         }
 
         None => {
@@ -814,6 +876,12 @@ fn planet_name(
             PlanetType::Egg,
         ) => {
             "Egg Planet"
+        }
+
+        Some(
+            PlanetType::Tree,
+        ) => {
+            "Tree Planet"
         }
 
         None => {
