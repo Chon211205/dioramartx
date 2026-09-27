@@ -690,11 +690,12 @@ fn main() {
                         galaxy_objects,
                     );
 
-                renderer::raytracer::render(
+                renderer::raytracer::render_rotated(
                     &mut framebuffer,
                     &galaxy_scene,
                     &light,
                     &camera,
+                    rotation,
                 );
             }
 
@@ -1130,206 +1131,145 @@ fn transform_objects_rotated(
 ) -> Vec<Object> {
     objects
         .into_iter()
-        .map(
-            |object| {
-                match object {
+        .map(|object| {
+            match object {
+                Object::Sphere(sphere) => {
                     Object::Sphere(
-                        sphere,
-                    ) => {
-                        Object::Sphere(
-                            Sphere::new(
-                                rotate_y(
-                                    sphere.center
-                                        * scale,
-                                    rotation,
-                                ) + offset,
-
-                                sphere.radius
-                                    * scale,
-
-                                sphere.material,
-                            ),
+                        Sphere::new(
+                            rotate_y(
+                                sphere.center * scale,
+                                rotation,
+                            ) + offset,
+                            sphere.radius * scale,
+                            sphere.material,
                         )
-                    }
-
-                    Object::Cylinder(
-                        cylinder,
-                    ) => {
-                        Object::Cylinder(
-                            Cylinder::new_oriented(
-                                rotate_y(
-                                    cylinder.center
-                                        * scale,
-                                    rotation,
-                                ) + offset,
-
-                                rotate_y(
-                                    cylinder.axis,
-                                    rotation,
-                                ),
-
-                                cylinder.radius
-                                    * scale,
-
-                                cylinder.height
-                                    * scale,
-
-                                cylinder.material,
-                            ),
-                        )
-                    }
-
-                    Object::Cone(
-                        cone,
-                    ) => {
-                        Object::Cone(
-                            Cone::new_oriented(
-                                rotate_y(
-                                    cone.center
-                                        * scale,
-                                    rotation,
-                                ) + offset,
-
-                                rotate_y(
-                                    cone.axis,
-                                    rotation,
-                                ),
-
-                                cone.radius
-                                    * scale,
-
-                                cone.height
-                                    * scale,
-
-                                cone.material,
-                            ),
-                        )
-                    }
-
-                    Object::Plane(
-                        plane,
-                    ) => {
-                        Object::Plane(
-                            Plane::new(
-                                rotate_y(
-                                    plane.point
-                                        * scale,
-                                    rotation,
-                                ) + offset,
-
-                                rotate_y(
-                                    plane.normal,
-                                    rotation,
-                                ),
-
-                                plane.material,
-                            ),
-                        )
-                    }
-
-                    Object::Cube(
-                        cube,
-                    ) => {
-                        Object::Cube(
-                            Cube::from_basis(
-                                rotate_y(
-                                    cube.center
-                                        * scale,
-                                    rotation,
-                                ) + offset,
-
-                                cube.half_size
-                                    * 2.0
-                                    * scale,
-
-                                rotate_y(
-                                    cube.right,
-                                    rotation,
-                                ),
-
-                                rotate_y(
-                                    cube.up,
-                                    rotation,
-                                ),
-
-                                rotate_y(
-                                    cube.forward,
-                                    rotation,
-                                ),
-
-                                cube.material,
-                            ),
-                        )
-                    }
-
-                    Object::Hemisphere(
-                        hemisphere,
-                    ) => {
-                        Object::Hemisphere(
-                            Hemisphere::new_with_materials(
-                                rotate_y(
-                                    hemisphere.center
-                                        * scale,
-                                    rotation,
-                                ) + offset,
-
-                                hemisphere.radius
-                                    * scale,
-
-                                rotate_y(
-                                    hemisphere.normal,
-                                    rotation,
-                                ),
-
-                                hemisphere.material,
-
-                                hemisphere.flat_material,
-                            ),
-                        )
-                    }
-
-                    Object::Torus(
-                        torus,
-                    ) => {
-                        Object::Torus(
-                            Torus::new(
-                                rotate_y(
-                                    torus.center
-                                        * scale,
-                                    rotation,
-                                ) + offset,
-
-                                torus.major_radius
-                                    * scale,
-
-                                torus.minor_radius
-                                    * scale,
-
-                                torus.material,
-                            ),
-                        )
-                    }
-
-                    Object::Ellipsoid(
-                        ellipsoid,
-                    ) => {
-                        Object::Ellipsoid(
-                            Ellipsoid::new(
-                                rotate_y(
-                                    ellipsoid.center
-                                        * scale,
-                                    rotation,
-                                ) + offset,
-
-                                ellipsoid.radii
-                                    * scale,
-
-                                ellipsoid.material,
-                            ),
-                        )
-                    }
+                    )
                 }
-            },
-        )
+
+                Object::Cylinder(cylinder) => {
+                    Object::Cylinder(
+                        Cylinder::new_oriented(
+                            rotate_y(
+                                cylinder.center * scale,
+                                rotation,
+                            ) + offset,
+                            rotate_y(
+                                cylinder.axis,
+                                rotation,
+                            ),
+                            cylinder.radius * scale,
+                            cylinder.height * scale,
+                            cylinder.material,
+                        ),
+                    )
+                }
+
+                Object::Cone(cone) => {
+                    Object::Cone(
+                        Cone::new_oriented(
+                            rotate_y(
+                                cone.center * scale,
+                                rotation,
+                            ) + offset,
+                            rotate_y(
+                                cone.axis,
+                                rotation,
+                            ),
+                            cone.radius * scale,
+                            cone.height * scale,
+                            cone.material,
+                        ),
+                    )
+                }
+
+                Object::Plane(plane) => {
+                    Object::Plane(
+                        Plane::new(
+                            rotate_y(
+                                plane.point * scale,
+                                rotation,
+                            ) + offset,
+                            rotate_y(
+                                plane.normal,
+                                rotation,
+                            ),
+                            plane.material,
+                        ),
+                    )
+                }
+
+                Object::Cube(cube) => {
+                    Object::Cube(
+                        Cube::from_basis(
+                            rotate_y(
+                                cube.center * scale,
+                                rotation,
+                            ) + offset,
+                            cube.half_size
+                                * 2.0
+                                * scale,
+                            rotate_y(
+                                cube.right,
+                                rotation,
+                            ),
+                            rotate_y(
+                                cube.up,
+                                rotation,
+                            ),
+                            rotate_y(
+                                cube.forward,
+                                rotation,
+                            ),
+                            cube.material,
+                        ),
+                    )
+                }
+
+                Object::Hemisphere(hemisphere) => {
+                    Object::Hemisphere(
+                        Hemisphere::new_with_materials(
+                            rotate_y(
+                                hemisphere.center * scale,
+                                rotation,
+                            ) + offset,
+                            hemisphere.radius * scale,
+                            rotate_y(
+                                hemisphere.normal,
+                                rotation,
+                            ),
+                            hemisphere.material,
+                            hemisphere.flat_material,
+                        ),
+                    )
+                }
+
+                Object::Torus(torus) => {
+                    Object::Torus(
+                        Torus::new(
+                            rotate_y(
+                                torus.center * scale,
+                                rotation,
+                            ) + offset,
+                            torus.major_radius * scale,
+                            torus.minor_radius * scale,
+                            torus.material,
+                        ),
+                    )
+                }
+
+                Object::Ellipsoid(ellipsoid) => {
+                    Object::Ellipsoid(
+                        Ellipsoid::new(
+                            rotate_y(
+                                ellipsoid.center * scale,
+                                rotation,
+                            ) + offset,
+                            ellipsoid.radii * scale,
+                            ellipsoid.material,
+                        ),
+                    )
+                }
+            }
+        })
         .collect()
 }
