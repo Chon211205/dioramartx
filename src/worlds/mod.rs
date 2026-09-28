@@ -3,6 +3,7 @@ pub mod forest;
 pub mod ice_lava;
 pub mod tree_planet;
 pub mod water;
+pub mod galaxy_selector;
 
 use crate::core::vec3::Vec3;
 use crate::scene::planet::PlanetDefinition;

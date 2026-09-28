@@ -13,7 +13,6 @@ use raylib::prelude::*;
 use crate::core::camera::Camera;
 use crate::core::framebuffer::Framebuffer;
 use crate::core::vec3::Vec3;
-
 use crate::materials::material::Material;
 
 use crate::objects::cone::Cone;
@@ -65,11 +64,10 @@ enum GalaxyTransition {
 }
 
 fn main() {
-    let (mut rl, thread) =
-        raylib::init()
-            .size(800, 600)
-            .title("Galaxy Diorama")
-            .build();
+    let (mut rl, thread) = raylib::init()
+        .size(800, 600)
+        .title("Galaxy Diorama")
+        .build();
 
     let audio =
         RaylibAudio::init_audio_device()
@@ -77,23 +75,23 @@ fn main() {
 
     let starbit_sound =
         audio
-            .new_sound(
-                "assets/sounds/starbit.mp3",
-            )
-            .expect(
-                "No se pudo cargar starbit.mp3",
-            );
+            .new_sound("assets/sounds/starbit.mp3")
+            .expect("No se pudo cargar starbit.mp3");
 
     let mut level_music =
         audio
-            .new_music(
-                "assets/sounds/level.mp3",
-            )
-            .expect(
-                "No se pudo cargar level.mp3",
-            );
+            .new_music("assets/sounds/level.mp3")
+            .expect("No se pudo cargar level.mp3");
 
     level_music.set_looping(true);
+
+    let mut world_1_music =
+        audio
+            .new_music("assets/sounds/w1.mp3")
+            .expect("No se pudo cargar w1.mp3");
+
+    world_1_music.set_looping(true);
+    world_1_music.set_volume(1.0);
 
     let monitor =
         raylib::core::window::get_current_monitor();
@@ -155,11 +153,13 @@ fn main() {
     let focused_scenes: Vec<Scene> =
         planets
             .iter()
-            .map(|planet| {
-                Scene::new(
-                    (planet.create)(),
-                )
-            })
+            .map(
+                |planet| {
+                    Scene::new(
+                        (planet.create)(),
+                    )
+                },
+            )
             .collect();
 
     let hit_material =
@@ -248,12 +248,26 @@ fn main() {
         usize =
         0;
 
+    let mut next_galaxy:
+        usize =
+        0;
+
+    let mut galaxy_selector_open =
+        false;
+
+    let mut galaxy_selector_index:
+        usize =
+        0;
+
     let mut galaxy_transition =
         GalaxyTransition::None;
 
     let mut transition_timer:
         f32 =
         0.0;
+
+    world_1_music
+        .play_stream();
 
     while !rl.window_should_close() {
         let current_screen_width =
@@ -281,20 +295,197 @@ fn main() {
                     as f32,
             );
 
-        if state == SceneState::Galaxy
+        if current_galaxy == 0 {
+            world_1_music
+                .update_stream();
+
+            if !world_1_music
+                .is_stream_playing()
+            {
+                world_1_music
+                    .play_stream();
+            }
+        } else {
+            if world_1_music
+                .is_stream_playing()
+            {
+                world_1_music
+                    .stop_stream();
+            }
+        }
+
+        if state
+            == SceneState::Galaxy
             && galaxy_transition
                 == GalaxyTransition::None
-            && rl.is_key_pressed(
-                KeyboardKey::KEY_N,
-            )
         {
-            galaxy_transition =
-                GalaxyTransition::ZoomOut;
+            if rl.is_key_pressed(
+                KeyboardKey::KEY_N,
+            ) {
+                galaxy_selector_open =
+                    !galaxy_selector_open;
 
-            transition_timer =
-                0.0;
+                galaxy_selector_index =
+                    current_galaxy;
+            }
+        }
 
-            sparkles.clear();
+        if galaxy_selector_open
+            && galaxy_transition
+                == GalaxyTransition::None
+        {
+            if rl.is_key_pressed(
+                KeyboardKey::KEY_ESCAPE,
+            ) {
+                galaxy_selector_open =
+                    false;
+            }
+
+            if rl.is_key_pressed(
+                KeyboardKey::KEY_LEFT,
+            )
+                || rl.is_key_pressed(
+                    KeyboardKey::KEY_A,
+                )
+            {
+                if galaxy_selector_index
+                    == 0
+                {
+                    galaxy_selector_index =
+                        GALAXY_COUNT
+                            - 1;
+                } else {
+                    galaxy_selector_index -=
+                        1;
+                }
+            }
+
+            if rl.is_key_pressed(
+                KeyboardKey::KEY_RIGHT,
+            )
+                || rl.is_key_pressed(
+                    KeyboardKey::KEY_D,
+                )
+            {
+                galaxy_selector_index =
+                    (
+                        galaxy_selector_index
+                            + 1
+                    )
+                        % GALAXY_COUNT;
+            }
+
+            if rl.is_mouse_button_pressed(
+                MouseButton::MOUSE_BUTTON_LEFT,
+            )
+                && point_inside_viewport(
+                    mouse_position,
+                    &viewport,
+                )
+            {
+                let selector_camera =
+                    create_selector_camera();
+
+                let render_mouse =
+                    screen_to_render(
+                        mouse_position,
+                        &viewport,
+                    );
+
+                let ray =
+                    selector_camera.get_ray(
+                        render_mouse.x,
+                        render_mouse.y,
+                        RENDER_WIDTH
+                            as f32,
+                        RENDER_HEIGHT
+                            as f32,
+                    );
+
+                let centers =
+                    selector_centers();
+
+                let mut closest =
+                    f32::INFINITY;
+
+                let mut clicked:
+                    Option<usize> =
+                    None;
+
+                for i in
+                    0..GALAXY_COUNT
+                {
+                    let sphere =
+                        Sphere::new(
+                            centers[i],
+                            2.65,
+                            hit_material,
+                        );
+
+                    if let Some(
+                        distance,
+                    ) =
+                        sphere.intersect(
+                            &ray.origin,
+                            &ray.direction,
+                        )
+                    {
+                        if distance
+                            < closest
+                        {
+                            closest =
+                                distance;
+
+                            clicked =
+                                Some(i);
+                        }
+                    }
+                }
+
+                if let Some(index) =
+                    clicked
+                {
+                    galaxy_selector_index =
+                        index;
+                }
+            }
+
+            if rl.is_key_pressed(
+                KeyboardKey::KEY_ENTER,
+            )
+            {
+                if galaxy_selector_index
+                    == current_galaxy
+                {
+                    galaxy_selector_open =
+                        false;
+                } else {
+                    next_galaxy =
+                        galaxy_selector_index;
+
+                    galaxy_selector_open =
+                        false;
+
+                    galaxy_transition =
+                        GalaxyTransition::ZoomOut;
+
+                    transition_timer =
+                        0.0;
+
+                    sparkles.clear();
+
+                    camera =
+                        Camera::new(
+                            Vec3::new(
+                                0.0,
+                                0.0,
+                                0.0,
+                            ),
+                            9.5,
+                            60.0,
+                        );
+                }
+            }
         }
 
         if galaxy_transition
@@ -309,11 +500,7 @@ fn main() {
                         >= 0.85
                     {
                         current_galaxy =
-                            (
-                                current_galaxy
-                                    + 1
-                            )
-                                % GALAXY_COUNT;
+                            next_galaxy;
 
                         galaxy_transition =
                             GalaxyTransition::Warp;
@@ -364,6 +551,7 @@ fn main() {
 
         if galaxy_transition
             == GalaxyTransition::None
+            && !galaxy_selector_open
         {
             match state {
                 SceneState::Galaxy => {
@@ -411,7 +599,7 @@ fn main() {
                                         current_galaxy,
                                     );
 
-                                let hit_object =
+                                let hit =
                                     Sphere::new(
                                         position,
                                         planet.hit_radius,
@@ -421,11 +609,10 @@ fn main() {
                                 if let Some(
                                     distance,
                                 ) =
-                                    hit_object
-                                        .intersect(
-                                            &ray.origin,
-                                            &ray.direction,
-                                        )
+                                    hit.intersect(
+                                        &ray.origin,
+                                        &ray.direction,
+                                    )
                                 {
                                     if distance
                                         < closest
@@ -434,7 +621,9 @@ fn main() {
                                             distance;
 
                                         selected_index =
-                                            Some(index);
+                                            Some(
+                                                index,
+                                            );
                                     }
                                 }
                             }
@@ -609,6 +798,7 @@ fn main() {
             == SceneState::Galaxy
             && galaxy_transition
                 == GalaxyTransition::None
+            && !galaxy_selector_open
         {
             sparkle_spawn_timer +=
                 dt;
@@ -667,130 +857,155 @@ fn main() {
             }
         }
 
-        match state {
-            SceneState::Galaxy => {
-                let rotation =
-                    current_time
-                        * 0.25;
+        if galaxy_selector_open {
+            let selector_camera =
+                create_selector_camera();
 
-                let world_scale =
-                    transition_world_scale(
-                        galaxy_transition,
-                        transition_timer,
-                    );
+            let selector_scene =
+                create_galaxy_selector_scene(
+                    galaxy_selector_index,
+                    current_galaxy,
+                    current_time,
+                );
 
-                let mut galaxy_objects =
-                    Vec::new();
+            renderer::raytracer::render_rotated_with_skybox(
+                &mut framebuffer,
+                &selector_scene,
+                &light,
+                &selector_camera,
+                0.0,
+                galaxy_selector_index,
+            );
+        } else {
+            match state {
+                SceneState::Galaxy => {
+                    let rotation =
+                        current_time
+                            * 0.25;
 
-                let mut nodes:
-                    Vec<Vec3> =
-                    Vec::new();
-
-                for (
-                    index,
-                    planet,
-                ) in planets
-                    .iter()
-                    .enumerate()
-                {
-                    let position =
-                        galaxy_position(
-                            planet.position,
-                            index,
-                            current_galaxy,
+                    let world_scale =
+                        transition_world_scale(
+                            galaxy_transition,
+                            transition_timer,
                         );
 
-                    let node_position =
-                        (
-                            position
-                                + planet.node_offset
-                        )
-                            * world_scale;
+                    let mut galaxy_objects =
+                        Vec::new();
 
-                    nodes.push(
-                        node_position,
-                    );
-                }
+                    let mut nodes:
+                        Vec<Vec3> =
+                        Vec::new();
 
-                if nodes.len() > 1 {
-                    for i in
-                        0..nodes.len() - 1
+                    for (
+                        index,
+                        planet,
+                    ) in planets
+                        .iter()
+                        .enumerate()
                     {
-                        add_path_scaled(
+                        let position =
+                            galaxy_position(
+                                planet.position,
+                                index,
+                                current_galaxy,
+                            );
+
+                        let node =
+                            (
+                                position
+                                    + planet.node_offset
+                            )
+                                * world_scale;
+
+                        nodes.push(
+                            node,
+                        );
+                    }
+
+                    if nodes.len() > 1 {
+                        for i in
+                            0..nodes.len() - 1
+                        {
+                            add_path_scaled(
+                                &mut galaxy_objects,
+                                nodes[i],
+                                nodes[
+                                    i + 1
+                                ],
+                                path_yellow_material,
+                                world_scale,
+                            );
+                        }
+                    }
+
+                    for node in &nodes {
+                        add_planet_node_scaled(
                             &mut galaxy_objects,
-                            nodes[i],
-                            nodes[i + 1],
+                            *node,
                             path_yellow_material,
                             world_scale,
                         );
                     }
-                }
 
-                for node in &nodes {
-                    add_planet_node_scaled(
-                        &mut galaxy_objects,
-                        *node,
-                        path_yellow_material,
-                        world_scale,
-                    );
-                }
+                    for (
+                        index,
+                        planet,
+                    ) in planets
+                        .iter()
+                        .enumerate()
+                    {
+                        let position =
+                            galaxy_position(
+                                planet.position,
+                                index,
+                                current_galaxy,
+                            )
+                                * world_scale;
 
-                for (
-                    index,
-                    planet,
-                ) in planets
-                    .iter()
-                    .enumerate()
-                {
-                    let position =
-                        galaxy_position(
-                            planet.position,
-                            index,
-                            current_galaxy,
-                        )
-                            * world_scale;
+                        let preview =
+                            transform_objects_rotated(
+                                (planet.create)(),
+                                position,
+                                planet.preview_scale
+                                    * world_scale,
+                                rotation,
+                            );
 
-                    let preview =
-                        transform_objects_rotated(
-                            (planet.create)(),
-                            position,
-                            planet.preview_scale
-                                * world_scale,
-                            rotation,
+                        galaxy_objects
+                            .extend(
+                                preview,
+                            );
+                    }
+
+                    let galaxy_scene =
+                        Scene::new(
+                            galaxy_objects,
                         );
 
-                    galaxy_objects
-                        .extend(
-                            preview,
-                        );
-                }
-
-                let galaxy_scene =
-                    Scene::new(
-                        galaxy_objects,
-                    );
-
-                renderer::raytracer::render_rotated_with_skybox(
-                    &mut framebuffer,
-                    &galaxy_scene,
-                    &light,
-                    &camera,
-                    rotation,
-                    current_galaxy,
-                );
-            }
-
-            SceneState::Focused => {
-                if let Some(index) =
-                    selected_planet
-                {
-                    renderer::raytracer::render_with_skybox(
+                    renderer::raytracer::render_rotated_with_skybox(
                         &mut framebuffer,
-                        &focused_scenes[index],
+                        &galaxy_scene,
                         &light,
                         &camera,
+                        rotation,
                         current_galaxy,
                     );
+                }
+
+                SceneState::Focused => {
+                    if let Some(index) =
+                        selected_planet
+                    {
+                        renderer::raytracer::render_with_skybox(
+                            &mut framebuffer,
+                            &focused_scenes[
+                                index
+                            ],
+                            &light,
+                            &camera,
+                            current_galaxy,
+                        );
+                    }
                 }
             }
         }
@@ -805,7 +1020,8 @@ fn main() {
                     framebuffer
                         .pixels()
                         .len()
-                        * std::mem::size_of::<Color>(),
+                        * std::mem::size_of::<Color>(
+                        ),
                 )
             };
 
@@ -856,7 +1072,16 @@ fn main() {
             Color::WHITE,
         );
 
-        if galaxy_transition
+        if galaxy_selector_open {
+            draw_selector_interface(
+                &mut d,
+                &viewport,
+                current_screen_width,
+                current_screen_height,
+                galaxy_selector_index,
+                current_galaxy,
+            );
+        } else if galaxy_transition
             == GalaxyTransition::None
         {
             match state {
@@ -903,7 +1128,7 @@ fn main() {
                     );
 
                     d.draw_text(
-                        "N - Viajar a otra galaxia",
+                        "N - Selector de galaxias",
                         30,
                         160,
                         20,
@@ -1001,6 +1226,1181 @@ fn main() {
     }
 }
 
+fn create_selector_camera() -> Camera {
+    Camera::new(
+        Vec3::new(
+            0.0,
+            0.0,
+            0.0,
+        ),
+        11.5,
+        52.0,
+    )
+}
+
+fn selector_centers() -> [Vec3; GALAXY_COUNT] {
+    [
+        Vec3::new(
+            -3.45,
+            0.0,
+            0.0,
+        ),
+        Vec3::new(
+            3.45,
+            0.0,
+            0.0,
+        ),
+    ]
+}
+
+fn create_galaxy_selector_scene(
+    selected: usize,
+    current: usize,
+    time: f32,
+) -> Scene {
+    let mut objects =
+        Vec::new();
+
+    let centers =
+        selector_centers();
+
+    let blue_core =
+        Material::new(
+            Vec3::new(
+                0.18,
+                0.65,
+                1.0,
+            ),
+            0.90,
+            0.75,
+            0.0,
+            0.15,
+        );
+
+    let blue_inner =
+        Material::new(
+            Vec3::new(
+                0.15,
+                0.95,
+                0.72,
+            ),
+            0.95,
+            0.80,
+            0.0,
+            0.18,
+        );
+
+    let orange_core =
+        Material::new(
+            Vec3::new(
+                1.0,
+                0.35,
+                0.08,
+            ),
+            0.95,
+            0.95,
+            0.0,
+            0.22,
+        );
+
+    let orange_inner =
+        Material::new(
+            Vec3::new(
+                1.0,
+                0.82,
+                0.16,
+            ),
+            0.95,
+            1.0,
+            0.0,
+            0.20,
+        );
+
+    let green_planet =
+        Material::new(
+            Vec3::new(
+                0.12,
+                0.65,
+                0.22,
+            ),
+            0.90,
+            0.35,
+            0.0,
+            0.03,
+        );
+
+    let dark_planet =
+        Material::new(
+            Vec3::new(
+                0.10,
+                0.06,
+                0.08,
+            ),
+            0.85,
+            0.30,
+            0.0,
+            0.05,
+        );
+
+    let yellow =
+        Material::new(
+            Vec3::new(
+                1.0,
+                0.80,
+                0.05,
+            ),
+            0.98,
+            1.0,
+            0.0,
+            0.25,
+        );
+
+    let selected_material =
+        Material::new(
+            Vec3::new(
+                1.0,
+                0.95,
+                0.20,
+            ),
+            1.0,
+            1.0,
+            0.0,
+            0.35,
+        );
+
+    let current_material =
+        Material::new(
+            Vec3::new(
+                0.20,
+                1.0,
+                0.55,
+            ),
+            0.95,
+            0.90,
+            0.0,
+            0.20,
+        );
+
+    add_selector_nebula(
+        &mut objects,
+        centers[0],
+        0,
+        selected == 0,
+        time,
+    );
+
+    add_selector_nebula(
+        &mut objects,
+        centers[1],
+        1,
+        selected == 1,
+        time,
+    );
+
+    add_selector_galaxy(
+        &mut objects,
+        centers[0],
+        0,
+        selected,
+        current,
+        time,
+        blue_core,
+        blue_inner,
+        green_planet,
+        dark_planet,
+        yellow,
+        selected_material,
+        current_material,
+    );
+
+    add_selector_galaxy(
+        &mut objects,
+        centers[1],
+        1,
+        selected,
+        current,
+        time,
+        orange_core,
+        orange_inner,
+        green_planet,
+        dark_planet,
+        yellow,
+        selected_material,
+        current_material,
+    );
+
+    let bridge_start =
+        centers[0]
+            + Vec3::new(
+                1.30,
+                0.55,
+                0.0,
+            );
+
+    let bridge_end =
+        centers[1]
+            + Vec3::new(
+                -1.30,
+                0.55,
+                0.0,
+            );
+
+    add_selector_bridge(
+        &mut objects,
+        bridge_start,
+        bridge_end,
+        yellow,
+        time,
+    );
+
+    Scene::new(
+        objects,
+    )
+}
+
+#[allow(clippy::too_many_arguments)]
+fn add_selector_galaxy(
+    objects: &mut Vec<Object>,
+    center: Vec3,
+    galaxy_index: usize,
+    selected: usize,
+    current: usize,
+    time: f32,
+    core_material: Material,
+    inner_material: Material,
+    green_material: Material,
+    dark_material: Material,
+    yellow_material: Material,
+    selected_material: Material,
+    current_material: Material,
+) {
+    let pulse_strength =
+        if selected
+            == galaxy_index
+        {
+            0.08
+        } else {
+            0.025
+        };
+
+    let pulse =
+        1.0
+            + (
+                time
+                    * 2.0
+                    + galaxy_index
+                        as f32
+            )
+                .sin()
+                * pulse_strength;
+
+    objects.push(
+        Object::Sphere(
+            Sphere::new(
+                center,
+                if selected
+                    == galaxy_index
+                {
+                    0.86
+                        * pulse
+                } else {
+                    0.70
+                        * pulse
+                },
+                core_material,
+            ),
+        ),
+    );
+
+    objects.push(
+        Object::Sphere(
+            Sphere::new(
+                center
+                    + Vec3::new(
+                        0.0,
+                        0.0,
+                        -0.12,
+                    ),
+                0.52,
+                inner_material,
+            ),
+        ),
+    );
+
+    add_selector_orbit(
+        objects,
+        center,
+        1.18,
+        22,
+        yellow_material,
+    );
+
+    add_selector_orbit(
+        objects,
+        center,
+        1.65,
+        28,
+        yellow_material,
+    );
+
+    add_selector_orbit(
+        objects,
+        center,
+        2.12,
+        34,
+        yellow_material,
+    );
+
+    let planet_count =
+        7;
+
+    for i in
+        0..planet_count
+    {
+        let ring =
+            match i % 3 {
+                0 => 1.18,
+                1 => 1.65,
+                _ => 2.12,
+            };
+
+        let speed =
+            if galaxy_index == 0 {
+                0.25
+                    + i as f32
+                        * 0.018
+            } else {
+                -0.30
+                    - i as f32
+                        * 0.015
+            };
+
+        let angle =
+            i as f32
+                / planet_count
+                    as f32
+                * std::f32::consts::PI
+                * 2.0
+                + time
+                    * speed;
+
+        let squash =
+            if galaxy_index == 0 {
+                0.55
+            } else {
+                0.48
+            };
+
+        let position =
+            center
+                + Vec3::new(
+                    angle.cos()
+                        * ring,
+                    angle.sin()
+                        * ring
+                        * squash,
+                    (
+                        angle
+                            * 1.7
+                    )
+                        .sin()
+                        * 0.20,
+                );
+
+        let radius =
+            match i % 4 {
+                0 => 0.17,
+                1 => 0.22,
+                2 => 0.14,
+                _ => 0.19,
+            };
+
+        let material =
+            if galaxy_index == 0 {
+                if i % 2 == 0 {
+                    green_material
+                } else {
+                    dark_material
+                }
+            } else {
+                if i % 3 == 0 {
+                    yellow_material
+                } else {
+                    dark_material
+                }
+            };
+
+        objects.push(
+            Object::Sphere(
+                Sphere::new(
+                    position,
+                    radius,
+                    material,
+                ),
+            ),
+        );
+    }
+
+    if selected
+        == galaxy_index
+    {
+        add_selector_orbit(
+            objects,
+            center,
+            2.55,
+            42,
+            selected_material,
+        );
+
+        objects.push(
+            Object::Sphere(
+                Sphere::new(
+                    center
+                        + Vec3::new(
+                            0.0,
+                            -2.62,
+                            0.0,
+                        ),
+                    0.13,
+                    selected_material,
+                ),
+            ),
+        );
+    }
+
+    if current
+        == galaxy_index
+    {
+        objects.push(
+            Object::Sphere(
+                Sphere::new(
+                    center
+                        + Vec3::new(
+                            0.0,
+                            2.58,
+                            0.0,
+                        ),
+                    0.12,
+                    current_material,
+                ),
+            ),
+        );
+    }
+}
+
+fn add_selector_nebula(
+    objects: &mut Vec<Object>,
+    center: Vec3,
+    galaxy_index: usize,
+    is_selected: bool,
+    time: f32,
+) {
+    let (
+        color_a,
+        color_b,
+        color_c,
+    ) =
+        if galaxy_index
+            == 0
+        {
+            (
+                Vec3::new(
+                    0.05,
+                    0.32,
+                    0.65,
+                ),
+                Vec3::new(
+                    0.05,
+                    0.75,
+                    0.85,
+                ),
+                Vec3::new(
+                    0.08,
+                    0.55,
+                    0.28,
+                ),
+            )
+        } else {
+            (
+                Vec3::new(
+                    0.35,
+                    0.05,
+                    0.55,
+                ),
+                Vec3::new(
+                    0.85,
+                    0.08,
+                    0.45,
+                ),
+                Vec3::new(
+                    1.0,
+                    0.28,
+                    0.05,
+                ),
+            )
+        };
+
+    let brightness =
+        if is_selected {
+            1.0
+        } else {
+            0.32
+        };
+
+    let selected_specular =
+        if is_selected {
+            0.80
+        } else {
+            0.18
+        };
+
+    let selected_reflectivity =
+        if is_selected {
+            0.16
+        } else {
+            0.02
+        };
+
+    let material_a =
+        Material::new(
+            color_a
+                * brightness,
+            0.85,
+            selected_specular,
+            0.0,
+            selected_reflectivity,
+        );
+
+    let material_b =
+        Material::new(
+            color_b
+                * brightness,
+            0.90,
+            selected_specular,
+            0.0,
+            selected_reflectivity,
+        );
+
+    let material_c =
+        Material::new(
+            color_c
+                * brightness,
+            0.95,
+            selected_specular,
+            0.0,
+            selected_reflectivity,
+        );
+
+    let arms =
+        3;
+
+    let particles_per_arm =
+        42;
+
+    let direction =
+        if galaxy_index == 0 {
+            1.0
+        } else {
+            -1.0
+        };
+
+    let rotation_speed =
+        if is_selected {
+            0.10
+        } else {
+            0.035
+        };
+
+    let scale =
+        if is_selected {
+            1.06
+        } else {
+            0.94
+        };
+
+    for arm in
+        0..arms
+    {
+        let arm_offset =
+            arm as f32
+                / arms as f32
+                * std::f32::consts::PI
+                * 2.0;
+
+        for i in
+            0..particles_per_arm
+        {
+            let t =
+                i as f32
+                    / particles_per_arm
+                        as f32;
+
+            let radius =
+                (
+                    0.65
+                        + t
+                            * 2.45
+                )
+                    * scale;
+
+            let spiral =
+                arm_offset
+                    + direction
+                        * (
+                            t
+                                * 5.8
+                            + time
+                                * rotation_speed
+                        );
+
+            let wobble =
+                (
+                    i as f32
+                        * 1.73
+                        + arm as f32
+                            * 2.9
+                )
+                    .sin()
+                    * 0.16;
+
+            let x =
+                spiral.cos()
+                    * radius;
+
+            let y =
+                spiral.sin()
+                    * radius
+                    * 0.42;
+
+            let z =
+                -0.70
+                    - t
+                        * 0.20
+                    + wobble
+                        * 0.10;
+
+            let jitter_x =
+                (
+                    i as f32
+                        * 5.31
+                        + arm as f32
+                )
+                    .sin()
+                    * 0.10;
+
+            let jitter_y =
+                (
+                    i as f32
+                        * 3.77
+                        + arm as f32
+                            * 1.9
+                )
+                    .cos()
+                    * 0.08;
+
+            let position =
+                center
+                    + Vec3::new(
+                        x
+                            + jitter_x,
+                        y
+                            + jitter_y,
+                        z,
+                    );
+
+            let base_particle_radius =
+                0.045
+                    + (
+                        i as f32
+                            * 0.91
+                    )
+                        .sin()
+                        .abs()
+                        * 0.045;
+
+            let particle_radius =
+                if is_selected {
+                    base_particle_radius
+                        * 1.18
+                } else {
+                    base_particle_radius
+                        * 0.75
+                };
+
+            let material =
+                match i % 3 {
+                    0 => material_a,
+                    1 => material_b,
+                    _ => material_c,
+                };
+
+            objects.push(
+                Object::Sphere(
+                    Sphere::new(
+                        position,
+                        particle_radius,
+                        material,
+                    ),
+                ),
+            );
+        }
+    }
+
+    let core_particles =
+        if is_selected {
+            34
+        } else {
+            20
+        };
+
+    for i in
+        0..core_particles
+    {
+        let angle =
+            i as f32
+                / core_particles
+                    as f32
+                * std::f32::consts::PI
+                * 2.0
+                + time
+                    * rotation_speed
+                    * direction;
+
+        let radius =
+            (
+                0.25
+                    + (
+                        i as f32
+                            * 1.91
+                    )
+                        .sin()
+                        .abs()
+                        * 0.55
+            )
+                * scale;
+
+        let position =
+            center
+                + Vec3::new(
+                    angle.cos()
+                        * radius,
+                    angle.sin()
+                        * radius
+                        * 0.50,
+                    -0.82,
+                );
+
+        objects.push(
+            Object::Sphere(
+                Sphere::new(
+                    position,
+                    if is_selected {
+                        0.075
+                    } else {
+                        0.045
+                    },
+                    material_b,
+                ),
+            ),
+        );
+    }
+
+    if is_selected {
+        let glow_material =
+            Material::new(
+                if galaxy_index
+                    == 0
+                {
+                    Vec3::new(
+                        0.15,
+                        0.85,
+                        1.0,
+                    )
+                } else {
+                    Vec3::new(
+                        1.0,
+                        0.20,
+                        0.65,
+                    )
+                },
+                1.0,
+                1.0,
+                0.0,
+                0.25,
+            );
+
+        for i in
+            0..18
+        {
+            let angle =
+                i as f32
+                    / 18.0
+                    * std::f32::consts::PI
+                    * 2.0
+                    + time
+                        * 0.15
+                        * direction;
+
+            let radius =
+                2.80
+                    + (
+                        i as f32
+                            * 1.7
+                    )
+                        .sin()
+                        * 0.15;
+
+            let position =
+                center
+                    + Vec3::new(
+                        angle.cos()
+                            * radius,
+                        angle.sin()
+                            * radius
+                            * 0.42,
+                        -0.78,
+                    );
+
+            objects.push(
+                Object::Sphere(
+                    Sphere::new(
+                        position,
+                        0.055,
+                        glow_material,
+                    ),
+                ),
+            );
+        }
+    }
+}
+
+fn add_selector_orbit(
+    objects: &mut Vec<Object>,
+    center: Vec3,
+    radius: f32,
+    segments: usize,
+    material: Material,
+) {
+    for i in
+        0..segments
+    {
+        let angle =
+            i as f32
+                / segments
+                    as f32
+                * std::f32::consts::PI
+                * 2.0;
+
+        let position =
+            center
+                + Vec3::new(
+                    angle.cos()
+                        * radius,
+                    angle.sin()
+                        * radius
+                        * 0.48,
+                    0.16,
+                );
+
+        objects.push(
+            Object::Sphere(
+                Sphere::new(
+                    position,
+                    0.035,
+                    material,
+                ),
+            ),
+        );
+    }
+}
+
+fn add_selector_bridge(
+    objects: &mut Vec<Object>,
+    start: Vec3,
+    end: Vec3,
+    material: Material,
+    time: f32,
+) {
+    let direction =
+        end
+            - start;
+
+    let length =
+        direction.length();
+
+    if length > 0.001 {
+        objects.push(
+            Object::Cylinder(
+                Cylinder::new_oriented(
+                    (
+                        start
+                            + end
+                    )
+                        * 0.5,
+                    direction.normalize(),
+                    0.035,
+                    length,
+                    material,
+                ),
+            ),
+        );
+    }
+
+    let t =
+        (
+            time
+                * 0.42
+        )
+            .fract();
+
+    let point =
+        start
+            + (
+                end
+                    - start
+            )
+                * t;
+
+    objects.push(
+        Object::Sphere(
+            Sphere::new(
+                point,
+                0.12,
+                material,
+            ),
+        ),
+    );
+}
+
+fn draw_selector_interface(
+    d: &mut RaylibDrawHandle<'_>,
+    viewport: &Viewport,
+    screen_width: i32,
+    screen_height: i32,
+    selected: usize,
+    current: usize,
+) {
+    let selector_camera =
+        create_selector_camera();
+
+    let centers =
+        selector_centers();
+
+    let left_screen =
+        world_to_screen(
+            centers[0],
+            &selector_camera,
+            viewport,
+        );
+
+    let right_screen =
+        world_to_screen(
+            centers[1],
+            &selector_camera,
+            viewport,
+        );
+
+    let title =
+        "SELECCIONA UNA GALAXIA";
+
+    let title_size =
+        34;
+
+    let title_width =
+        d.measure_text(
+            title,
+            title_size,
+        );
+
+    d.draw_text(
+        title,
+        screen_width / 2
+            - title_width / 2,
+        35,
+        title_size,
+        Color::WHITE,
+    );
+
+    if let Some(point) =
+        left_screen
+    {
+        draw_selector_label(
+            d,
+            point,
+            "GALAXIA 1",
+            selected == 0,
+            current == 0,
+        );
+    }
+
+    if let Some(point) =
+        right_screen
+    {
+        draw_selector_label(
+            d,
+            point,
+            "GALAXIA 2",
+            selected == 1,
+            current == 1,
+        );
+    }
+
+    let selected_text =
+        match selected {
+            0 => {
+                "Galaxia 1 seleccionada"
+            }
+
+            1 => {
+                "Galaxia 2 seleccionada"
+            }
+
+            _ => "",
+        };
+
+    let selected_size =
+        23;
+
+    let selected_width =
+        d.measure_text(
+            selected_text,
+            selected_size,
+        );
+
+    d.draw_text(
+        selected_text,
+        screen_width / 2
+            - selected_width / 2,
+        screen_height
+            - 105,
+        selected_size,
+        Color::new(
+            255,
+            225,
+            80,
+            255,
+        ),
+    );
+
+    let controls =
+        "A / D o Flechas - Seleccionar    ENTER - Viajar    N / ESC - Cerrar";
+
+    let control_size =
+        18;
+
+    let controls_width =
+        d.measure_text(
+            controls,
+            control_size,
+        );
+
+    d.draw_text(
+        controls,
+        screen_width / 2
+            - controls_width / 2,
+        screen_height
+            - 65,
+        control_size,
+        Color::LIGHTGRAY,
+    );
+}
+
+fn draw_selector_label(
+    d: &mut RaylibDrawHandle<'_>,
+    center: Vector2,
+    name: &str,
+    selected: bool,
+    current: bool,
+) {
+    let name_size =
+        if selected {
+            28
+        } else {
+            23
+        };
+
+    let name_width =
+        d.measure_text(
+            name,
+            name_size,
+        );
+
+    d.draw_text(
+        name,
+        center.x as i32
+            - name_width / 2,
+        center.y as i32
+            + 155,
+        name_size,
+        if selected {
+            Color::new(
+                255,
+                225,
+                70,
+                255,
+            )
+        } else {
+            Color::WHITE
+        },
+    );
+
+    if current {
+        let text =
+            "ACTUAL";
+
+        let size =
+            17;
+
+        let width =
+            d.measure_text(
+                text,
+                size,
+            );
+
+        d.draw_text(
+            text,
+            center.x as i32
+                - width / 2,
+            center.y as i32
+                + 190,
+            size,
+            Color::new(
+                80,
+                245,
+                135,
+                255,
+            ),
+        );
+    } else if selected {
+        let text =
+            "ENTER PARA VIAJAR";
+
+        let size =
+            16;
+
+        let width =
+            d.measure_text(
+                text,
+                size,
+            );
+
+        d.draw_text(
+            text,
+            center.x as i32
+                - width / 2,
+            center.y as i32
+                + 190,
+            size,
+            Color::new(
+                255,
+                225,
+                70,
+                255,
+            ),
+        );
+    }
+}
+
 fn galaxy_position(
     original: Vec3,
     index: usize,
@@ -1011,45 +2411,35 @@ fn galaxy_position(
 
         1 => {
             match index {
-                0 => {
-                    Vec3::new(
-                        -3.8,
-                        1.20,
-                        0.25,
-                    )
-                }
+                0 => Vec3::new(
+                    -3.8,
+                    1.20,
+                    0.25,
+                ),
 
-                1 => {
-                    Vec3::new(
-                        -2.0,
-                        -0.20,
-                        -0.20,
-                    )
-                }
+                1 => Vec3::new(
+                    -2.0,
+                    -0.20,
+                    -0.20,
+                ),
 
-                2 => {
-                    Vec3::new(
-                        0.0,
-                        0.90,
-                        0.15,
-                    )
-                }
+                2 => Vec3::new(
+                    0.0,
+                    0.90,
+                    0.15,
+                ),
 
-                3 => {
-                    Vec3::new(
-                        2.0,
-                        -0.15,
-                        -0.20,
-                    )
-                }
+                3 => Vec3::new(
+                    2.0,
+                    -0.15,
+                    -0.20,
+                ),
 
-                4 => {
-                    Vec3::new(
-                        3.8,
-                        1.10,
-                        0.25,
-                    )
-                }
+                4 => Vec3::new(
+                    3.8,
+                    1.10,
+                    0.25,
+                ),
 
                 _ => {
                     let angle =
@@ -1092,13 +2482,8 @@ fn transition_world_scale(
                         1.0,
                     );
 
-            let t =
-                smoothstep(
-                    t,
-                );
-
             1.0
-                - t
+                - smoothstep(t)
                     * 0.82
         }
 
@@ -1117,13 +2502,8 @@ fn transition_world_scale(
                         1.0,
                     );
 
-            let t =
-                smoothstep(
-                    t,
-                );
-
             0.18
-                + t
+                + smoothstep(t)
                     * 0.82
         }
     }
@@ -1160,13 +2540,6 @@ fn draw_transition(
                         1.0,
                     );
 
-            let alpha =
-                (
-                    t
-                        * 120.0
-                )
-                    as u8;
-
             d.draw_rectangle(
                 0,
                 0,
@@ -1176,7 +2549,11 @@ fn draw_transition(
                     0,
                     0,
                     20,
-                    alpha,
+                    (
+                        t
+                            * 120.0
+                    )
+                        as u8,
                 ),
             );
         }
@@ -1199,24 +2576,14 @@ fn draw_transition(
                 t,
             );
 
-            let flash_strength =
+            let flash =
                 1.0
                     - (
-                        t * 2.0
+                        t
+                            * 2.0
                             - 1.0
                     )
                         .abs();
-
-            let flash_alpha =
-                (
-                    flash_strength
-                        .clamp(
-                            0.0,
-                            1.0,
-                        )
-                        * 220.0
-                )
-                    as u8;
 
             d.draw_rectangle(
                 0,
@@ -1227,18 +2594,16 @@ fn draw_transition(
                     255,
                     255,
                     255,
-                    flash_alpha,
+                    (
+                        flash
+                            .clamp(
+                                0.0,
+                                1.0,
+                            )
+                            * 220.0
+                    )
+                        as u8,
                 ),
-            );
-
-            d.draw_text(
-                "Viajando...",
-                width / 2
-                    - 75,
-                height
-                    - 90,
-                26,
-                Color::WHITE,
             );
         }
 
@@ -1253,16 +2618,6 @@ fn draw_transition(
                         1.0,
                     );
 
-            let alpha =
-                (
-                    (
-                        1.0
-                            - t
-                    )
-                        * 120.0
-                )
-                    as u8;
-
             d.draw_rectangle(
                 0,
                 0,
@@ -1272,7 +2627,14 @@ fn draw_transition(
                     0,
                     0,
                     20,
-                    alpha,
+                    (
+                        (
+                            1.0
+                                - t
+                        )
+                            * 120.0
+                    )
+                        as u8,
                 ),
             );
         }
@@ -1296,15 +2658,14 @@ fn draw_warp(
         );
 
     let max_distance =
-        (
-            width.max(
-                height,
-            )
-        )
-            as f32
+        width.max(
+            height,
+        ) as f32
             * 0.75;
 
-    for i in 0..100 {
+    for i in
+        0..100
+    {
         let seed =
             i as f32
                 * 19.731
@@ -1319,13 +2680,15 @@ fn draw_warp(
 
         let base =
             pseudo_random(
-                seed * 2.31,
+                seed
+                    * 2.31,
             );
 
         let speed =
             0.25
                 + pseudo_random(
-                    seed * 4.91,
+                    seed
+                        * 4.91,
                 )
                     * 0.75;
 
@@ -1349,7 +2712,8 @@ fn draw_warp(
                 + progress
                     * 140.0
                 + pseudo_random(
-                    seed * 7.11,
+                    seed
+                        * 7.11,
                 )
                     * 40.0;
 
@@ -1358,7 +2722,6 @@ fn draw_warp(
                 center.x
                     + angle.cos()
                         * distance,
-
                 center.y
                     + angle.sin()
                         * distance,
@@ -1372,7 +2735,6 @@ fn draw_warp(
                             distance
                                 + streak
                         ),
-
                 center.y
                     + angle.sin()
                         * (
@@ -1381,20 +2743,21 @@ fn draw_warp(
                         ),
             );
 
-        let color_value =
+        let value =
             pseudo_random(
-                seed * 9.7,
+                seed
+                    * 9.7,
             );
 
         let color =
-            if color_value < 0.25 {
+            if value < 0.25 {
                 Color::new(
                     120,
                     190,
                     255,
                     230,
                 )
-            } else if color_value
+            } else if value
                 < 0.50
             {
                 Color::new(
@@ -1403,7 +2766,7 @@ fn draw_warp(
                     255,
                     230,
                 )
-            } else if color_value
+            } else if value
                 < 0.75
             {
                 Color::new(
@@ -1430,19 +2793,6 @@ fn draw_warp(
             color,
         );
     }
-
-    d.draw_circle_v(
-        center,
-        10.0
-            + progress
-                * 45.0,
-        Color::new(
-            255,
-            255,
-            255,
-            70,
-        ),
-    );
 }
 
 fn calculate_viewport(
@@ -1450,8 +2800,10 @@ fn calculate_viewport(
     screen_height: f32,
 ) -> Viewport {
     let render_aspect =
-        RENDER_WIDTH as f32
-            / RENDER_HEIGHT as f32;
+        RENDER_WIDTH
+            as f32
+            / RENDER_HEIGHT
+                as f32;
 
     let screen_aspect =
         screen_width
@@ -1501,7 +2853,8 @@ fn point_inside_viewport(
     point: Vector2,
     viewport: &Viewport,
 ) -> bool {
-    point.x >= viewport.x
+    point.x
+        >= viewport.x
         && point.x
             <= viewport.x
                 + viewport.width
@@ -1599,7 +2952,9 @@ fn world_to_screen(
             &forward,
         );
 
-    if camera_z <= 0.01 {
+    if camera_z
+        <= 0.01
+    {
         return None;
     }
 
@@ -1668,7 +3023,9 @@ fn world_to_screen(
 }
 
 fn create_planet_colliders(
-    planets: &[scene::planet::PlanetDefinition],
+    planets: &[
+        scene::planet::PlanetDefinition
+    ],
     camera: &Camera,
     viewport: &Viewport,
     current_galaxy: usize,
@@ -1762,8 +3119,10 @@ fn create_planet_colliders(
 
         let radius =
             (
-                dx * dx
-                    + dy * dy
+                dx
+                    * dx
+                    + dy
+                        * dy
             )
                 .sqrt()
                 * 0.92;
@@ -1801,65 +3160,54 @@ fn sparkle_color(
 ) -> Color {
     let index =
         (
-            value * 6.0
+            value
+                * 6.0
         )
             .floor()
             as i32;
 
     match index {
-        0 => {
-            Color::new(
-                235,
-                55,
-                55,
-                255,
-            )
-        }
+        0 => Color::new(
+            235,
+            55,
+            55,
+            255,
+        ),
 
-        1 => {
-            Color::new(
-                70,
-                220,
-                90,
-                255,
-            )
-        }
+        1 => Color::new(
+            70,
+            220,
+            90,
+            255,
+        ),
 
-        2 => {
-            Color::new(
-                65,
-                135,
-                255,
-                255,
-            )
-        }
+        2 => Color::new(
+            65,
+            135,
+            255,
+            255,
+        ),
 
-        3 => {
-            Color::new(
-                170,
-                80,
-                235,
-                255,
-            )
-        }
+        3 => Color::new(
+            170,
+            80,
+            235,
+            255,
+        ),
 
-        4 => {
-            Color::new(
-                210,
-                220,
-                230,
-                255,
-            )
-        }
+        4 => Color::new(
+            210,
+            220,
+            230,
+            255,
+        ),
 
-        _ => {
-            Color::new(
-                255,
-                220,
-                55,
-                255,
-            )
-        }
+        _ => Color::new(
+            255,
+            220,
+            55,
+            255,
+        ),
     }
 }
 
@@ -1883,32 +3231,38 @@ fn spawn_sparkle(
 
     let x_random =
         pseudo_random(
-            seed * 17.31,
+            seed
+                * 17.31,
         );
 
     let speed_random =
         pseudo_random(
-            seed * 31.73,
+            seed
+                * 31.73,
         );
 
     let direction_random =
         pseudo_random(
-            seed * 47.19,
+            seed
+                * 47.19,
         );
 
     let size_random =
         pseudo_random(
-            seed * 61.53,
+            seed
+                * 61.53,
         );
 
     let spin_random =
         pseudo_random(
-            seed * 77.11,
+            seed
+                * 77.11,
         );
 
     let color_random =
         pseudo_random(
-            seed * 91.37,
+            seed
+                * 91.37,
         );
 
     let x =
@@ -1972,7 +3326,9 @@ fn spawn_sparkle(
 
 fn update_sparkles(
     sparkles: &mut Vec<Sparkle>,
-    colliders: &[PlanetCollider],
+    colliders: &[
+        PlanetCollider
+    ],
     dt: f32,
     viewport: &Viewport,
 ) {
@@ -2002,7 +3358,9 @@ fn update_sparkles(
             sparkle.rotation_speed
                 * dt;
 
-        for collider in colliders {
+        for collider in
+            colliders
+        {
             collide_sparkle_planet(
                 sparkle,
                 collider,
@@ -2029,9 +3387,6 @@ fn update_sparkles(
                     .x
                     .abs()
                     * 0.72;
-
-            sparkle.rotation_speed +=
-                1.0;
         }
 
         if sparkle.position.x
@@ -2045,9 +3400,6 @@ fn update_sparkles(
                     .x
                     .abs()
                     * 0.72;
-
-            sparkle.rotation_speed -=
-                1.0;
         }
 
         if sparkle.position.y
@@ -2080,8 +3432,10 @@ fn collide_sparkle_planet(
             - planet.center.y;
 
     let distance_squared =
-        dx * dx
-            + dy * dy;
+        dx
+            * dx
+            + dy
+                * dy;
 
     let minimum_distance =
         sparkle.radius
@@ -2103,8 +3457,10 @@ fn collide_sparkle_planet(
 
     let normal =
         Vector2::new(
-            dx / distance,
-            dy / distance,
+            dx
+                / distance,
+            dy
+                / distance,
         );
 
     let penetration =
@@ -2154,23 +3510,14 @@ fn collide_sparkle_planet(
 
     sparkle.velocity.y *=
         0.97;
-
-    let tangent_velocity =
-        -sparkle.velocity.x
-            * normal.y
-            + sparkle.velocity.y
-                * normal.x;
-
-    sparkle.rotation_speed +=
-        tangent_velocity
-            * 0.015;
 }
 
 fn collect_sparkles(
     sparkles: &mut Vec<Sparkle>,
     mouse: Vector2,
     score: &mut u32,
-    starbit_sound: &raylib::audio::Sound<'_>,
+    starbit_sound:
+        &raylib::audio::Sound<'_>,
 ) {
     let cursor_radius =
         21.0;
@@ -2194,8 +3541,10 @@ fn collect_sparkles(
             sparkle.radius
                 + cursor_radius;
 
-        if dx * dx
-            + dy * dy
+        if dx
+            * dx
+            + dy
+                * dy
             <= total_radius
                 * total_radius
         {
@@ -2221,7 +3570,9 @@ fn draw_sparkles(
     d: &mut RaylibDrawHandle<'_>,
     sparkles: &[Sparkle],
 ) {
-    for sparkle in sparkles {
+    for sparkle in
+        sparkles
+    {
         if sparkle.active {
             draw_sparkle(
                 d,
@@ -2235,7 +3586,8 @@ fn draw_sparkle(
     d: &mut RaylibDrawHandle<'_>,
     sparkle: &Sparkle,
 ) {
-    const POINTS: usize =
+    const POINTS:
+        usize =
         8;
 
     let outer =
@@ -2246,12 +3598,17 @@ fn draw_sparkle(
             * 0.28;
 
     let mut vertices =
-        [Vector2::new(
-            0.0,
-            0.0,
-        ); POINTS];
+        [
+            Vector2::new(
+                0.0,
+                0.0,
+            );
+            POINTS
+        ];
 
-    for i in 0..POINTS {
+    for i in
+        0..POINTS
+    {
         let radius =
             if i % 2 == 0 {
                 outer
@@ -2270,14 +3627,15 @@ fn draw_sparkle(
                 sparkle.position.x
                     + angle.cos()
                         * radius,
-
                 sparkle.position.y
                     + angle.sin()
                         * radius,
             );
     }
 
-    for i in 0..POINTS {
+    for i in
+        0..POINTS
+    {
         let next =
             (
                 i + 1
@@ -2285,7 +3643,9 @@ fn draw_sparkle(
                 % POINTS;
 
         d.draw_triangle(
-            vertices[next],
+            vertices[
+                next
+            ],
             vertices[i],
             sparkle.position,
             sparkle.color,
@@ -2304,7 +3664,8 @@ fn draw_star_cursor(
     d: &mut RaylibDrawHandle<'_>,
     mouse: Vector2,
 ) {
-    const POINTS: usize =
+    const POINTS:
+        usize =
         10;
 
     let outer_radius =
@@ -2335,12 +3696,17 @@ fn draw_star_cursor(
         );
 
     let mut outer =
-        [Vector2::new(
-            0.0,
-            0.0,
-        ); POINTS];
+        [
+            Vector2::new(
+                0.0,
+                0.0,
+            );
+            POINTS
+        ];
 
-    for i in 0..POINTS {
+    for i in
+        0..POINTS
+    {
         let radius =
             if i % 2 == 0 {
                 outer_radius
@@ -2359,14 +3725,15 @@ fn draw_star_cursor(
                 mouse.x
                     + angle.cos()
                         * radius,
-
                 mouse.y
                     + angle.sin()
                         * radius,
             );
     }
 
-    for i in 0..POINTS {
+    for i in
+        0..POINTS
+    {
         let next =
             (
                 i + 1
@@ -2374,7 +3741,9 @@ fn draw_star_cursor(
                 % POINTS;
 
         d.draw_triangle(
-            outer[next],
+            outer[
+                next
+            ],
             outer[i],
             mouse,
             border,
@@ -2388,12 +3757,17 @@ fn draw_star_cursor(
         8.5;
 
     let mut inner =
-        [Vector2::new(
-            0.0,
-            0.0,
-        ); POINTS];
+        [
+            Vector2::new(
+                0.0,
+                0.0,
+            );
+            POINTS
+        ];
 
-    for i in 0..POINTS {
+    for i in
+        0..POINTS
+    {
         let radius =
             if i % 2 == 0 {
                 inner_outer_radius
@@ -2412,14 +3786,15 @@ fn draw_star_cursor(
                 mouse.x
                     + angle.cos()
                         * radius,
-
                 mouse.y
                     + angle.sin()
                         * radius,
             );
     }
 
-    for i in 0..POINTS {
+    for i in
+        0..POINTS
+    {
         let next =
             (
                 i + 1
@@ -2427,7 +3802,9 @@ fn draw_star_cursor(
                 % POINTS;
 
         d.draw_triangle(
-            inner[next],
+            inner[
+                next
+            ],
             inner[i],
             mouse,
             fill,
@@ -2591,10 +3968,8 @@ fn transform_objects_rotated(
                                     rotation,
                                 )
                                     + offset,
-
                                 sphere.radius
                                     * scale,
-
                                 sphere.material,
                             ),
                         )
@@ -2611,18 +3986,14 @@ fn transform_objects_rotated(
                                     rotation,
                                 )
                                     + offset,
-
                                 rotate_y(
                                     cylinder.axis,
                                     rotation,
                                 ),
-
                                 cylinder.radius
                                     * scale,
-
                                 cylinder.height
                                     * scale,
-
                                 cylinder.material,
                             ),
                         )
@@ -2639,18 +4010,14 @@ fn transform_objects_rotated(
                                     rotation,
                                 )
                                     + offset,
-
                                 rotate_y(
                                     cone.axis,
                                     rotation,
                                 ),
-
                                 cone.radius
                                     * scale,
-
                                 cone.height
                                     * scale,
-
                                 cone.material,
                             ),
                         )
@@ -2667,12 +4034,10 @@ fn transform_objects_rotated(
                                     rotation,
                                 )
                                     + offset,
-
                                 rotate_y(
                                     plane.normal,
                                     rotation,
                                 ),
-
                                 plane.material,
                             ),
                         )
@@ -2689,26 +4054,21 @@ fn transform_objects_rotated(
                                     rotation,
                                 )
                                     + offset,
-
                                 cube.half_size
                                     * 2.0
                                     * scale,
-
                                 rotate_y(
                                     cube.right,
                                     rotation,
                                 ),
-
                                 rotate_y(
                                     cube.up,
                                     rotation,
                                 ),
-
                                 rotate_y(
                                     cube.forward,
                                     rotation,
                                 ),
-
                                 cube.material,
                             ),
                         )
@@ -2725,17 +4085,13 @@ fn transform_objects_rotated(
                                     rotation,
                                 )
                                     + offset,
-
                                 hemisphere.radius
                                     * scale,
-
                                 rotate_y(
                                     hemisphere.normal,
                                     rotation,
                                 ),
-
                                 hemisphere.material,
-
                                 hemisphere.flat_material,
                             ),
                         )
@@ -2752,13 +4108,10 @@ fn transform_objects_rotated(
                                     rotation,
                                 )
                                     + offset,
-
                                 torus.major_radius
                                     * scale,
-
                                 torus.minor_radius
                                     * scale,
-
                                 torus.material,
                             ),
                         )
@@ -2775,10 +4128,8 @@ fn transform_objects_rotated(
                                     rotation,
                                 )
                                     + offset,
-
                                 ellipsoid.radii
                                     * scale,
-
                                 ellipsoid.material,
                             ),
                         )
