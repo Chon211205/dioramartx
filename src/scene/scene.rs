@@ -7,23 +7,13 @@ pub struct Scene {
 }
 
 impl Scene {
-    pub fn new(
-        objects: Vec<Object>,
-    ) -> Self {
-        let bvh =
-            Bvh::build(
-                &objects,
-            );
+    pub fn new(objects: Vec<Object>) -> Self {
+        let bvh = Bvh::build(&objects);
 
-        Self {
-            objects,
-            bvh,
-        }
+        Self { objects, bvh }
     }
 
-    pub fn objects(
-        &self,
-    ) -> &[Object] {
+    pub fn objects(&self) -> &[Object] {
         &self.objects
     }
 }

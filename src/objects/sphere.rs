@@ -8,11 +8,7 @@ pub struct Sphere {
 }
 
 impl Sphere {
-    pub fn new(
-        center: Vec3,
-        radius: f32,
-        material: Material,
-    ) -> Self {
+    pub fn new(center: Vec3, radius: f32, material: Material) -> Self {
         Self {
             center,
             radius,
@@ -20,11 +16,7 @@ impl Sphere {
         }
     }
 
-    pub fn intersect(
-        &self,
-        origin: &Vec3,
-        direction: &Vec3,
-    ) -> Option<f32> {
+    pub fn intersect(&self, origin: &Vec3, direction: &Vec3) -> Option<f32> {
         let oc = *origin - self.center;
 
         let a = direction.dot(direction);

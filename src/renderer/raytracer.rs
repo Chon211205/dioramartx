@@ -18,10 +18,10 @@ use crate::objects::cube::Cube;
 
 use crate::objects::cylinder::Cylinder;
 
-use crate::objects::object::Object;
-use crate::objects::hemisphere::Hemisphere;
-use crate::objects::torus::Torus;
 use crate::objects::ellipsoid::Ellipsoid;
+use crate::objects::hemisphere::Hemisphere;
+use crate::objects::object::Object;
+use crate::objects::torus::Torus;
 
 use crate::objects::plane::Plane;
 
@@ -35,19 +35,8 @@ const MAX_DEPTH: u32 = 4;
 
 const EPSILON: f32 = 0.002;
 
-pub fn render(
-    framebuffer: &mut Framebuffer,
-    scene: &Scene,
-    light: &Light,
-    camera: &Camera,
-) {
-    render_with_skybox(
-        framebuffer,
-        scene,
-        light,
-        camera,
-        0,
-    );
+pub fn render(framebuffer: &mut Framebuffer, scene: &Scene, light: &Light, camera: &Camera) {
+    render_with_skybox(framebuffer, scene, light, camera, 0);
 }
 
 pub fn render_with_skybox(
@@ -57,14 +46,7 @@ pub fn render_with_skybox(
     camera: &Camera,
     skybox_id: usize,
 ) {
-    render_rotated_with_skybox(
-        framebuffer,
-        scene,
-        light,
-        camera,
-        0.0,
-        skybox_id,
-    );
+    render_rotated_with_skybox(framebuffer, scene, light, camera, 0.0, skybox_id);
 }
 
 pub fn render_rotated(
@@ -74,14 +56,7 @@ pub fn render_rotated(
     camera: &Camera,
     rotation_y: f32,
 ) {
-    render_rotated_with_skybox(
-        framebuffer,
-        scene,
-        light,
-        camera,
-        rotation_y,
-        0,
-    );
+    render_rotated_with_skybox(framebuffer, scene, light, camera, rotation_y, 0);
 }
 
 pub fn render_rotated_with_skybox(
@@ -92,100 +67,55 @@ pub fn render_rotated_with_skybox(
     rotation_y: f32,
     skybox_id: usize,
 ) {
-    let width =
-        framebuffer.width as usize;
+    let width = framebuffer.width as usize;
 
-    let height =
-        framebuffer.height as usize;
+    let height = framebuffer.height as usize;
 
-    let thread_count =
-        thread::available_parallelism()
-            .map(|n| n.get())
-            .unwrap_or(4)
-            .max(1);
+    let thread_count = thread::available_parallelism()
+        .map(|n| n.get())
+        .unwrap_or(4)
+        .max(1);
 
-    let rows_per_thread =
-        (
-            height
-                + thread_count
-                - 1
-        )
-            / thread_count;
+    let rows_per_thread = (height + thread_count - 1) / thread_count;
 
-    let chunk_size =
-        rows_per_thread
-            * width;
+    let chunk_size = rows_per_thread * width;
 
-    let pixels =
-        framebuffer.pixels_mut();
+    let pixels = framebuffer.pixels_mut();
 
-    thread::scope(
-        |scope| {
-            for (
-                chunk_index,
-                chunk,
-            ) in pixels
-                .chunks_mut(
-                    chunk_size,
-                )
-                .enumerate()
-            {
-                scope.spawn(
-                    move || {
-                        let start_row =
-                            chunk_index
-                                * rows_per_thread;
+    thread::scope(|scope| {
+        for (chunk_index, chunk) in pixels.chunks_mut(chunk_size).enumerate() {
+            scope.spawn(move || {
+                let start_row = chunk_index * rows_per_thread;
 
-                        for local_index in
-                            0..chunk.len()
-                        {
-                            let local_y =
-                                local_index
-                                    / width;
+                for local_index in 0..chunk.len() {
+                    let local_y = local_index / width;
 
-                            let x =
-                                local_index
-                                    % width;
+                    let x = local_index % width;
 
-                            let y =
-                                start_row
-                                    + local_y;
+                    let y = start_row + local_y;
 
-                            if y >= height {
-                                continue;
-                            }
+                    if y >= height {
+                        continue;
+                    }
 
-                            let ray =
-                                camera.get_ray(
-                                    x as f32 + 0.5,
-                                    y as f32 + 0.5,
-                                    width as f32,
-                                    height as f32,
-                                );
+                    let ray =
+                        camera.get_ray(x as f32 + 0.5, y as f32 + 0.5, width as f32, height as f32);
 
-                            let color =
-                                cast_ray(
-                                    &ray.origin,
-                                    &ray.direction,
-                                    scene,
-                                    light,
-                                    0,
-                                    rotation_y,
-                                    skybox_id,
-                                );
+                    let color = cast_ray(
+                        &ray.origin,
+                        &ray.direction,
+                        scene,
+                        light,
+                        0,
+                        rotation_y,
+                        skybox_id,
+                    );
 
-                            chunk[
-                                local_index
-                            ] =
-                                to_color(
-                                    color,
-                                );
-                        }
-                    },
-                );
-            }
-        },
-    );
+                    chunk[local_index] = to_color(color);
+                }
+            });
+        }
+    });
 }
 
 fn cast_ray(
@@ -197,761 +127,178 @@ fn cast_ray(
     rotation_y: f32,
     skybox_id: usize,
 ) -> Vec3 {
-
     if depth >= MAX_DEPTH {
-
-        return skybox_color(
-            direction,
-            skybox_id,
-        );
-
+        return skybox_color(direction, skybox_id);
     }
 
-    let hit =
+    let hit = scene.bvh.intersect(origin, direction, &scene.objects);
 
-        scene
+    let (object_index, distance) = match hit {
+        Some(value) => value,
 
-            .bvh
+        None => {
+            return skybox_color(direction, skybox_id);
+        }
+    };
 
-            .intersect(
+    let object = &scene.objects[object_index];
 
-                origin,
+    let hit_point = *origin + *direction * distance;
 
-                direction,
+    let geometric_normal = object.normal_at(&hit_point).normalize();
 
-                &scene.objects,
+    let front_face = direction.dot(&geometric_normal) < 0.0;
 
-            );
-
-    let (
-
-        object_index,
-
-        distance,
-
-    ) =
-
-        match hit {
-
-            Some(
-
-                value,
-
-            ) => {
-
-                value
-
-            }
-
-            None => {
-
-                return skybox_color(
-                    direction,
-                    skybox_id,
-                );
-
-            }
-
-        };
-
-    let object =
-
-        &scene.objects[
-
-            object_index
-
-        ];
-
-    let hit_point =
-
-        *origin
-
-            + *direction
-
-                * distance;
-
-    let geometric_normal =
-
-        object
-
-            .normal_at(
-
-                &hit_point,
-
-            )
-
-            .normalize();
-
-    let front_face =
-
-        direction
-
-            .dot(
-
-                &geometric_normal,
-
-            )
-
-            < 0.0;
-
-    let mut normal =
-
-        if front_face {
-
-            geometric_normal
-
-        } else {
-
-            -geometric_normal
-
-        };
-
-    let material =
-        object.material_at(&hit_point);
-
-    let (
-
-        u,
-
-        v,
-
-    ) =
-
-        object_uv(
-            object,
-            &hit_point,
-            rotation_y,
-        );
-
-    let mut surface_color =
-
-        material.color;
-
-    if let Some(
-
-        texture,
-
-    ) =
-
-        material
-
-            .albedo_texture
-
-    {
-
-        let texture_color =
-
-            texture.sample(
-
-                u,
-
-                v,
-
-            );
-
-        surface_color =
-
-            multiply_vec3(
-
-                surface_color,
-
-                texture_color,
-
-            );
-
+    let mut normal = if front_face {
+        geometric_normal
     } else {
+        -geometric_normal
+    };
 
+    let material = object.material_at(&hit_point);
+
+    let (u, v) = object_uv(object, &hit_point, rotation_y);
+
+    let mut surface_color = material.color;
+
+    if let Some(texture) = material.albedo_texture {
+        let texture_color = texture.sample(u, v);
+
+        surface_color = multiply_vec3(surface_color, texture_color);
+    } else {
         match material.pattern {
-
             MaterialPattern::Grass => {
-
-                surface_color =
-
-                    multiply_vec3(
-
-                        surface_color,
-
-                        procedural_grass(
-
-                            u,
-
-                            v,
-
-                            &hit_point,
-
-                        ),
-
-                    );
-
+                surface_color = multiply_vec3(surface_color, procedural_grass(u, v, &hit_point));
             }
 
             MaterialPattern::Solid => {}
-
         }
-
     }
 
-    if let Some(
-
-        normal_texture,
-
-    ) =
-
-        material
-
-            .normal_texture
-
-    {
-
-        let sample =
-
-            normal_texture
-
-                .sample(
-
-                    u,
-
-                    v,
-
-                );
-
-        let tangent_normal =
-
-            Vec3::new(
-
-                sample.x
-
-                    * 2.0
-
-                    - 1.0,
-
-                sample.y
-
-                    * 2.0
-
-                    - 1.0,
-
-                sample.z
-
-                    * 2.0
-
-                    - 1.0,
-
-            )
-
-            .normalize();
-
-        let (
-
-            tangent,
-
-            bitangent,
-
-        ) =
-
-            object_tangent_basis(
-
-                object,
-
-                &hit_point,
-
-                normal,
-
-            );
-
-        normal =
-
-            (
-
-                tangent
-
-                    * tangent_normal.x
-
-                    + bitangent
-
-                        * tangent_normal.y
-
-                    + normal
-
-                        * tangent_normal.z
-
-            )
-
-                .normalize();
-
-        if direction
-
-            .dot(
-
-                &normal,
-
-            )
-
-            > 0.0
-
-        {
-
-            normal =
-
-                -normal;
-
-        }
-
-    }
-
-    let roughness =
-
-        material
-
-            .roughness_texture
-
-            .map(
-
-                |texture| {
-
-                    texture
-
-                        .sample_scalar(
-
-                            u,
-
-                            v,
-
-                        )
-
-                        .clamp(
-
-                            0.0,
-
-                            1.0,
-
-                        )
-
-                },
-
-            )
-
-            .unwrap_or(
-
-                0.5,
-
-            );
-
-    let ao =
-
-        material
-
-            .ao_texture
-
-            .map(
-
-                |texture| {
-
-                    texture
-
-                        .sample_scalar(
-
-                            u,
-
-                            v,
-
-                        )
-
-                        .clamp(
-
-                            0.0,
-
-                            1.0,
-
-                        )
-
-                },
-
-            )
-
-            .unwrap_or(
-
-                1.0,
-
-            );
-
-    let to_light =
-
-        light.position
-
-            - hit_point;
-
-    let light_distance =
-
-        to_light.length();
-
-    let light_direction =
-
-        to_light
-
-            / light_distance;
-
-    let shadow_origin =
-
-        hit_point
-
-            + normal
-
-                * EPSILON;
-
-    let in_shadow =
-
-        if normal
-
-            .dot(
-
-                &light_direction,
-
-            )
-
-            <= 0.0
-
-        {
-
-            true
-
-        } else {
-
-            scene
-
-                .bvh
-
-                .any_hit(
-
-                    &shadow_origin,
-
-                    &light_direction,
-
-                    light_distance
-
-                        - EPSILON,
-
-                    &scene.objects,
-
-                )
-
-        };
-
-    let ndotl =
-
-        normal
-
-            .dot(
-
-                &light_direction,
-
-            )
-
-            .max(
-
-                0.0,
-
-            );
-
-    let ambient =
-
-        0.22
-
-            * ao;
-
-    let diffuse_factor =
-
-        if in_shadow {
-
-            ndotl
-
-                * 0.18
-
-        } else {
-
-            ndotl
-
-        };
-
-    let view_direction =
-
-        -*direction;
-
-    let reflected_light =
-
-        reflect(
-
-            -light_direction,
-
-            normal,
-
+    if let Some(normal_texture) = material.normal_texture {
+        let sample = normal_texture.sample(u, v);
+
+        let tangent_normal = Vec3::new(
+            sample.x * 2.0 - 1.0,
+            sample.y * 2.0 - 1.0,
+            sample.z * 2.0 - 1.0,
         )
-
         .normalize();
 
-    let specular_dot =
+        let (tangent, bitangent) = object_tangent_basis(object, &hit_point, normal);
 
-        reflected_light
+        normal =
+            (tangent * tangent_normal.x + bitangent * tangent_normal.y + normal * tangent_normal.z)
+                .normalize();
 
-            .dot(
+        if direction.dot(&normal) > 0.0 {
+            normal = -normal;
+        }
+    }
 
-                &view_direction,
+    let roughness = material
+        .roughness_texture
+        .map(|texture| texture.sample_scalar(u, v).clamp(0.0, 1.0))
+        .unwrap_or(0.5);
 
-            )
+    let ao = material
+        .ao_texture
+        .map(|texture| texture.sample_scalar(u, v).clamp(0.0, 1.0))
+        .unwrap_or(1.0);
 
-            .max(
+    let to_light = light.position - hit_point;
 
-                0.0,
+    let light_distance = to_light.length();
 
-            );
+    let light_direction = to_light / light_distance;
 
-    let shininess =
+    let shadow_origin = hit_point + normal * EPSILON;
 
-        8.0
+    let in_shadow = if normal.dot(&light_direction) <= 0.0 {
+        true
+    } else {
+        scene.bvh.any_hit(
+            &shadow_origin,
+            &light_direction,
+            light_distance - EPSILON,
+            &scene.objects,
+        )
+    };
 
-            + (
+    let ndotl = normal.dot(&light_direction).max(0.0);
 
-                1.0
+    let ambient = 0.22 * ao;
 
-                    - roughness
+    let diffuse_factor = if in_shadow { ndotl * 0.18 } else { ndotl };
 
-            )
+    let view_direction = -*direction;
 
-                * 120.0;
+    let reflected_light = reflect(-light_direction, normal).normalize();
 
-    let mut specular =
+    let specular_dot = reflected_light.dot(&view_direction).max(0.0);
 
-        specular_dot
+    let shininess = 8.0 + (1.0 - roughness) * 120.0;
 
-            .powf(
-
-                shininess,
-
-            )
-
-            * material.specular
-
-            * (
-
-                1.0
-
-                    - roughness
-
-                        * 0.65
-
-            );
+    let mut specular = specular_dot.powf(shininess) * material.specular * (1.0 - roughness * 0.65);
 
     if in_shadow {
-
-        specular *=
-
-            0.08;
-
+        specular *= 0.08;
     }
 
-    let diffuse_light =
+    let diffuse_light = ambient + diffuse_factor * material.albedo * light.intensity;
 
-        ambient
+    let mut final_color = surface_color * diffuse_light;
 
-            + diffuse_factor
+    final_color = final_color + light.color * (specular * light.intensity);
 
-                * material.albedo
+    let reflectivity = material.reflectivity.clamp(0.0, 1.0);
 
-                * light.intensity;
+    if reflectivity > 0.001 {
+        let reflected_direction = reflect(*direction, normal).normalize();
 
-    let mut final_color =
+        let reflected_origin = hit_point + normal * EPSILON;
 
-        surface_color
+        let reflected_color = cast_ray(
+            &reflected_origin,
+            &reflected_direction,
+            scene,
+            light,
+            depth + 1,
+            rotation_y,
+            skybox_id,
+        );
 
-            * diffuse_light;
-
-    final_color =
-
-        final_color
-
-            + light.color
-
-                * (
-
-                    specular
-
-                        * light.intensity
-
-                );
-
-    let reflectivity =
-
-        material
-
-            .reflectivity
-
-            .clamp(
-
-                0.0,
-
-                1.0,
-
-            );
-
-    if reflectivity
-
-        > 0.001
-
-    {
-
-        let reflected_direction =
-
-            reflect(
-
-                *direction,
-
-                normal,
-
-            )
-
-            .normalize();
-
-        let reflected_origin =
-
-            hit_point
-
-                + normal
-
-                    * EPSILON;
-
-        let reflected_color =
-            cast_ray(
-                &reflected_origin,
-                &reflected_direction,
-                scene,
-                light,
-                depth + 1,
-                rotation_y,
-                skybox_id,
-            );
-
-        final_color =
-
-            final_color
-
-                * (
-
-                    1.0
-
-                        - reflectivity
-
-                )
-
-                + reflected_color
-
-                    * reflectivity;
-
+        final_color = final_color * (1.0 - reflectivity) + reflected_color * reflectivity;
     }
 
-    let transparency =
+    let transparency = material.transparency.clamp(0.0, 1.0);
 
-        material
+    if transparency > 0.001 {
+        let eta = if front_face { 1.0 / 1.33 } else { 1.33 };
 
-            .transparency
-
-            .clamp(
-
-                0.0,
-
-                1.0,
-
-            );
-
-    if transparency
-
-        > 0.001
-
-    {
-
-        let eta =
-
-            if front_face {
-
-                1.0 / 1.33
-
-            } else {
-
-                1.33
-
-            };
-
-        let refracted_direction =
-
-            refract(
-
-                *direction,
-
-                normal,
-
-                eta,
-
-            )
-
-            .unwrap_or(
-
-                *direction,
-
-            )
-
+        let refracted_direction = refract(*direction, normal, eta)
+            .unwrap_or(*direction)
             .normalize();
 
-        let refracted_origin =
+        let refracted_origin = hit_point + refracted_direction * (EPSILON * 2.0);
 
-            hit_point
+        let refracted_color = cast_ray(
+            &refracted_origin,
+            &refracted_direction,
+            scene,
+            light,
+            depth + 1,
+            rotation_y,
+            skybox_id,
+        );
 
-                + refracted_direction
-
-                    * (
-
-                        EPSILON
-
-                            * 2.0
-
-                    );
-
-        let refracted_color =
-            cast_ray(
-                &refracted_origin,
-                &refracted_direction,
-                scene,
-                light,
-                depth + 1,
-                rotation_y,
-                skybox_id,
-            );
-
-        final_color =
-
-            final_color
-
-                * (
-
-                    1.0
-
-                        - transparency
-
-                )
-
-                + refracted_color
-
-                    * transparency;
-
+        final_color = final_color * (1.0 - transparency) + refracted_color * transparency;
     }
 
     final_color
-
 }
 
-fn object_uv(
-    object: &Object,
-    point: &Vec3,
-    rotation_y: f32,
-) -> (f32, f32) {
+fn object_uv(object: &Object, point: &Vec3, rotation_y: f32) -> (f32, f32) {
     match object {
         Object::Sphere(sphere) => sphere_uv(sphere, point, rotation_y),
         Object::Plane(plane) => planar_uv(plane, point),
@@ -975,1962 +322,573 @@ fn rotate_y_inverse(point: Vec3, angle: f32) -> Vec3 {
     )
 }
 
-fn sphere_uv(
-    sphere: &Sphere,
-    point: &Vec3,
-    rotation_y: f32,
-) -> (f32, f32) {
+fn sphere_uv(sphere: &Sphere, point: &Vec3, rotation_y: f32) -> (f32, f32) {
     let local = (*point - sphere.center).normalize();
     let p = rotate_y_inverse(local, rotation_y);
 
-    let u =
-        0.5
-            + p.z.atan2(p.x)
-                / (2.0 * PI);
+    let u = 0.5 + p.z.atan2(p.x) / (2.0 * PI);
 
-    let v =
-        0.5
-            - p.y.clamp(-1.0, 1.0).asin()
-                / PI;
+    let v = 0.5 - p.y.clamp(-1.0, 1.0).asin() / PI;
 
     (u, v)
 }
 
-fn planar_uv(
-    plane: &Plane,
-    point: &Vec3,
-) -> (f32, f32) {
-    let normal =
-        plane.normal.normalize();
+fn planar_uv(plane: &Plane, point: &Vec3) -> (f32, f32) {
+    let normal = plane.normal.normalize();
 
-    let (tangent, bitangent) =
-        tangent_basis(normal);
+    let (tangent, bitangent) = tangent_basis(normal);
 
-    let local =
-        *point - plane.point;
+    let local = *point - plane.point;
 
-    (
-        local.dot(&tangent) * 0.5,
-        local.dot(&bitangent) * 0.5,
-    )
+    (local.dot(&tangent) * 0.5, local.dot(&bitangent) * 0.5)
 }
 
-fn cylinder_uv(
-    cylinder: &Cylinder,
-    point: &Vec3,
-) -> (f32, f32) {
-    let axis =
-        cylinder.axis.normalize();
+fn cylinder_uv(cylinder: &Cylinder, point: &Vec3) -> (f32, f32) {
+    let axis = cylinder.axis.normalize();
 
-    let local =
-        *point - cylinder.center;
+    let local = *point - cylinder.center;
 
-    let axial =
-        local.dot(&axis);
+    let axial = local.dot(&axis);
 
-    let (tangent, bitangent) =
-        axis_basis(axis);
+    let (tangent, bitangent) = axis_basis(axis);
 
-    let radial =
-        local - axis * axial;
+    let radial = local - axis * axial;
 
-    let x =
-        radial.dot(&tangent);
+    let x = radial.dot(&tangent);
 
-    let z =
-        radial.dot(&bitangent);
+    let z = radial.dot(&bitangent);
 
-    let half_height =
-        cylinder.height * 0.5;
+    let half_height = cylinder.height * 0.5;
 
-    let cap_epsilon =
-        0.015;
+    let cap_epsilon = 0.015;
 
-    if axial.abs()
-        >= half_height - cap_epsilon
-    {
-        let u =
-            0.5
-                + x
-                    / (cylinder.radius * 2.0);
+    if axial.abs() >= half_height - cap_epsilon {
+        let u = 0.5 + x / (cylinder.radius * 2.0);
 
-        let v =
-            0.5
-                + z
-                    / (cylinder.radius * 2.0);
+        let v = 0.5 + z / (cylinder.radius * 2.0);
 
         return (u, v);
     }
 
-    let angle =
-        z.atan2(x);
+    let angle = z.atan2(x);
 
-    let u =
-        0.5
-            + angle / (2.0 * PI);
+    let u = 0.5 + angle / (2.0 * PI);
 
-    let v =
-        axial / cylinder.height + 0.5;
+    let v = axial / cylinder.height + 0.5;
 
     (u * 2.0, v * 1.5)
 }
 
-fn cone_uv(
-    cone: &Cone,
-    point: &Vec3,
-) -> (f32, f32) {
-    let axis =
-        cone.axis.normalize();
+fn cone_uv(cone: &Cone, point: &Vec3) -> (f32, f32) {
+    let axis = cone.axis.normalize();
 
-    let local =
-        *point - cone.center;
+    let local = *point - cone.center;
 
-    let axial =
-        local.dot(&axis);
+    let axial = local.dot(&axis);
 
-    let (tangent, bitangent) =
-        axis_basis(axis);
+    let (tangent, bitangent) = axis_basis(axis);
 
-    let radial =
-        local - axis * axial;
+    let radial = local - axis * axial;
 
-    let x =
-        radial.dot(&tangent);
+    let x = radial.dot(&tangent);
 
-    let z =
-        radial.dot(&bitangent);
+    let z = radial.dot(&bitangent);
 
-    let u =
-        0.5
-            + z.atan2(x)
-                / (2.0 * PI);
+    let u = 0.5 + z.atan2(x) / (2.0 * PI);
 
-    let v =
-        axial / cone.height + 0.5;
+    let v = axial / cone.height + 0.5;
 
     (u * 2.0, v)
 }
 
-fn cube_uv(
-    cube: &Cube,
-    point: &Vec3,
-) -> (f32, f32) {
-    let delta =
-        *point - cube.center;
+fn cube_uv(cube: &Cube, point: &Vec3) -> (f32, f32) {
+    let delta = *point - cube.center;
 
-    let local =
-        Vec3::new(
-            delta.dot(&cube.right),
-            delta.dot(&cube.up),
-            delta.dot(&cube.forward),
-        ) / cube.half_size;
+    let local = Vec3::new(
+        delta.dot(&cube.right),
+        delta.dot(&cube.up),
+        delta.dot(&cube.forward),
+    ) / cube.half_size;
 
     let ax = local.x.abs();
     let ay = local.y.abs();
     let az = local.z.abs();
 
     if ax >= ay && ax >= az {
-        (
-            (local.z + 1.0) * 0.5,
-            (local.y + 1.0) * 0.5,
-        )
+        ((local.z + 1.0) * 0.5, (local.y + 1.0) * 0.5)
     } else if ay >= ax && ay >= az {
-        (
-            (local.x + 1.0) * 0.5,
-            (local.z + 1.0) * 0.5,
-        )
+        ((local.x + 1.0) * 0.5, (local.z + 1.0) * 0.5)
     } else {
-        (
-            (local.x + 1.0) * 0.5,
-            (local.y + 1.0) * 0.5,
-        )
+        ((local.x + 1.0) * 0.5, (local.y + 1.0) * 0.5)
     }
 }
 
-fn hemisphere_uv(
-    hemisphere: &Hemisphere,
-    point: &Vec3,
-    rotation_y: f32,
-) -> (f32, f32) {
-    let local =
-        *point - hemisphere.center;
+fn hemisphere_uv(hemisphere: &Hemisphere, point: &Vec3, rotation_y: f32) -> (f32, f32) {
+    let local = *point - hemisphere.center;
 
-    let normal =
-        hemisphere.normal.normalize();
+    let normal = hemisphere.normal.normalize();
 
-    let plane_distance =
-        local.dot(&normal);
+    let plane_distance = local.dot(&normal);
 
     if plane_distance.abs() < 0.006 {
-        let (tangent, bitangent) =
-            axis_basis(normal);
+        let (tangent, bitangent) = axis_basis(normal);
 
         return (
-            0.5
-                + local.dot(&tangent)
-                    / (hemisphere.radius * 2.0),
-            0.5
-                + local.dot(&bitangent)
-                    / (hemisphere.radius * 2.0),
+            0.5 + local.dot(&tangent) / (hemisphere.radius * 2.0),
+            0.5 + local.dot(&bitangent) / (hemisphere.radius * 2.0),
         );
     }
 
-    let p =
-        rotate_y_inverse(
-            local.normalize(),
-            rotation_y,
-        );
+    let p = rotate_y_inverse(local.normalize(), rotation_y);
 
-    let u =
-        0.5
-            + p.z.atan2(p.x)
-                / (2.0 * PI);
+    let u = 0.5 + p.z.atan2(p.x) / (2.0 * PI);
 
-    let v =
-        0.5
-            - p.y.clamp(-1.0, 1.0).asin()
-                / PI;
+    let v = 0.5 - p.y.clamp(-1.0, 1.0).asin() / PI;
 
     (u, v)
 }
 
-fn torus_uv(
-    torus: &Torus,
-    point: &Vec3,
-    rotation_y: f32,
-) -> (f32, f32) {
-    let local =
-        rotate_y_inverse(
-            *point - torus.center,
-            rotation_y,
-        );
+fn torus_uv(torus: &Torus, point: &Vec3, rotation_y: f32) -> (f32, f32) {
+    let local = rotate_y_inverse(*point - torus.center, rotation_y);
 
-    let major_angle =
-        local.z.atan2(local.x);
+    let major_angle = local.z.atan2(local.x);
 
-    let radial =
-        (local.x * local.x
-            + local.z * local.z)
-            .sqrt();
+    let radial = (local.x * local.x + local.z * local.z).sqrt();
 
-    let tube_x =
-        radial - torus.major_radius;
+    let tube_x = radial - torus.major_radius;
 
-    let tube_angle =
-        local.y.atan2(tube_x);
+    let tube_angle = local.y.atan2(tube_x);
 
     (
-        0.5
-            + major_angle / (2.0 * PI),
-        0.5
-            + tube_angle / (2.0 * PI),
+        0.5 + major_angle / (2.0 * PI),
+        0.5 + tube_angle / (2.0 * PI),
     )
 }
 
-fn ellipsoid_uv(
-    ellipsoid: &Ellipsoid,
-    point: &Vec3,
-    rotation_y: f32,
-) -> (f32, f32) {
-    let local =
-        *point - ellipsoid.center;
+fn ellipsoid_uv(ellipsoid: &Ellipsoid, point: &Vec3, rotation_y: f32) -> (f32, f32) {
+    let local = *point - ellipsoid.center;
 
-    let normalized =
-        Vec3::new(
-            local.x / ellipsoid.radii.x,
-            local.y / ellipsoid.radii.y,
-            local.z / ellipsoid.radii.z,
-        );
+    let normalized = Vec3::new(
+        local.x / ellipsoid.radii.x,
+        local.y / ellipsoid.radii.y,
+        local.z / ellipsoid.radii.z,
+    );
 
-    let p =
-        rotate_y_inverse(
-            normalized,
-            rotation_y,
-        )
-        .normalize();
+    let p = rotate_y_inverse(normalized, rotation_y).normalize();
 
-    let u =
-        0.5
-            + p.z.atan2(p.x)
-                / (2.0 * PI);
+    let u = 0.5 + p.z.atan2(p.x) / (2.0 * PI);
 
-    let v =
-        0.5
-            - p.y.clamp(-1.0, 1.0).asin()
-                / PI;
+    let v = 0.5 - p.y.clamp(-1.0, 1.0).asin() / PI;
 
     (u, v)
 }
 
-fn object_tangent_basis(
-    object: &Object,
-    point: &Vec3,
-    normal: Vec3,
-) -> (Vec3, Vec3) {
+fn object_tangent_basis(object: &Object, point: &Vec3, normal: Vec3) -> (Vec3, Vec3) {
     match object {
         Object::Sphere(sphere) => {
-            let local =
-                (*point - sphere.center)
-                    .normalize();
+            let local = (*point - sphere.center).normalize();
 
-            let mut tangent =
-                Vec3::new(
-                    -local.z,
-                    0.0,
-                    local.x,
-                );
+            let mut tangent = Vec3::new(-local.z, 0.0, local.x);
 
             if tangent.length() < 0.001 {
-                tangent =
-                    Vec3::new(
-                        1.0,
-                        0.0,
-                        0.0,
-                    );
+                tangent = Vec3::new(1.0, 0.0, 0.0);
             }
 
-            tangent =
-                tangent.normalize();
+            tangent = tangent.normalize();
 
-            let bitangent =
-                normal
-                    .cross(&tangent)
-                    .normalize();
+            let bitangent = normal.cross(&tangent).normalize();
 
             (tangent, bitangent)
         }
 
-        Object::Plane(_) => {
-            tangent_basis(normal)
-        }
+        Object::Plane(_) => tangent_basis(normal),
 
         Object::Cylinder(cylinder) => {
-            let axis =
-                cylinder.axis.normalize();
+            let axis = cylinder.axis.normalize();
 
-            let surface_normal =
-                cylinder.normal_at(point);
+            let surface_normal = cylinder.normal_at(point);
 
-            if surface_normal
-                .dot(&axis)
-                .abs()
-                > 0.85
-            {
+            if surface_normal.dot(&axis).abs() > 0.85 {
                 axis_basis(axis)
             } else {
-                let mut tangent =
-                    axis
-                        .cross(&surface_normal);
+                let mut tangent = axis.cross(&surface_normal);
 
                 if tangent.length() < 0.001 {
                     return tangent_basis(normal);
                 }
 
-                tangent =
-                    tangent.normalize();
+                tangent = tangent.normalize();
 
-                let bitangent =
-                    normal
-                        .cross(&tangent)
-                        .normalize();
+                let bitangent = normal.cross(&tangent).normalize();
 
                 (tangent, bitangent)
             }
         }
 
         Object::Cone(cone) => {
-            let axis =
-                cone.axis.normalize();
+            let axis = cone.axis.normalize();
 
-            let local =
-                *point - cone.center;
+            let local = *point - cone.center;
 
-            let axial =
-                local.dot(&axis);
+            let axial = local.dot(&axis);
 
-            let radial =
-                local - axis * axial;
+            let radial = local - axis * axial;
 
             if radial.length() < 0.001 {
                 return tangent_basis(normal);
             }
 
-            let tangent =
-                axis
-                    .cross(
-                        &radial.normalize(),
-                    )
-                    .normalize();
+            let tangent = axis.cross(&radial.normalize()).normalize();
 
-            let bitangent =
-                normal
-                    .cross(&tangent)
-                    .normalize();
+            let bitangent = normal.cross(&tangent).normalize();
 
             (tangent, bitangent)
         }
 
         Object::Cube(cube) => {
-            let delta =
-                *point - cube.center;
+            let delta = *point - cube.center;
 
-            let lx =
-                delta.dot(&cube.right).abs();
+            let lx = delta.dot(&cube.right).abs();
 
-            let ly =
-                delta.dot(&cube.up).abs();
+            let ly = delta.dot(&cube.up).abs();
 
-            let lz =
-                delta.dot(&cube.forward).abs();
+            let lz = delta.dot(&cube.forward).abs();
 
             if lx >= ly && lx >= lz {
-                let tangent =
-                    cube.forward.normalize();
+                let tangent = cube.forward.normalize();
 
-                let bitangent =
-                    normal
-                        .cross(&tangent)
-                        .normalize();
+                let bitangent = normal.cross(&tangent).normalize();
 
                 (tangent, bitangent)
             } else if ly >= lx && ly >= lz {
-                let tangent =
-                    cube.right.normalize();
+                let tangent = cube.right.normalize();
 
-                let bitangent =
-                    normal
-                        .cross(&tangent)
-                        .normalize();
+                let bitangent = normal.cross(&tangent).normalize();
 
                 (tangent, bitangent)
             } else {
-                let tangent =
-                    cube.right.normalize();
+                let tangent = cube.right.normalize();
 
-                let bitangent =
-                    normal
-                        .cross(&tangent)
-                        .normalize();
+                let bitangent = normal.cross(&tangent).normalize();
 
                 (tangent, bitangent)
             }
         }
 
         Object::Hemisphere(hemisphere) => {
-            let local =
-                *point - hemisphere.center;
+            let local = *point - hemisphere.center;
 
-            let axis =
-                hemisphere.normal.normalize();
+            let axis = hemisphere.normal.normalize();
 
             if local.dot(&axis).abs() < 0.006 {
                 axis_basis(axis)
             } else {
-                let p =
-                    local.normalize();
+                let p = local.normalize();
 
-                let mut tangent =
-                    Vec3::new(
-                        -p.z,
-                        0.0,
-                        p.x,
-                    );
+                let mut tangent = Vec3::new(-p.z, 0.0, p.x);
 
                 if tangent.length() < 0.001 {
                     return tangent_basis(normal);
                 }
 
-                tangent =
-                    tangent.normalize();
+                tangent = tangent.normalize();
 
-                let bitangent =
-                    normal
-                        .cross(&tangent)
-                        .normalize();
+                let bitangent = normal.cross(&tangent).normalize();
 
                 (tangent, bitangent)
             }
         }
 
-        Object::Torus(torus) => {
-            torus_tangent_basis(
-                torus,
-                point,
-                normal,
-            )
-        }
+        Object::Torus(torus) => torus_tangent_basis(torus, point, normal),
 
-        Object::Ellipsoid(ellipsoid) => {
-            ellipsoid_tangent_basis(
-                ellipsoid,
-                point,
-                normal,
-            )
-        }
+        Object::Ellipsoid(ellipsoid) => ellipsoid_tangent_basis(ellipsoid, point, normal),
     }
 }
 
-fn torus_tangent_basis(
-    torus: &Torus,
-    point: &Vec3,
-    normal: Vec3,
-) -> (Vec3, Vec3) {
-    let local =
-        *point - torus.center;
+fn torus_tangent_basis(torus: &Torus, point: &Vec3, normal: Vec3) -> (Vec3, Vec3) {
+    let local = *point - torus.center;
 
-    let mut tangent =
-        Vec3::new(
-            -local.z,
-            0.0,
-            local.x,
-        );
+    let mut tangent = Vec3::new(-local.z, 0.0, local.x);
 
     if tangent.length() < 0.0001 {
         return tangent_basis(normal);
     }
 
-    tangent =
-        tangent.normalize();
+    tangent = tangent.normalize();
 
-    let bitangent =
-        normal
-            .cross(&tangent)
-            .normalize();
+    let bitangent = normal.cross(&tangent).normalize();
 
     (tangent, bitangent)
 }
 
-fn ellipsoid_tangent_basis(
-    ellipsoid: &Ellipsoid,
-    point: &Vec3,
-    normal: Vec3,
-) -> (Vec3, Vec3) {
-    let local =
-        *point - ellipsoid.center;
+fn ellipsoid_tangent_basis(ellipsoid: &Ellipsoid, point: &Vec3, normal: Vec3) -> (Vec3, Vec3) {
+    let local = *point - ellipsoid.center;
 
-    let normalized =
-        Vec3::new(
-            local.x / ellipsoid.radii.x,
-            local.y / ellipsoid.radii.y,
-            local.z / ellipsoid.radii.z,
-        );
+    let normalized = Vec3::new(
+        local.x / ellipsoid.radii.x,
+        local.y / ellipsoid.radii.y,
+        local.z / ellipsoid.radii.z,
+    );
 
-    let mut tangent =
-        Vec3::new(
-            -normalized.z,
-            0.0,
-            normalized.x,
-        );
+    let mut tangent = Vec3::new(-normalized.z, 0.0, normalized.x);
 
     if tangent.length() < 0.0001 {
         return tangent_basis(normal);
     }
 
-    tangent =
-        tangent.normalize();
+    tangent = tangent.normalize();
 
-    let bitangent =
-        normal
-            .cross(&tangent)
-            .normalize();
+    let bitangent = normal.cross(&tangent).normalize();
 
     (tangent, bitangent)
 }
 
-fn tangent_basis(
+fn tangent_basis(normal: Vec3) -> (Vec3, Vec3) {
+    let helper = if normal.y.abs() < 0.9 {
+        Vec3::new(0.0, 1.0, 0.0)
+    } else {
+        Vec3::new(1.0, 0.0, 0.0)
+    };
 
-    normal: Vec3,
+    let tangent = helper.cross(&normal).normalize();
 
-) -> (Vec3, Vec3) {
+    let bitangent = normal.cross(&tangent).normalize();
 
-    let helper =
-
-        if normal.y.abs()
-
-            < 0.9
-
-        {
-
-            Vec3::new(
-
-                0.0,
-
-                1.0,
-
-                0.0,
-
-            )
-
-        } else {
-
-            Vec3::new(
-
-                1.0,
-
-                0.0,
-
-                0.0,
-
-            )
-
-        };
-
-    let tangent =
-
-        helper
-
-            .cross(
-
-                &normal,
-
-            )
-
-            .normalize();
-
-    let bitangent =
-
-        normal
-
-            .cross(
-
-                &tangent,
-
-            )
-
-            .normalize();
-
-    (
-
-        tangent,
-
-        bitangent,
-
-    )
-
+    (tangent, bitangent)
 }
 
-fn axis_basis(
+fn axis_basis(axis: Vec3) -> (Vec3, Vec3) {
+    let helper = if axis.y.abs() < 0.9 {
+        Vec3::new(0.0, 1.0, 0.0)
+    } else {
+        Vec3::new(1.0, 0.0, 0.0)
+    };
 
-    axis: Vec3,
+    let tangent = helper.cross(&axis).normalize();
 
-) -> (Vec3, Vec3) {
+    let bitangent = axis.cross(&tangent).normalize();
 
-    let helper =
-
-        if axis.y.abs()
-
-            < 0.9
-
-        {
-
-            Vec3::new(
-
-                0.0,
-
-                1.0,
-
-                0.0,
-
-            )
-
-        } else {
-
-            Vec3::new(
-
-                1.0,
-
-                0.0,
-
-                0.0,
-
-            )
-
-        };
-
-    let tangent =
-
-        helper
-
-            .cross(
-
-                &axis,
-
-            )
-
-            .normalize();
-
-    let bitangent =
-
-        axis
-
-            .cross(
-
-                &tangent,
-
-            )
-
-            .normalize();
-
-    (
-
-        tangent,
-
-        bitangent,
-
-    )
-
+    (tangent, bitangent)
 }
 
-fn procedural_grass(
+fn procedural_grass(u: f32, v: f32, point: &Vec3) -> Vec3 {
+    let noise = procedural_hash(u * 80.0 + point.x * 17.0, v * 80.0 + point.z * 19.0);
 
-    u: f32,
+    let blade = ((u * 120.0 + v * 40.0).sin() * 0.5 + 0.5) * 0.12;
 
-    v: f32,
+    let brightness = 0.72 + noise * 0.30 + blade;
 
-    point: &Vec3,
-
-) -> Vec3 {
-
-    let noise =
-
-        procedural_hash(
-
-            u * 80.0
-
-                + point.x
-
-                    * 17.0,
-
-            v * 80.0
-
-                + point.z
-
-                    * 19.0,
-
-        );
-
-    let blade =
-
-        (
-
-            (
-
-                u * 120.0
-
-                    + v * 40.0
-
-            )
-
-                .sin()
-
-                * 0.5
-
-                + 0.5
-
-        )
-
-            * 0.12;
-
-    let brightness =
-
-        0.72
-
-            + noise
-
-                * 0.30
-
-            + blade;
-
-    Vec3::new(
-
-        brightness
-
-            * 0.80,
-
-        brightness,
-
-        brightness
-
-            * 0.75,
-
-    )
-
+    Vec3::new(brightness * 0.80, brightness, brightness * 0.75)
 }
 
-fn reflect(
-
-    incident: Vec3,
-
-    normal: Vec3,
-
-) -> Vec3 {
-
-    incident
-
-        - normal
-
-            * (
-
-                2.0
-
-                    * incident
-
-                        .dot(
-
-                            &normal,
-
-                        )
-
-            )
-
+fn reflect(incident: Vec3, normal: Vec3) -> Vec3 {
+    incident - normal * (2.0 * incident.dot(&normal))
 }
 
-fn refract(
+fn refract(incident: Vec3, normal: Vec3, eta: f32) -> Option<Vec3> {
+    let i = incident.normalize();
 
-    incident: Vec3,
+    let n = normal.normalize();
 
-    normal: Vec3,
+    let cos_i = (-i.dot(&n)).clamp(-1.0, 1.0);
 
-    eta: f32,
-
-) -> Option<Vec3> {
-
-    let i =
-
-        incident.normalize();
-
-    let n =
-
-        normal.normalize();
-
-    let cos_i =
-
-        (
-
-            -i.dot(
-
-                &n,
-
-            )
-
-        )
-
-            .clamp(
-
-                -1.0,
-
-                1.0,
-
-            );
-
-    let k =
-
-        1.0
-
-            - eta
-
-                * eta
-
-                * (
-
-                    1.0
-
-                        - cos_i
-
-                            * cos_i
-
-                );
+    let k = 1.0 - eta * eta * (1.0 - cos_i * cos_i);
 
     if k < 0.0 {
-
         None
-
     } else {
-
-        Some(
-
-            i * eta
-
-                + n
-
-                    * (
-
-                        eta
-
-                            * cos_i
-
-                            - k.sqrt()
-
-                    ),
-
-        )
-
+        Some(i * eta + n * (eta * cos_i - k.sqrt()))
     }
-
 }
 
-fn skybox_color(
-    direction: &Vec3,
-    skybox_id: usize,
-) -> Vec3 {
+fn skybox_color(direction: &Vec3, skybox_id: usize) -> Vec3 {
     match skybox_id {
-        1 => {
-            skybox_galaxy_2(
-                direction,
-            )
-        }
+        1 => skybox_galaxy_2(direction),
 
-        _ => {
-            skybox_galaxy_1(
-                direction,
-            )
-        }
+        _ => skybox_galaxy_1(direction),
     }
 }
 
-fn skybox_galaxy_1(
+fn skybox_galaxy_1(direction: &Vec3) -> Vec3 {
+    let dir = direction.normalize();
 
-    direction: &Vec3,
+    let vertical = (dir.y * 0.5 + 0.5).clamp(0.0, 1.0);
 
-) -> Vec3 {
+    let top = Vec3::new(0.04, 0.18, 0.30);
 
-    let dir =
+    let bottom = Vec3::new(0.005, 0.02, 0.08);
 
-        direction
+    let mut color = bottom * (1.0 - vertical) + top * vertical;
 
-            .normalize();
+    let nebula_1 = (dir.x * 5.0 + dir.y * 3.0 + (dir.z * 4.0).sin()).sin() * 0.5 + 0.5;
 
-    let vertical =
+    let nebula_2 = (dir.z * 7.0 - dir.y * 4.0 + (dir.x * 6.0).cos()).sin() * 0.5 + 0.5;
 
-        (
+    let nebula_3 = (dir.x * 11.0 + dir.z * 9.0).cos() * 0.5 + 0.5;
 
-            dir.y
+    let nebula_strength = (nebula_1 * nebula_2 * 0.55 + nebula_3 * 0.18).clamp(0.0, 1.0);
 
-                * 0.5
+    color = color + Vec3::new(0.01, 0.10, 0.12) * nebula_strength;
 
-                + 0.5
+    let green_nebula = (nebula_1 * nebula_3).powf(2.0);
 
-        )
+    color = color + Vec3::new(0.01, 0.10, 0.05) * green_nebula;
 
-            .clamp(
+    let glow_direction = Vec3::new(-1.0, 0.10, 0.15).normalize();
 
-                0.0,
+    let glow_dot = dir.dot(&glow_direction).max(0.0);
 
-                1.0,
+    let broad_glow = glow_dot.powf(6.0);
 
-            );
+    let core_glow = glow_dot.powf(45.0);
 
-    let top =
+    color = color + Vec3::new(0.10, 0.45, 0.22) * broad_glow;
 
-        Vec3::new(
+    color = color + Vec3::new(0.45, 1.00, 0.65) * core_glow * 1.8;
 
-            0.04,
+    let cyan_direction = Vec3::new(0.15, 0.20, -1.0).normalize();
 
-            0.18,
+    let cyan_glow = dir.dot(&cyan_direction).max(0.0).powf(10.0);
 
-            0.30,
+    color = color + Vec3::new(0.03, 0.22, 0.35) * cyan_glow;
 
-        );
+    let star_u = (dir.x * 437.0).floor();
 
-    let bottom =
+    let star_v = (dir.y * 613.0).floor();
 
-        Vec3::new(
+    let star_w = (dir.z * 521.0).floor();
 
-            0.005,
+    let star_noise = procedural_hash(star_u + star_w * 0.37, star_v + star_w * 0.71);
 
-            0.02,
+    if star_noise > 0.9965 {
+        let star_strength = (star_noise - 0.9965) / 0.0035;
 
-            0.08,
+        let tint = procedural_hash(star_u * 0.31, star_v * 0.73);
 
-        );
+        let star_color = if tint < 0.33 {
+            Vec3::new(0.75, 0.90, 1.0)
+        } else if tint < 0.66 {
+            Vec3::new(0.85, 1.0, 0.90)
+        } else {
+            Vec3::new(1.0, 1.0, 1.0)
+        };
 
-    let mut color =
-
-        bottom
-
-            * (
-
-                1.0
-
-                    - vertical
-
-            )
-
-            + top
-
-                * vertical;
-
-    let nebula_1 =
-
-        (
-
-            dir.x
-
-                * 5.0
-
-                + dir.y
-
-                    * 3.0
-
-                + (
-
-                    dir.z
-
-                        * 4.0
-
-                )
-
-                    .sin()
-
-        )
-
-            .sin()
-
-            * 0.5
-
-            + 0.5;
-
-    let nebula_2 =
-
-        (
-
-            dir.z
-
-                * 7.0
-
-                - dir.y
-
-                    * 4.0
-
-                + (
-
-                    dir.x
-
-                        * 6.0
-
-                )
-
-                    .cos()
-
-        )
-
-            .sin()
-
-            * 0.5
-
-            + 0.5;
-
-    let nebula_3 =
-
-        (
-
-            dir.x
-
-                * 11.0
-
-                + dir.z
-
-                    * 9.0
-
-        )
-
-            .cos()
-
-            * 0.5
-
-            + 0.5;
-
-    let nebula_strength =
-
-        (
-
-            nebula_1
-
-                * nebula_2
-
-                * 0.55
-
-            + nebula_3
-
-                * 0.18
-
-        )
-
-            .clamp(
-
-                0.0,
-
-                1.0,
-
-            );
-
-    color =
-
-        color
-
-            + Vec3::new(
-
-                0.01,
-
-                0.10,
-
-                0.12,
-
-            )
-
-                * nebula_strength;
-
-    let green_nebula =
-
-        (
-
-            nebula_1
-
-                * nebula_3
-
-        )
-
-            .powf(
-
-                2.0,
-
-            );
-
-    color =
-
-        color
-
-            + Vec3::new(
-
-                0.01,
-
-                0.10,
-
-                0.05,
-
-            )
-
-                * green_nebula;
-
-    let glow_direction =
-
-        Vec3::new(
-
-            -1.0,
-
-            0.10,
-
-            0.15,
-
-        )
-
-        .normalize();
-
-    let glow_dot =
-
-        dir
-
-            .dot(
-
-                &glow_direction,
-
-            )
-
-            .max(
-
-                0.0,
-
-            );
-
-    let broad_glow =
-
-        glow_dot
-
-            .powf(
-
-                6.0,
-
-            );
-
-    let core_glow =
-
-        glow_dot
-
-            .powf(
-
-                45.0,
-
-            );
-
-    color =
-
-        color
-
-            + Vec3::new(
-
-                0.10,
-
-                0.45,
-
-                0.22,
-
-            )
-
-                * broad_glow;
-
-    color =
-
-        color
-
-            + Vec3::new(
-
-                0.45,
-
-                1.00,
-
-                0.65,
-
-            )
-
-                * core_glow
-
-                * 1.8;
-
-    let cyan_direction =
-
-        Vec3::new(
-
-            0.15,
-
-            0.20,
-
-            -1.0,
-
-        )
-
-        .normalize();
-
-    let cyan_glow =
-
-        dir
-
-            .dot(
-
-                &cyan_direction,
-
-            )
-
-            .max(
-
-                0.0,
-
-            )
-
-            .powf(
-
-                10.0,
-
-            );
-
-    color =
-
-        color
-
-            + Vec3::new(
-
-                0.03,
-
-                0.22,
-
-                0.35,
-
-            )
-
-                * cyan_glow;
-
-    let star_u =
-
-        (
-
-            dir.x
-
-                * 437.0
-
-        )
-
-            .floor();
-
-    let star_v =
-
-        (
-
-            dir.y
-
-                * 613.0
-
-        )
-
-            .floor();
-
-    let star_w =
-
-        (
-
-            dir.z
-
-                * 521.0
-
-        )
-
-            .floor();
-
-    let star_noise =
-
-        procedural_hash(
-
-            star_u
-
-                + star_w
-
-                    * 0.37,
-
-            star_v
-
-                + star_w
-
-                    * 0.71,
-
-        );
-
-    if star_noise
-
-        > 0.9965
-
-    {
-
-        let star_strength =
-
-            (
-
-                star_noise
-
-                    - 0.9965
-
-            )
-
-                / 0.0035;
-
-        let tint =
-
-            procedural_hash(
-
-                star_u
-
-                    * 0.31,
-
-                star_v
-
-                    * 0.73,
-
-            );
-
-        let star_color =
-
-            if tint < 0.33 {
-
-                Vec3::new(
-
-                    0.75,
-
-                    0.90,
-
-                    1.0,
-
-                )
-
-            } else if tint
-
-                < 0.66
-
-            {
-
-                Vec3::new(
-
-                    0.85,
-
-                    1.0,
-
-                    0.90,
-
-                )
-
-            } else {
-
-                Vec3::new(
-
-                    1.0,
-
-                    1.0,
-
-                    1.0,
-
-                )
-
-            };
-
-        color =
-
-            color
-
-                + star_color
-
-                    * (
-
-                        star_strength
-
-                            * 1.8
-
-                    );
-
+        color = color + star_color * (star_strength * 1.8);
     }
 
     color
-
 }
 
-fn skybox_galaxy_2(
-    direction: &Vec3,
-) -> Vec3 {
-    let dir =
-        direction.normalize();
+fn skybox_galaxy_2(direction: &Vec3) -> Vec3 {
+    let dir = direction.normalize();
 
-    let vertical =
-        (
-            dir.y
-                * 0.5
-                + 0.5
-        )
-            .clamp(
-                0.0,
-                1.0,
-            );
+    let vertical = (dir.y * 0.5 + 0.5).clamp(0.0, 1.0);
 
-    let bottom =
-        Vec3::new(
-            0.008,
-            0.003,
-            0.025,
-        );
+    let bottom = Vec3::new(0.008, 0.003, 0.025);
 
-    let top =
-        Vec3::new(
-            0.055,
-            0.015,
-            0.11,
-        );
+    let top = Vec3::new(0.055, 0.015, 0.11);
 
-    let mut color =
-        bottom
-            * (
-                1.0
-                    - vertical
-            )
-            + top
-                * vertical;
+    let mut color = bottom * (1.0 - vertical) + top * vertical;
 
-    let wave_1 =
-        (
-            dir.x
-                * 4.0
-                + dir.z
-                    * 7.0
-                + (
-                    dir.y
-                        * 3.0
-                )
-                    .sin()
-                    * 2.0
-        )
-            .sin()
-            * 0.5
-            + 0.5;
+    let wave_1 = (dir.x * 4.0 + dir.z * 7.0 + (dir.y * 3.0).sin() * 2.0).sin() * 0.5 + 0.5;
 
-    let wave_2 =
-        (
-            dir.z
-                * 5.0
-                - dir.x
-                    * 6.0
-                + (
-                    dir.y
-                        * 8.0
-                )
-                    .cos()
-        )
-            .cos()
-            * 0.5
-            + 0.5;
+    let wave_2 = (dir.z * 5.0 - dir.x * 6.0 + (dir.y * 8.0).cos()).cos() * 0.5 + 0.5;
 
-    let wave_3 =
-        (
-            dir.x
-                * 13.0
-                + dir.y
-                    * 9.0
-                + dir.z
-                    * 4.0
-        )
-            .sin()
-            * 0.5
-            + 0.5;
+    let wave_3 = (dir.x * 13.0 + dir.y * 9.0 + dir.z * 4.0).sin() * 0.5 + 0.5;
 
-    let purple_nebula =
-        (
-            wave_1
-                * wave_2
-        )
-            .powf(
-                1.6,
-            );
+    let purple_nebula = (wave_1 * wave_2).powf(1.6);
 
-    color =
-        color
-            + Vec3::new(
-                0.13,
-                0.025,
-                0.25,
-            )
-                * purple_nebula
-                * 1.2;
+    color = color + Vec3::new(0.13, 0.025, 0.25) * purple_nebula * 1.2;
 
-    let magenta_nebula =
-        (
-            wave_2
-                * wave_3
-        )
-            .powf(
-                2.4,
-            );
+    let magenta_nebula = (wave_2 * wave_3).powf(2.4);
 
-    color =
-        color
-            + Vec3::new(
-                0.22,
-                0.015,
-                0.16,
-            )
-                * magenta_nebula;
+    color = color + Vec3::new(0.22, 0.015, 0.16) * magenta_nebula;
 
-    let blue_nebula =
-        (
-            wave_1
-                * (
-                    1.0
-                        - wave_3
-                )
-        )
-            .powf(
-                2.0,
-            );
+    let blue_nebula = (wave_1 * (1.0 - wave_3)).powf(2.0);
 
-    color =
-        color
-            + Vec3::new(
-                0.015,
-                0.055,
-                0.20,
-            )
-                * blue_nebula;
+    color = color + Vec3::new(0.015, 0.055, 0.20) * blue_nebula;
 
-    let galaxy_band =
-        (
-            1.0
-                - (
-                    dir.y
-                        + (
-                            dir.x
-                                * 2.7
-                        )
-                            .sin()
-                            * 0.16
-                )
-                    .abs()
-                    * 3.7
-        )
-            .clamp(
-                0.0,
-                1.0,
-            )
-            .powf(
-                2.0,
-            );
+    let galaxy_band = (1.0 - (dir.y + (dir.x * 2.7).sin() * 0.16).abs() * 3.7)
+        .clamp(0.0, 1.0)
+        .powf(2.0);
 
-    color =
-        color
-            + Vec3::new(
-                0.12,
-                0.04,
-                0.18,
-            )
-                * galaxy_band;
+    color = color + Vec3::new(0.12, 0.04, 0.18) * galaxy_band;
 
     let cloud_detail =
-        (
-            (
-                dir.x
-                    * 25.0
-                + dir.z
-                    * 17.0
-            )
-                .sin()
-            * (
-                dir.y
-                    * 21.0
-                - dir.x
-                    * 9.0
-            )
-                .cos()
-            * 0.5
-            + 0.5
-        )
-            .powf(
-                3.0,
-            );
+        ((dir.x * 25.0 + dir.z * 17.0).sin() * (dir.y * 21.0 - dir.x * 9.0).cos() * 0.5 + 0.5)
+            .powf(3.0);
 
-    color =
-        color
-            + Vec3::new(
-                0.08,
-                0.025,
-                0.14,
-            )
-                * cloud_detail
-                * galaxy_band;
+    color = color + Vec3::new(0.08, 0.025, 0.14) * cloud_detail * galaxy_band;
 
-    let glow_direction =
-        Vec3::new(
-            0.75,
-            0.08,
-            -0.65,
-        )
-            .normalize();
+    let glow_direction = Vec3::new(0.75, 0.08, -0.65).normalize();
 
-    let glow =
-        dir
-            .dot(
-                &glow_direction,
-            )
-            .max(
-                0.0,
-            );
+    let glow = dir.dot(&glow_direction).max(0.0);
 
-    let broad_glow =
-        glow.powf(
-            8.0,
-        );
+    let broad_glow = glow.powf(8.0);
 
-    let center_glow =
-        glow.powf(
-            45.0,
-        );
+    let center_glow = glow.powf(45.0);
 
-    color =
-        color
-            + Vec3::new(
-                0.25,
-                0.04,
-                0.32,
-            )
-                * broad_glow;
+    color = color + Vec3::new(0.25, 0.04, 0.32) * broad_glow;
 
-    color =
-        color
-            + Vec3::new(
-                0.85,
-                0.28,
-                1.0,
-            )
-                * center_glow
-                * 1.4;
+    color = color + Vec3::new(0.85, 0.28, 1.0) * center_glow * 1.4;
 
-    let blue_glow_direction =
-        Vec3::new(
-            -0.8,
-            0.25,
-            0.45,
-        )
-            .normalize();
+    let blue_glow_direction = Vec3::new(-0.8, 0.25, 0.45).normalize();
 
-    let blue_glow =
-        dir
-            .dot(
-                &blue_glow_direction,
-            )
-            .max(
-                0.0,
-            )
-            .powf(
-                18.0,
-            );
+    let blue_glow = dir.dot(&blue_glow_direction).max(0.0).powf(18.0);
 
-    color =
-        color
-            + Vec3::new(
-                0.08,
-                0.28,
-                0.70,
-            )
-                * blue_glow;
+    color = color + Vec3::new(0.08, 0.28, 0.70) * blue_glow;
 
-    let star_x =
-        (
-            dir.x
-                * 813.0
-        )
-            .floor();
+    let star_x = (dir.x * 813.0).floor();
 
-    let star_y =
-        (
-            dir.y
-                * 991.0
-        )
-            .floor();
+    let star_y = (dir.y * 991.0).floor();
 
-    let star_z =
-        (
-            dir.z
-                * 677.0
-        )
-            .floor();
+    let star_z = (dir.z * 677.0).floor();
 
-    let star_hash =
-        procedural_hash(
-            star_x
-                + star_z
-                    * 0.17,
-            star_y
-                + star_x
-                    * 0.23,
-        );
+    let star_hash = procedural_hash(star_x + star_z * 0.17, star_y + star_x * 0.23);
 
     if star_hash > 0.992 {
-        let intensity =
-            (
-                star_hash
-                    - 0.992
-            )
-                / 0.008;
+        let intensity = (star_hash - 0.992) / 0.008;
 
-        let cold =
-            procedural_hash(
-                star_x
-                    * 0.31,
-                star_z
-                    * 0.73,
-            );
+        let cold = procedural_hash(star_x * 0.31, star_z * 0.73);
 
-        let star_color =
-            if cold < 0.35 {
-                Vec3::new(
-                    0.55,
-                    0.70,
-                    1.0,
-                )
-            } else if cold < 0.70 {
-                Vec3::new(
-                    1.0,
-                    0.72,
-                    0.95,
-                )
-            } else {
-                Vec3::new(
-                    1.0,
-                    1.0,
-                    1.0,
-                )
-            };
+        let star_color = if cold < 0.35 {
+            Vec3::new(0.55, 0.70, 1.0)
+        } else if cold < 0.70 {
+            Vec3::new(1.0, 0.72, 0.95)
+        } else {
+            Vec3::new(1.0, 1.0, 1.0)
+        };
 
-        color =
-            color
-                + star_color
-                    * intensity
-                    * 1.8;
+        color = color + star_color * intensity * 1.8;
     }
 
-    let bright_star_hash =
-        procedural_hash(
-            star_x
-                * 1.91
-                + 7.0,
-            star_z
-                * 2.17
-                + star_y,
-        );
+    let bright_star_hash = procedural_hash(star_x * 1.91 + 7.0, star_z * 2.17 + star_y);
 
     if bright_star_hash > 0.9985 {
-        let intensity =
-            (
-                bright_star_hash
-                    - 0.9985
-            )
-                / 0.0015;
+        let intensity = (bright_star_hash - 0.9985) / 0.0015;
 
-        color =
-            color
-                + Vec3::new(
-                    0.70,
-                    0.82,
-                    1.0,
-                )
-                    * intensity
-                    * 2.5;
+        color = color + Vec3::new(0.70, 0.82, 1.0) * intensity * 2.5;
     }
 
     color
 }
 
-fn procedural_hash(
+fn procedural_hash(x: f32, y: f32) -> f32 {
+    let value = (x * 12.9898 + y * 78.233).sin() * 43758.5453;
 
-    x: f32,
-
-    y: f32,
-
-) -> f32 {
-
-    let value =
-
-        (
-
-            x * 12.9898
-
-                + y * 78.233
-
-        )
-
-            .sin()
-
-            * 43758.5453;
-
-    value
-
-        - value.floor()
-
+    value - value.floor()
 }
 
-fn multiply_vec3(
-
-    a: Vec3,
-
-    b: Vec3,
-
-) -> Vec3 {
-
-    Vec3::new(
-
-        a.x * b.x,
-
-        a.y * b.y,
-
-        a.z * b.z,
-
-    )
-
+fn multiply_vec3(a: Vec3, b: Vec3) -> Vec3 {
+    Vec3::new(a.x * b.x, a.y * b.y, a.z * b.z)
 }
 
-fn to_color(
+fn to_color(color: Vec3) -> Color {
+    let r = (color.x.clamp(0.0, 1.0).powf(1.0 / 2.2) * 255.0) as u8;
 
-    color: Vec3,
+    let g = (color.y.clamp(0.0, 1.0).powf(1.0 / 2.2) * 255.0) as u8;
 
-) -> Color {
+    let b = (color.z.clamp(0.0, 1.0).powf(1.0 / 2.2) * 255.0) as u8;
 
-    let r =
-
-        (
-
-            color.x
-
-                .clamp(
-
-                    0.0,
-
-                    1.0,
-
-                )
-
-                .powf(
-
-                    1.0 / 2.2,
-
-                )
-
-                * 255.0
-
-        )
-
-            as u8;
-
-    let g =
-
-        (
-
-            color.y
-
-                .clamp(
-
-                    0.0,
-
-                    1.0,
-
-                )
-
-                .powf(
-
-                    1.0 / 2.2,
-
-                )
-
-                * 255.0
-
-        )
-
-            as u8;
-
-    let b =
-
-        (
-
-            color.z
-
-                .clamp(
-
-                    0.0,
-
-                    1.0,
-
-                )
-
-                .powf(
-
-                    1.0 / 2.2,
-
-                )
-
-                * 255.0
-
-        )
-
-            as u8;
-
-    Color::new(
-
-        r,
-
-        g,
-
-        b,
-
-        255,
-
-    )
-
+    Color::new(r, g, b, 255)
 }

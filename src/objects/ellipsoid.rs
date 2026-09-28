@@ -8,11 +8,7 @@ pub struct Ellipsoid {
 }
 
 impl Ellipsoid {
-    pub fn new(
-        center: Vec3,
-        radii: Vec3,
-        material: Material,
-    ) -> Self {
+    pub fn new(center: Vec3, radii: Vec3, material: Material) -> Self {
         Self {
             center,
             radii,
@@ -20,69 +16,38 @@ impl Ellipsoid {
         }
     }
 
-    pub fn intersect(
-        &self,
-        origin: &Vec3,
-        direction: &Vec3,
-    ) -> Option<f32> {
-        let oc =
-            *origin - self.center;
+    pub fn intersect(&self, origin: &Vec3, direction: &Vec3) -> Option<f32> {
+        let oc = *origin - self.center;
 
-        let ox =
-            oc.x / self.radii.x;
+        let ox = oc.x / self.radii.x;
 
-        let oy =
-            oc.y / self.radii.y;
+        let oy = oc.y / self.radii.y;
 
-        let oz =
-            oc.z / self.radii.z;
+        let oz = oc.z / self.radii.z;
 
-        let dx =
-            direction.x / self.radii.x;
+        let dx = direction.x / self.radii.x;
 
-        let dy =
-            direction.y / self.radii.y;
+        let dy = direction.y / self.radii.y;
 
-        let dz =
-            direction.z / self.radii.z;
+        let dz = direction.z / self.radii.z;
 
-        let a =
-            dx * dx
-                + dy * dy
-                + dz * dz;
+        let a = dx * dx + dy * dy + dz * dz;
 
-        let b =
-            2.0
-                * (
-                    ox * dx
-                        + oy * dy
-                        + oz * dz
-                );
+        let b = 2.0 * (ox * dx + oy * dy + oz * dz);
 
-        let c =
-            ox * ox
-                + oy * oy
-                + oz * oz
-                - 1.0;
+        let c = ox * ox + oy * oy + oz * oz - 1.0;
 
-        let discriminant =
-            b * b
-                - 4.0 * a * c;
+        let discriminant = b * b - 4.0 * a * c;
 
         if discriminant < 0.0 {
             return None;
         }
 
-        let sqrt_d =
-            discriminant.sqrt();
+        let sqrt_d = discriminant.sqrt();
 
-        let t1 =
-            (-b - sqrt_d)
-                / (2.0 * a);
+        let t1 = (-b - sqrt_d) / (2.0 * a);
 
-        let t2 =
-            (-b + sqrt_d)
-                / (2.0 * a);
+        let t2 = (-b + sqrt_d) / (2.0 * a);
 
         if t1 > 0.001 {
             Some(t1)
@@ -93,44 +58,22 @@ impl Ellipsoid {
         }
     }
 
-    pub fn normal_at(
-        &self,
-        point: &Vec3,
-    ) -> Vec3 {
-        let local =
-            *point - self.center;
+    pub fn normal_at(&self, point: &Vec3) -> Vec3 {
+        let local = *point - self.center;
 
         Vec3::new(
-            local.x
-                / (
-                    self.radii.x
-                        * self.radii.x
-                ),
-
-            local.y
-                / (
-                    self.radii.y
-                        * self.radii.y
-                ),
-
-            local.z
-                / (
-                    self.radii.z
-                        * self.radii.z
-                ),
+            local.x / (self.radii.x * self.radii.x),
+            local.y / (self.radii.y * self.radii.y),
+            local.z / (self.radii.z * self.radii.z),
         )
         .normalize()
     }
 
-    pub fn min(
-        &self,
-    ) -> Vec3 {
+    pub fn min(&self) -> Vec3 {
         self.center - self.radii
     }
 
-    pub fn max(
-        &self,
-    ) -> Vec3 {
+    pub fn max(&self) -> Vec3 {
         self.center + self.radii
     }
 }
