@@ -319,13 +319,27 @@ fn draw_water(
     shake_x: f32,
     shake_y: f32,
 ) {
+    // Cielo diurno celeste sobre el horizonte.
     d.draw_rectangle_gradient_v(
         0,
         0,
         WIDTH,
-        HEIGHT,
-        Color::new(6, 72, 125, 255),
-        Color::new(4, 35, 78, 255),
+        HORIZON_Y as i32 + 8,
+        Color::new(64, 174, 244, 255),
+        Color::new(157, 226, 255, 255),
+    );
+    draw_pixel_cloud(d, 105, 58, 1.0);
+    draw_pixel_cloud(d, 735, 82, 0.72);
+    draw_pixel_cloud(d, 425, 35, 0.52);
+
+    // Mar exterior claro; la textura más intensa queda reservada al camino.
+    d.draw_rectangle_gradient_v(
+        0,
+        HORIZON_Y as i32,
+        WIDTH,
+        HEIGHT - HORIZON_Y as i32,
+        Color::new(72, 190, 226, 255),
+        Color::new(17, 102, 170, 255),
     );
 
     // Cada franja sigue el centro curvo de la pista y conserva píxeles nítidos.
@@ -388,6 +402,16 @@ fn draw_water(
         Color::new(255, 226, 139, 190),
         Color::new(255, 226, 139, 0),
     );
+}
+
+fn draw_pixel_cloud(d: &mut RaylibDrawHandle, x: i32, y: i32, scale: f32) {
+    let unit = (12.0 * scale).max(4.0) as i32;
+    let shadow = Color::new(184, 229, 246, 255);
+    let white = Color::new(245, 253, 255, 255);
+    d.draw_rectangle(x, y + unit, unit * 6, unit * 2, shadow);
+    d.draw_rectangle(x + unit, y, unit * 2, unit * 3, white);
+    d.draw_rectangle(x + unit * 3, y + unit / 2, unit * 2, unit * 2, white);
+    d.draw_rectangle(x, y + unit, unit * 6, unit, white);
 }
 
 fn course_center(world_y: f32) -> f32 {
@@ -462,32 +486,92 @@ fn draw_course(d: &mut RaylibDrawHandle, game: &Game, sx: f32, sy: f32) {
         project_point(course_center(COURSE_LENGTH), COURSE_LENGTH, game.distance);
     let finish_y = finish_y + sy;
     if finish_y > -100.0 && finish_y < HEIGHT as f32 + 100.0 {
-        for i in 0..12 {
-            let tile_width = 68.0 * finish_scale;
-            let x = finish_x - tile_width * 6.0 + i as f32 * tile_width;
-            let color = if i % 2 == 0 {
+        draw_finish_arch(d, finish_x, finish_y, finish_scale);
+    }
+}
+
+fn draw_finish_arch(d: &mut RaylibDrawHandle, center_x: f32, water_y: f32, scale: f32) {
+    let half_span = ROAD_HALF_WIDTH * 0.78 * scale;
+    let left = center_x - half_span;
+    let right = center_x + half_span;
+    let post_width = (28.0 * scale).max(4.0);
+    let post_height = (118.0 * scale).max(16.0);
+    let outline = (5.0 * scale).max(1.0);
+    let top = water_y - post_height;
+    let dark = Color::new(25, 31, 66, 255);
+    let blue = Color::new(25, 104, 207, 255);
+    let cyan = Color::new(98, 238, 255, 255);
+
+    for x in [left, right] {
+        d.draw_rectangle(
+            (x - post_width * 0.5 - outline) as i32,
+            (top - outline) as i32,
+            (post_width + outline * 2.0).ceil() as i32,
+            (post_height + outline * 2.0).ceil() as i32,
+            dark,
+        );
+        d.draw_rectangle(
+            (x - post_width * 0.5) as i32,
+            top as i32,
+            post_width.ceil() as i32,
+            post_height.ceil() as i32,
+            blue,
+        );
+        d.draw_rectangle(
+            (x - post_width * 0.22) as i32,
+            top as i32,
+            (post_width * 0.25).max(1.0).ceil() as i32,
+            post_height.ceil() as i32,
+            cyan,
+        );
+        d.draw_rectangle(
+            (x - post_width * 0.78) as i32,
+            (water_y - 9.0 * scale) as i32,
+            (post_width * 1.56).ceil() as i32,
+            (11.0 * scale).max(2.0).ceil() as i32,
+            dark,
+        );
+    }
+
+    // Tablero a cuadros suspendido entre las torres.
+    let columns = 12;
+    let rows = 3;
+    let tile_width = (right - left) / columns as f32;
+    let tile_height = (16.0 * scale).max(2.0);
+    let banner_top = top - tile_height;
+    d.draw_rectangle(
+        (left - outline) as i32,
+        (banner_top - outline) as i32,
+        (right - left + outline * 2.0).ceil() as i32,
+        (tile_height * rows as f32 + outline * 2.0).ceil() as i32,
+        dark,
+    );
+    for row in 0..rows {
+        for column in 0..columns {
+            let color = if (row + column) % 2 == 0 {
                 Color::WHITE
             } else {
-                Color::new(20, 25, 40, 255)
+                Color::new(25, 31, 66, 255)
             };
             d.draw_rectangle(
-                x as i32,
-                finish_y as i32,
+                (left + column as f32 * tile_width) as i32,
+                (banner_top + row as f32 * tile_height) as i32,
                 tile_width.ceil() as i32,
-                (22.0 * finish_scale).max(2.0) as i32,
+                tile_height.ceil() as i32,
                 color,
             );
         }
-        let font_size = (30.0 * finish_scale).max(10.0) as i32;
-        let label_width = d.measure_text("META", font_size);
-        d.draw_text(
-            "META",
-            (WIDTH - label_width) / 2,
-            finish_y as i32 - font_size - 7,
-            font_size,
-            Color::WHITE,
-        );
     }
+
+    let font_size = (24.0 * scale).max(8.0) as i32;
+    let label_width = d.measure_text("META", font_size);
+    d.draw_text(
+        "META",
+        center_x as i32 - label_width / 2,
+        (banner_top - font_size as f32 - 5.0 * scale) as i32,
+        font_size,
+        Color::new(255, 224, 70, 255),
+    );
 }
 
 fn draw_pixel_gate(
