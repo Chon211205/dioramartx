@@ -1,361 +1,291 @@
 use crate::core::vec3::Vec3;
 use crate::materials::material::Material;
-use crate::objects::cone::Cone;
 use crate::objects::cube::Cube;
-use crate::objects::cylinder::Cylinder;
 use crate::objects::object::Object;
-use crate::objects::sphere::Sphere;
+use crate::textures::texture::TextureMap;
 
 pub fn create_cube_planet() -> Vec<Object> {
-    let mut objects = Vec::new();
+    let face1_color =
+        Box::leak(
+            Box::new(
+                TextureMap::from_file(
+                    "assets/textures/Fase1Cube/WoodFloor051_1K-PNG_Color.png",
+                ),
+            ),
+        );
 
-    let cube_body = Material::new(
-        Vec3::new(0.24, 0.72, 0.28),
-        0.92,
-        0.25,
-        0.0,
-        0.03,
-    );
+    let face1_normal =
+        Box::leak(
+            Box::new(
+                TextureMap::from_file(
+                    "assets/textures/Fase1Cube/WoodFloor051_1K-PNG_NormalGL.png",
+                ),
+            ),
+        );
 
-    let dirt = Material::new(
-        Vec3::new(0.44, 0.28, 0.14),
-        0.95,
-        0.12,
-        0.0,
-        0.0,
-    );
+    let face1_roughness =
+        Box::leak(
+            Box::new(
+                TextureMap::from_file(
+                    "assets/textures/Fase1Cube/WoodFloor051_1K-PNG_Roughness.png",
+                ),
+            ),
+        );
 
-    let grass = Material::new(
-        Vec3::new(0.12, 0.78, 0.18),
-        0.95,
-        0.22,
-        0.0,
-        0.02,
-    );
+    let face2_color =
+        Box::leak(
+            Box::new(
+                TextureMap::from_file(
+                    "assets/textures/Fase2Cube/WoodFloor057_1K-PNG_Color.png",
+                ),
+            ),
+        );
 
-    let trunk = Material::new(
-        Vec3::new(0.43, 0.26, 0.14),
-        0.95,
-        0.10,
-        0.0,
-        0.0,
-    );
+    let face2_normal =
+        Box::leak(
+            Box::new(
+                TextureMap::from_file(
+                    "assets/textures/Fase2Cube/WoodFloor057_1K-PNG_NormalGL.png",
+                ),
+            ),
+        );
 
-    let leaves = Material::new(
-        Vec3::new(0.18, 0.62, 0.20),
-        0.92,
-        0.18,
-        0.0,
-        0.01,
-    );
+    let face2_roughness =
+        Box::leak(
+            Box::new(
+                TextureMap::from_file(
+                    "assets/textures/Fase2Cube/WoodFloor057_1K-PNG_Roughness.png",
+                ),
+            ),
+        );
 
-    let water = Material::new(
-        Vec3::new(0.15, 0.55, 0.95),
-        0.85,
-        0.85,
-        0.0,
-        0.08,
-    );
+    let face3_color =
+        Box::leak(
+            Box::new(
+                TextureMap::from_file(
+                    "assets/textures/Fase3Cube/Wood081_1K-PNG_Color.png",
+                ),
+            ),
+        );
 
-    let rock = Material::new(
-        Vec3::new(0.55, 0.55, 0.58),
-        0.90,
-        0.20,
-        0.0,
-        0.02,
-    );
+    let face3_normal =
+        Box::leak(
+            Box::new(
+                TextureMap::from_file(
+                    "assets/textures/Fase3Cube/Wood081_1K-PNG_NormalGL.png",
+                ),
+            ),
+        );
 
-    objects.push(
+    let face3_roughness =
+        Box::leak(
+            Box::new(
+                TextureMap::from_file(
+                    "assets/textures/Fase3Cube/Wood081_1K-PNG_Roughness.png",
+                ),
+            ),
+        );
+
+    let face4_color =
+        Box::leak(
+            Box::new(
+                TextureMap::from_file(
+                    "assets/textures/Face4cube/Wood025_1K-PNG_Color.png",
+                ),
+            ),
+        );
+
+    let face4_normal =
+        Box::leak(
+            Box::new(
+                TextureMap::from_file(
+                    "assets/textures/Face4cube/Wood025_1K-PNG_NormalGL.png",
+                ),
+            ),
+        );
+
+    let face4_roughness =
+        Box::leak(
+            Box::new(
+                TextureMap::from_file(
+                    "assets/textures/Face4cube/Wood025_1K-PNG_Roughness.png",
+                ),
+            ),
+        );
+
+    let face5_color =
+        Box::leak(
+            Box::new(
+                TextureMap::from_file(
+                    "assets/textures/Face5Cube/WoodFloor035_1K-PNG_Color.png",
+                ),
+            ),
+        );
+
+    let face5_normal =
+        Box::leak(
+            Box::new(
+                TextureMap::from_file(
+                    "assets/textures/Face5Cube/WoodFloor035_1K-PNG_NormalGL.png",
+                ),
+            ),
+        );
+
+    let face5_roughness =
+        Box::leak(
+            Box::new(
+                TextureMap::from_file(
+                    "assets/textures/Face5Cube/WoodFloor035_1K-PNG_Roughness.png",
+                ),
+            ),
+        );
+
+    let face6_color =
+        Box::leak(
+            Box::new(
+                TextureMap::from_file(
+                    "assets/textures/Face6Cube/Wood005_1K-PNG_Color.png",
+                ),
+            ),
+        );
+
+    let face6_normal =
+        Box::leak(
+            Box::new(
+                TextureMap::from_file(
+                    "assets/textures/Face6Cube/Wood005_1K-PNG_NormalGL.png",
+                ),
+            ),
+        );
+
+    let face6_roughness =
+        Box::leak(
+            Box::new(
+                TextureMap::from_file(
+                    "assets/textures/Face6Cube/Wood005_1K-PNG_Roughness.png",
+                ),
+            ),
+        );
+
+    let face1_material =
+        Material::textured(
+            Vec3::new(
+                1.0,
+                1.0,
+                1.0,
+            ),
+            1.0,
+            0.30,
+            0.0,
+            0.02,
+            Some(face1_color),
+            Some(face1_normal),
+            Some(face1_roughness),
+            None,
+        );
+
+    let face2_material =
+        Material::textured(
+            Vec3::new(
+                1.0,
+                1.0,
+                1.0,
+            ),
+            1.0,
+            0.30,
+            0.0,
+            0.02,
+            Some(face2_color),
+            Some(face2_normal),
+            Some(face2_roughness),
+            None,
+        );
+
+    let face3_material =
+        Material::textured(
+            Vec3::new(
+                1.0,
+                1.0,
+                1.0,
+            ),
+            1.0,
+            0.30,
+            0.0,
+            0.02,
+            Some(face3_color),
+            Some(face3_normal),
+            Some(face3_roughness),
+            None,
+        );
+
+    let face4_material =
+        Material::textured(
+            Vec3::new(
+                1.0,
+                1.0,
+                1.0,
+            ),
+            1.0,
+            0.30,
+            0.0,
+            0.02,
+            Some(face4_color),
+            Some(face4_normal),
+            Some(face4_roughness),
+            None,
+        );
+
+    let face5_material =
+        Material::textured(
+            Vec3::new(
+                1.0,
+                1.0,
+                1.0,
+            ),
+            1.0,
+            0.30,
+            0.0,
+            0.02,
+            Some(face5_color),
+            Some(face5_normal),
+            Some(face5_roughness),
+            None,
+        );
+
+    let face6_material =
+        Material::textured(
+            Vec3::new(
+                1.0,
+                1.0,
+                1.0,
+            ),
+            1.0,
+            0.30,
+            0.0,
+            0.02,
+            Some(face6_color),
+            Some(face6_normal),
+            Some(face6_roughness),
+            None,
+        );
+
+    vec![
         Object::Cube(
-            Cube::new(
-                Vec3::new(0.0, 0.0, 0.0),
-                2.8,
-                cube_body,
+            Cube::new_with_faces(
+                Vec3::new(
+                    0.0,
+                    0.0,
+                    0.0,
+                ),
+                3.0,
+
+                face2_material,
+                face3_material,
+                face4_material,
+                face5_material,
+                face1_material,
+                face6_material,
             ),
         ),
-    );
-
-    objects.push(
-        Object::Cube(
-            Cube::new(
-                Vec3::new(0.0, 1.10, 0.0),
-                2.1,
-                grass,
-            ),
-        ),
-    );
-
-    objects.push(
-        Object::Cube(
-            Cube::new(
-                Vec3::new(0.0, 0.55, 0.0),
-                2.35,
-                dirt,
-            ),
-        ),
-    );
-
-    objects.push(
-        Object::Cube(
-            Cube::new(
-                Vec3::new(0.65, 1.32, -0.35),
-                0.75,
-                water,
-            ),
-        ),
-    );
-
-    objects.push(
-        Object::Cube(
-            Cube::new(
-                Vec3::new(-0.95, 1.30, 0.55),
-                0.38,
-                rock,
-            ),
-        ),
-    );
-
-    objects.push(
-        Object::Cube(
-            Cube::new(
-                Vec3::new(-0.45, 1.28, 0.95),
-                0.28,
-                rock,
-            ),
-        ),
-    );
-
-    add_tree(
-        &mut objects,
-        Vec3::new(-0.75, 1.38, -0.45),
-        0.85,
-        trunk,
-        leaves,
-    );
-
-    add_tree(
-        &mut objects,
-        Vec3::new(0.95, 1.38, 0.70),
-        0.72,
-        trunk,
-        leaves,
-    );
-
-    add_tree(
-        &mut objects,
-        Vec3::new(0.15, 1.38, 0.95),
-        0.68,
-        trunk,
-        leaves,
-    );
-
-    add_bush(
-        &mut objects,
-        Vec3::new(-1.05, 1.28, -0.95),
-        0.22,
-        leaves,
-    );
-
-    add_bush(
-        &mut objects,
-        Vec3::new(0.35, 1.28, -1.00),
-        0.20,
-        leaves,
-    );
-
-    add_bush(
-        &mut objects,
-        Vec3::new(1.05, 1.28, -0.15),
-        0.18,
-        leaves,
-    );
-
-    add_flower(
-        &mut objects,
-        Vec3::new(-0.10, 1.28, -0.35),
-    );
-
-    add_flower(
-        &mut objects,
-        Vec3::new(0.55, 1.28, 0.35),
-    );
-
-    add_flower(
-        &mut objects,
-        Vec3::new(-0.65, 1.28, 0.15),
-    );
-
-    add_side_deco(
-        &mut objects,
-        Vec3::new(1.45, 0.20, 0.10),
-        rock,
-        leaves,
-    );
-
-    add_side_deco(
-        &mut objects,
-        Vec3::new(-1.45, -0.15, -0.35),
-        rock,
-        leaves,
-    );
-
-    add_side_deco(
-        &mut objects,
-        Vec3::new(0.20, -1.10, 1.45),
-        rock,
-        leaves,
-    );
-
-    objects
-}
-
-fn add_tree(
-    objects: &mut Vec<Object>,
-    position: Vec3,
-    scale: f32,
-    trunk: Material,
-    leaves: Material,
-) {
-    objects.push(
-        Object::Cylinder(
-            Cylinder::new_oriented(
-                position + Vec3::new(0.0, 0.22 * scale, 0.0),
-                Vec3::new(0.0, 1.0, 0.0),
-                0.10 * scale,
-                0.42 * scale,
-                trunk,
-            ),
-        ),
-    );
-
-    objects.push(
-        Object::Cone(
-            Cone::new_oriented(
-                position + Vec3::new(0.0, 0.58 * scale, 0.0),
-                Vec3::new(0.0, 1.0, 0.0),
-                0.34 * scale,
-                0.42 * scale,
-                leaves,
-            ),
-        ),
-    );
-
-    objects.push(
-        Object::Cone(
-            Cone::new_oriented(
-                position + Vec3::new(0.0, 0.82 * scale, 0.0),
-                Vec3::new(0.0, 1.0, 0.0),
-                0.25 * scale,
-                0.34 * scale,
-                leaves,
-            ),
-        ),
-    );
-}
-
-fn add_bush(
-    objects: &mut Vec<Object>,
-    position: Vec3,
-    radius: f32,
-    material: Material,
-) {
-    objects.push(
-        Object::Sphere(
-            Sphere::new(
-                position,
-                radius,
-                material,
-            ),
-        ),
-    );
-
-    objects.push(
-        Object::Sphere(
-            Sphere::new(
-                position + Vec3::new(0.16, 0.02, 0.04),
-                radius * 0.72,
-                material,
-            ),
-        ),
-    );
-
-    objects.push(
-        Object::Sphere(
-            Sphere::new(
-                position + Vec3::new(-0.14, 0.01, -0.05),
-                radius * 0.68,
-                material,
-            ),
-        ),
-    );
-}
-
-fn add_flower(
-    objects: &mut Vec<Object>,
-    position: Vec3,
-) {
-    let stem = Material::new(
-        Vec3::new(0.18, 0.72, 0.16),
-        0.95,
-        0.08,
-        0.0,
-        0.0,
-    );
-
-    let petal = Material::new(
-        Vec3::new(1.0, 0.92, 0.18),
-        0.95,
-        0.25,
-        0.0,
-        0.0,
-    );
-
-    objects.push(
-        Object::Cylinder(
-            Cylinder::new_oriented(
-                position + Vec3::new(0.0, 0.08, 0.0),
-                Vec3::new(0.0, 1.0, 0.0),
-                0.015,
-                0.16,
-                stem,
-            ),
-        ),
-    );
-
-    objects.push(
-        Object::Sphere(
-            Sphere::new(
-                position + Vec3::new(0.0, 0.18, 0.0),
-                0.05,
-                petal,
-            ),
-        ),
-    );
-}
-
-fn add_side_deco(
-    objects: &mut Vec<Object>,
-    position: Vec3,
-    rock: Material,
-    leaves: Material,
-) {
-    objects.push(
-        Object::Sphere(
-            Sphere::new(
-                position,
-                0.16,
-                rock,
-            ),
-        ),
-    );
-
-    objects.push(
-        Object::Sphere(
-            Sphere::new(
-                position + Vec3::new(0.18, 0.12, 0.04),
-                0.10,
-                leaves,
-            ),
-        ),
-    );
+    ]
 }

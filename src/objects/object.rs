@@ -257,10 +257,8 @@ impl Object {
                 cone.material
             }
 
-            Object::Cube(
-                cube,
-            ) => {
-                cube.material
+            Object::Cube(cube) => {
+                cube.material_at(point)
             }
 
             Object::Hemisphere(

@@ -3888,7 +3888,7 @@ fn transform_objects_rotated(
                         cube,
                     ) => {
                         Object::Cube(
-                            Cube::from_basis(
+                            Cube::from_basis_faces(
                                 rotate_y(
                                     cube.center
                                         * scale,
@@ -3915,7 +3915,12 @@ fn transform_objects_rotated(
                                     rotation,
                                 ),
 
-                                cube.material,
+                                cube.right_material,
+                                cube.left_material,
+                                cube.top_material,
+                                cube.bottom_material,
+                                cube.front_material,
+                                cube.back_material,
                             ),
                         )
                     }
