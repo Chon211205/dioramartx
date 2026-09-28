@@ -1,22 +1,13 @@
-pub mod egg;
-pub mod forest;
-pub mod ice_lava;
-pub mod tree_planet;
-pub mod water;
-pub mod cube_planet;
-pub mod galaxy_selector;
-
 use crate::core::vec3::Vec3;
 use crate::scene::planet::PlanetDefinition;
 
-use egg::create_egg_diorama;
-use forest::create_forest_diorama;
-use ice_lava::create_ice_lava_diorama;
-use tree_planet::create_tree_planet_world;
-use water::create_water_diorama;
-use cube_planet::create_cube_planet;
+use crate::worlds::egg::create_egg_diorama;
+use crate::worlds::forest::create_forest_diorama;
+use crate::worlds::ice_lava::create_ice_lava_diorama;
+use crate::worlds::tree_planet::create_tree_planet_world;
+use crate::worlds::water::create_water_diorama;
 
-pub fn planet_registry() -> Vec<PlanetDefinition> {
+pub fn create_galaxy() -> Vec<PlanetDefinition> {
     vec![
         PlanetDefinition::new(
             "Forest Planet",
@@ -101,15 +92,6 @@ pub fn planet_registry() -> Vec<PlanetDefinition> {
                 -0.95,
                 0.12,
             ),
-        ),
-
-        PlanetDefinition::new(
-            "Cube Planet",
-            create_cube_planet,
-            Vec3::new(5.8, 0.45, -0.10),
-            0.42,
-            1.20,
-            Vec3::new(0.0, -0.95, 0.12),
         ),
     ]
 }
