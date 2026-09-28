@@ -4,7 +4,9 @@ pub mod ice_lava;
 pub mod tree_planet;
 pub mod water;
 pub mod cube_planet;
+pub mod water_circuit;
 pub mod galaxy_selector;
+
 
 use crate::core::vec3::Vec3;
 use crate::scene::planet::PlanetDefinition;
@@ -15,6 +17,7 @@ use ice_lava::create_ice_lava_diorama;
 use tree_planet::create_tree_planet_world;
 use water::create_water_diorama;
 use cube_planet::create_cube_planet;
+
 
 pub fn planet_registry() -> Vec<PlanetDefinition> {
     vec![
@@ -111,5 +114,6 @@ pub fn planet_registry() -> Vec<PlanetDefinition> {
             1.20,
             Vec3::new(0.0, -0.95, 0.12),
         ),
+
     ]
 }
