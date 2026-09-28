@@ -8,11 +8,7 @@ pub struct Plane {
 }
 
 impl Plane {
-    pub fn new(
-        point: Vec3,
-        normal: Vec3,
-        material: Material,
-    ) -> Self {
+    pub fn new(point: Vec3, normal: Vec3, material: Material) -> Self {
         Self {
             point,
             normal: normal.normalize(),
@@ -20,28 +16,16 @@ impl Plane {
         }
     }
 
-    pub fn intersect(
-        &self,
-        origin: &Vec3,
-        direction: &Vec3,
-    ) -> Option<f32> {
-        let denominator =
-            self.normal.dot(direction);
+    pub fn intersect(&self, origin: &Vec3, direction: &Vec3) -> Option<f32> {
+        let denominator = self.normal.dot(direction);
 
         if denominator.abs() < 0.0001 {
             return None;
         }
 
-        let t =
-            (self.point - *origin)
-                .dot(&self.normal)
-                / denominator;
+        let t = (self.point - *origin).dot(&self.normal) / denominator;
 
-        if t > 0.001 {
-            Some(t)
-        } else {
-            None
-        }
+        if t > 0.001 { Some(t) } else { None }
     }
 
     pub fn normal_at(&self) -> Vec3 {

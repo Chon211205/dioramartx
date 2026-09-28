@@ -13,12 +13,7 @@ impl Vec3 {
     }
 
     pub fn length(&self) -> f32 {
-        (
-            self.x * self.x
-            + self.y * self.y
-            + self.z * self.z
-        )
-        .sqrt()
+        (self.x * self.x + self.y * self.y + self.z * self.z).sqrt()
     }
 
     pub fn normalize(&self) -> Self {
@@ -32,9 +27,7 @@ impl Vec3 {
     }
 
     pub fn dot(&self, other: &Vec3) -> f32 {
-        self.x * other.x
-            + self.y * other.y
-            + self.z * other.z
+        self.x * other.x + self.y * other.y + self.z * other.z
     }
 
     pub fn cross(&self, other: &Vec3) -> Self {
@@ -50,11 +43,7 @@ impl Add for Vec3 {
     type Output = Vec3;
 
     fn add(self, other: Vec3) -> Vec3 {
-        Vec3::new(
-            self.x + other.x,
-            self.y + other.y,
-            self.z + other.z,
-        )
+        Vec3::new(self.x + other.x, self.y + other.y, self.z + other.z)
     }
 }
 
@@ -62,11 +51,7 @@ impl Sub for Vec3 {
     type Output = Vec3;
 
     fn sub(self, other: Vec3) -> Vec3 {
-        Vec3::new(
-            self.x - other.x,
-            self.y - other.y,
-            self.z - other.z,
-        )
+        Vec3::new(self.x - other.x, self.y - other.y, self.z - other.z)
     }
 }
 
@@ -74,11 +59,7 @@ impl Mul<f32> for Vec3 {
     type Output = Vec3;
 
     fn mul(self, scalar: f32) -> Vec3 {
-        Vec3::new(
-            self.x * scalar,
-            self.y * scalar,
-            self.z * scalar,
-        )
+        Vec3::new(self.x * scalar, self.y * scalar, self.z * scalar)
     }
 }
 
@@ -86,11 +67,7 @@ impl Div<f32> for Vec3 {
     type Output = Vec3;
 
     fn div(self, scalar: f32) -> Vec3 {
-        Vec3::new(
-            self.x / scalar,
-            self.y / scalar,
-            self.z / scalar,
-        )
+        Vec3::new(self.x / scalar, self.y / scalar, self.z / scalar)
     }
 }
 
@@ -98,10 +75,6 @@ impl Neg for Vec3 {
     type Output = Vec3;
 
     fn neg(self) -> Vec3 {
-        Vec3::new(
-            -self.x,
-            -self.y,
-            -self.z,
-        )
+        Vec3::new(-self.x, -self.y, -self.z)
     }
 }

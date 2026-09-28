@@ -9,35 +9,18 @@ pub fn create_galaxy() -> Vec<PlanetDefinition> {
         PlanetDefinition::new(
             "Cube Planet",
             create_cube_planet,
-            Vec3::new(
-                -2.5,
-                0.45,
-                0.0,
-            ),
+            Vec3::new(-2.5, 0.45, 0.0),
             0.42,
             1.50,
-            Vec3::new(
-                0.0,
-                -1.05,
-                0.10,
-            ),
+            Vec3::new(0.0, -1.05, 0.10),
         ),
-
         PlanetDefinition::new(
             "Water Circuit",
             create_water_circuit_world,
-            Vec3::new(
-                2.5,
-                0.55,
-                0.0,
-            ),
+            Vec3::new(2.5, 0.55, 0.0),
             0.15,
             1.50,
-            Vec3::new(
-                0.0,
-                -1.05,
-                0.10,
-            ),
+            Vec3::new(0.0, -1.05, 0.10),
         ),
     ]
 }
