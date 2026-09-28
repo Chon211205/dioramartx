@@ -3492,9 +3492,9 @@ fn spawn_sparkle(
                 ),
 
             radius:
-                7.0
+                12.0
                     + size_random
-                        * 5.0,
+                        * 8.0,
 
             active: true,
 
