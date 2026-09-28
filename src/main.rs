@@ -1428,20 +1428,9 @@ fn main() {
                         Color::LIGHTGRAY,
                     );
 
-                    d.draw_text(
-                        &format!(
-                            "Destellos: {}",
-                            sparkle_score,
-                        ),
-                        30,
-                        200,
-                        24,
-                        Color::new(
-                            255,
-                            235,
-                            70,
-                            255,
-                        ),
+                    draw_sparkle_counter(
+                        &mut d,
+                        sparkle_score,
                     );
                 }
 
@@ -3812,6 +3801,220 @@ fn draw_sparkle(
         sparkle.position,
         sparkle.radius
             * 0.18,
+        Color::WHITE,
+    );
+}
+
+fn draw_sparkle_counter(
+    d: &mut RaylibDrawHandle<'_>,
+    sparkle_score: u32,
+) {
+    let panel_x = 28.0;
+    let panel_y = 190.0;
+    let panel_width = 112.0;
+    let panel_height = 48.0;
+
+    d.draw_rectangle_rounded(
+        Rectangle::new(
+            panel_x,
+            panel_y,
+            panel_width,
+            panel_height,
+        ),
+        0.40,
+        10,
+        Color::new(
+            20,
+            25,
+            35,
+            220,
+        ),
+    );
+
+    d.draw_rectangle_rounded_lines(
+        Rectangle::new(
+            panel_x,
+            panel_y,
+            panel_width,
+            panel_height,
+        ),
+        0.40,
+        10,
+        Color::new(
+            210,
+            235,
+            255,
+            240,
+        ),
+    );
+
+    let center =
+        Vector2::new(
+            panel_x + 25.0,
+            panel_y + 24.0,
+        );
+
+    let rotation =
+        -std::f32::consts::PI
+            / 2.0;
+
+    let outer_radius =
+        16.0;
+
+    let inner_radius =
+        7.5;
+
+    let mut points =
+        [
+            Vector2::new(
+                0.0,
+                0.0,
+            );
+            10
+        ];
+
+    for i in 0..10 {
+        let radius =
+            if i % 2 == 0 {
+                outer_radius
+            } else {
+                inner_radius
+            };
+
+        let angle =
+            rotation
+                + i as f32
+                    * std::f32::consts::PI
+                    / 5.0;
+
+        points[i] =
+            Vector2::new(
+                center.x
+                    + angle.cos()
+                        * radius,
+                center.y
+                    + angle.sin()
+                        * radius,
+            );
+    }
+
+    for i in 1..9 {
+        d.draw_triangle(
+            points[0],
+            points[i],
+            points[i + 1],
+            Color::new(
+                160,
+                245,
+                255,
+                255,
+            ),
+        );
+    }
+
+    let inner_outer_radius =
+        11.0;
+
+    let inner_inner_radius =
+        5.0;
+
+    let mut inner_points =
+        [
+            Vector2::new(
+                0.0,
+                0.0,
+            );
+            10
+        ];
+
+    for i in 0..10 {
+        let radius =
+            if i % 2 == 0 {
+                inner_outer_radius
+            } else {
+                inner_inner_radius
+            };
+
+        let angle =
+            rotation
+                + i as f32
+                    * std::f32::consts::PI
+                    / 5.0;
+
+        inner_points[i] =
+            Vector2::new(
+                center.x
+                    + angle.cos()
+                        * radius,
+                center.y
+                    + angle.sin()
+                        * radius,
+            );
+    }
+
+    for i in 1..9 {
+        d.draw_triangle(
+            inner_points[0],
+            inner_points[i],
+            inner_points[i + 1],
+            Color::new(
+                190,
+                40,
+                220,
+                255,
+            ),
+        );
+    }
+
+    d.draw_circle(
+        center.x as i32 - 4,
+        center.y as i32 - 3,
+        2.5,
+        Color::WHITE,
+    );
+
+    let text =
+        format!(
+            "x{}",
+            sparkle_score,
+        );
+
+    d.draw_text(
+        &text,
+        (
+            panel_x
+                + 55.0
+                + 2.0
+        )
+            as i32,
+        (
+            panel_y
+                + 10.0
+                + 2.0
+        )
+            as i32,
+        27,
+        Color::new(
+            0,
+            0,
+            0,
+            180,
+        ),
+    );
+
+    d.draw_text(
+        &text,
+        (
+            panel_x
+                + 55.0
+        )
+            as i32,
+        (
+            panel_y
+                + 10.0
+        )
+            as i32,
+        27,
         Color::WHITE,
     );
 }
