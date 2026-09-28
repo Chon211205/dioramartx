@@ -4,21 +4,100 @@ use crate::materials::material::Material;
 pub struct Cube {
     pub center: Vec3,
     pub half_size: f32,
+
     pub material: Material,
+
+    pub right_material: Material,
+    pub left_material: Material,
+    pub top_material: Material,
+    pub bottom_material: Material,
+    pub front_material: Material,
+    pub back_material: Material,
+
     pub right: Vec3,
     pub up: Vec3,
     pub forward: Vec3,
 }
 
 impl Cube {
-    pub fn new(center: Vec3, size: f32, material: Material) -> Self {
+    pub fn new(
+        center: Vec3,
+        size: f32,
+        material: Material,
+    ) -> Self {
         Self {
             center,
             half_size: size * 0.5,
+
             material,
-            right: Vec3::new(1.0, 0.0, 0.0),
-            up: Vec3::new(0.0, 1.0, 0.0),
-            forward: Vec3::new(0.0, 0.0, 1.0),
+
+            right_material: material,
+            left_material: material,
+            top_material: material,
+            bottom_material: material,
+            front_material: material,
+            back_material: material,
+
+            right: Vec3::new(
+                1.0,
+                0.0,
+                0.0,
+            ),
+
+            up: Vec3::new(
+                0.0,
+                1.0,
+                0.0,
+            ),
+
+            forward: Vec3::new(
+                0.0,
+                0.0,
+                1.0,
+            ),
+        }
+    }
+
+    pub fn new_with_faces(
+        center: Vec3,
+        size: f32,
+        right_material: Material,
+        left_material: Material,
+        top_material: Material,
+        bottom_material: Material,
+        front_material: Material,
+        back_material: Material,
+    ) -> Self {
+        Self {
+            center,
+            half_size: size * 0.5,
+
+            material: front_material,
+
+            right_material,
+            left_material,
+            top_material,
+            bottom_material,
+            front_material,
+            back_material,
+
+            right: Vec3::new(
+                1.0,
+                0.0,
+                0.0,
+            ),
+
+            up: Vec3::new(
+                0.0,
+                1.0,
+                0.0,
+            ),
+
+            forward: Vec3::new(
+                0.0,
+                0.0,
+                1.0,
+            ),
         }
     }
 
@@ -28,16 +107,39 @@ impl Cube {
         up: Vec3,
         material: Material,
     ) -> Self {
-        let up = up.normalize();
+        let up =
+            up.normalize();
 
-        let helper = if up.y.abs() < 0.99 {
-            Vec3::new(0.0, 1.0, 0.0)
-        } else {
-            Vec3::new(1.0, 0.0, 0.0)
-        };
+        let helper =
+            if up.y.abs()
+                < 0.99
+            {
+                Vec3::new(
+                    0.0,
+                    1.0,
+                    0.0,
+                )
+            } else {
+                Vec3::new(
+                    1.0,
+                    0.0,
+                    0.0,
+                )
+            };
 
-        let right = helper.cross(&up).normalize();
-        let forward = up.cross(&right).normalize();
+        let right =
+            helper
+                .cross(
+                    &up,
+                )
+                .normalize();
+
+        let forward =
+            up
+                .cross(
+                    &right,
+                )
+                .normalize();
 
         Self::from_basis(
             center,
@@ -59,11 +161,79 @@ impl Cube {
     ) -> Self {
         Self {
             center,
-            half_size: size * 0.5,
+            half_size:
+                size
+                    * 0.5,
+
             material,
-            right: right.normalize(),
-            up: up.normalize(),
-            forward: forward.normalize(),
+
+            right_material:
+                material,
+
+            left_material:
+                material,
+
+            top_material:
+                material,
+
+            bottom_material:
+                material,
+
+            front_material:
+                material,
+
+            back_material:
+                material,
+
+            right:
+                right.normalize(),
+
+            up:
+                up.normalize(),
+
+            forward:
+                forward.normalize(),
+        }
+    }
+
+    pub fn from_basis_faces(
+        center: Vec3,
+        size: f32,
+        right: Vec3,
+        up: Vec3,
+        forward: Vec3,
+        right_material: Material,
+        left_material: Material,
+        top_material: Material,
+        bottom_material: Material,
+        front_material: Material,
+        back_material: Material,
+    ) -> Self {
+        Self {
+            center,
+
+            half_size:
+                size
+                    * 0.5,
+
+            material:
+                front_material,
+
+            right_material,
+            left_material,
+            top_material,
+            bottom_material,
+            front_material,
+            back_material,
+
+            right:
+                right.normalize(),
+
+            up:
+                up.normalize(),
+
+            forward:
+                forward.normalize(),
         }
     }
 
@@ -72,25 +242,54 @@ impl Cube {
         origin: &Vec3,
         direction: &Vec3,
     ) -> Option<f32> {
-        let relative_origin = *origin - self.center;
+        let relative_origin =
+            *origin
+                - self.center;
 
-        let local_origin = Vec3::new(
-            relative_origin.dot(&self.right),
-            relative_origin.dot(&self.up),
-            relative_origin.dot(&self.forward),
-        );
+        let local_origin =
+            Vec3::new(
+                relative_origin
+                    .dot(
+                        &self.right,
+                    ),
 
-        let local_direction = Vec3::new(
-            direction.dot(&self.right),
-            direction.dot(&self.up),
-            direction.dot(&self.forward),
-        );
+                relative_origin
+                    .dot(
+                        &self.up,
+                    ),
 
-        let min = -self.half_size;
-        let max = self.half_size;
+                relative_origin
+                    .dot(
+                        &self.forward,
+                    ),
+            );
 
-        let mut t_min = -f32::INFINITY;
-        let mut t_max = f32::INFINITY;
+        let local_direction =
+            Vec3::new(
+                direction.dot(
+                    &self.right,
+                ),
+
+                direction.dot(
+                    &self.up,
+                ),
+
+                direction.dot(
+                    &self.forward,
+                ),
+            );
+
+        let min =
+            -self.half_size;
+
+        let max =
+            self.half_size;
+
+        let mut t_min =
+            -f32::INFINITY;
+
+        let mut t_max =
+            f32::INFINITY;
 
         if !update_slab(
             local_origin.x,
@@ -125,67 +324,205 @@ impl Cube {
             return None;
         }
 
-        if t_max < 0.001 {
+        if t_max
+            < 0.001
+        {
             return None;
         }
 
-        if t_min > 0.001 {
-            Some(t_min)
-        } else if t_max > 0.001 {
-            Some(t_max)
+        if t_min
+            > 0.001
+        {
+            Some(
+                t_min,
+            )
+        } else if t_max
+            > 0.001
+        {
+            Some(
+                t_max,
+            )
         } else {
             None
         }
     }
 
-    pub fn normal_at(&self, point: &Vec3) -> Vec3 {
-        let relative = *point - self.center;
+    pub fn normal_at(
+        &self,
+        point: &Vec3,
+    ) -> Vec3 {
+        let relative =
+            *point
+                - self.center;
 
-        let local = Vec3::new(
-            relative.dot(&self.right),
-            relative.dot(&self.up),
-            relative.dot(&self.forward),
-        );
+        let local =
+            Vec3::new(
+                relative.dot(
+                    &self.right,
+                ),
 
-        let ax = local.x.abs();
-        let ay = local.y.abs();
-        let az = local.z.abs();
+                relative.dot(
+                    &self.up,
+                ),
 
-        if ax >= ay && ax >= az {
-            (self.right * local.x.signum()).normalize()
-        } else if ay >= ax && ay >= az {
-            (self.up * local.y.signum()).normalize()
+                relative.dot(
+                    &self.forward,
+                ),
+            );
+
+        let ax =
+            local.x.abs();
+
+        let ay =
+            local.y.abs();
+
+        let az =
+            local.z.abs();
+
+        if ax >= ay
+            && ax >= az
+        {
+            (
+                self.right
+                    * local.x
+                        .signum()
+            )
+                .normalize()
+        } else if ay >= ax
+            && ay >= az
+        {
+            (
+                self.up
+                    * local.y
+                        .signum()
+            )
+                .normalize()
         } else {
-            (self.forward * local.z.signum()).normalize()
+            (
+                self.forward
+                    * local.z
+                        .signum()
+            )
+                .normalize()
         }
     }
 
-    pub fn min(&self) -> Vec3 {
+    pub fn material_at(
+        &self,
+        point: &Vec3,
+    ) -> Material {
+        let relative =
+            *point
+                - self.center;
+
+        let local =
+            Vec3::new(
+                relative.dot(
+                    &self.right,
+                ),
+
+                relative.dot(
+                    &self.up,
+                ),
+
+                relative.dot(
+                    &self.forward,
+                ),
+            );
+
+        let ax =
+            local.x.abs();
+
+        let ay =
+            local.y.abs();
+
+        let az =
+            local.z.abs();
+
+        if ax >= ay
+            && ax >= az
+        {
+            if local.x
+                >= 0.0
+            {
+                self.right_material
+            } else {
+                self.left_material
+            }
+        } else if ay >= ax
+            && ay >= az
+        {
+            if local.y
+                >= 0.0
+            {
+                self.top_material
+            } else {
+                self.bottom_material
+            }
+        } else if local.z
+            >= 0.0
+        {
+            self.front_material
+        } else {
+            self.back_material
+        }
+    }
+
+    pub fn min(
+        &self,
+    ) -> Vec3 {
         self.aabb().0
     }
 
-    pub fn max(&self) -> Vec3 {
+    pub fn max(
+        &self,
+    ) -> Vec3 {
         self.aabb().1
     }
 
-    pub fn aabb(&self) -> (Vec3, Vec3) {
-        let ex = self.right.x.abs() * self.half_size
-            + self.up.x.abs() * self.half_size
-            + self.forward.x.abs() * self.half_size;
+    pub fn aabb(
+        &self,
+    ) -> (
+        Vec3,
+        Vec3,
+    ) {
+        let ex =
+            self.right.x.abs()
+                * self.half_size
+                + self.up.x.abs()
+                    * self.half_size
+                + self.forward.x.abs()
+                    * self.half_size;
 
-        let ey = self.right.y.abs() * self.half_size
-            + self.up.y.abs() * self.half_size
-            + self.forward.y.abs() * self.half_size;
+        let ey =
+            self.right.y.abs()
+                * self.half_size
+                + self.up.y.abs()
+                    * self.half_size
+                + self.forward.y.abs()
+                    * self.half_size;
 
-        let ez = self.right.z.abs() * self.half_size
-            + self.up.z.abs() * self.half_size
-            + self.forward.z.abs() * self.half_size;
+        let ez =
+            self.right.z.abs()
+                * self.half_size
+                + self.up.z.abs()
+                    * self.half_size
+                + self.forward.z.abs()
+                    * self.half_size;
 
-        let extent = Vec3::new(ex, ey, ez);
+        let extent =
+            Vec3::new(
+                ex,
+                ey,
+                ez,
+            );
 
         (
-            self.center - extent,
-            self.center + extent,
+            self.center
+                - extent,
+
+            self.center
+                + extent,
         )
     }
 }
@@ -198,23 +535,56 @@ fn update_slab(
     t_min: &mut f32,
     t_max: &mut f32,
 ) -> bool {
-    const EPSILON: f32 = 1e-8;
+    const EPSILON:
+        f32 =
+        1e-8;
 
-    if direction.abs() < EPSILON {
-        return origin >= min && origin <= max;
+    if direction.abs()
+        < EPSILON
+    {
+        return origin
+            >= min
+            && origin
+                <= max;
     }
 
-    let inverse = 1.0 / direction;
+    let inverse =
+        1.0
+            / direction;
 
-    let mut t0 = (min - origin) * inverse;
-    let mut t1 = (max - origin) * inverse;
+    let mut t0 =
+        (
+            min
+                - origin
+        )
+            * inverse;
 
-    if t0 > t1 {
-        std::mem::swap(&mut t0, &mut t1);
+    let mut t1 =
+        (
+            max
+                - origin
+        )
+            * inverse;
+
+    if t0
+        > t1
+    {
+        std::mem::swap(
+            &mut t0,
+            &mut t1,
+        );
     }
 
-    *t_min = t_min.max(t0);
-    *t_max = t_max.min(t1);
+    *t_min =
+        t_min.max(
+            t0,
+        );
 
-    *t_max >= *t_min
+    *t_max =
+        t_max.min(
+            t1,
+        );
+
+    *t_max
+        >= *t_min
 }
