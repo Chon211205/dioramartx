@@ -11,7 +11,7 @@ use crate::textures::texture::TextureMap;
 fn water_texture() -> &'static TextureMap {
     static TEX: OnceLock<TextureMap> = OnceLock::new();
 
-    TEX.get_or_init(|| TextureMap::from_file("assets/textures/ice/Ice002_1K-PNG_Color.png"))
+    TEX.get_or_init(|| TextureMap::from_file("assets/textures/water_circuit/water_flow.png"))
 }
 
 fn create_water_material() -> Material {

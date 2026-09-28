@@ -2,9 +2,11 @@ use raylib::prelude::*;
 
 const WIDTH: i32 = 960;
 const HEIGHT: i32 = 640;
-const COURSE_LENGTH: f32 = 6400.0;
+const COURSE_LENGTH: f32 = 12800.0;
+const CIRCUIT_SECTION_LENGTH: f32 = 6400.0;
 const PLAYER_Y: f32 = 475.0;
 const HORIZON_Y: f32 = 145.0;
+const ROAD_HALF_WIDTH: f32 = 238.0;
 
 #[derive(Clone, Copy, PartialEq)]
 enum GameState {
@@ -20,13 +22,6 @@ struct Gate {
     x: f32,
     width: f32,
     passed: bool,
-}
-
-#[derive(Clone, Copy)]
-struct Rock {
-    y: f32,
-    x: f32,
-    radius: f32,
 }
 
 #[derive(Clone, Copy)]
@@ -47,17 +42,18 @@ struct Game {
     boost: f32,
     health: i32,
     gates: Vec<Gate>,
-    rocks: Vec<Rock>,
     wake: Vec<WakeParticle>,
     missed: u32,
     shake: f32,
+    fall_timer: f32,
+    lean: f32,
 }
 
 impl Game {
     fn new() -> Self {
         let mut game = Self {
             state: GameState::Title,
-            player_x: WIDTH as f32 * 0.5,
+            player_x: course_center(0.0),
             speed: 0.0,
             distance: 0.0,
             elapsed: 0.0,
@@ -65,10 +61,11 @@ impl Game {
             boost: 1.0,
             health: 3,
             gates: Vec::new(),
-            rocks: Vec::new(),
             wake: Vec::new(),
             missed: 0,
             shake: 0.0,
+            fall_timer: 0.0,
+            lean: 0.0,
         };
         game.build_course();
         game
@@ -76,33 +73,21 @@ impl Game {
 
     fn build_course(&mut self) {
         self.gates.clear();
-        self.rocks.clear();
 
-        for i in 0..18 {
-            let y = 420.0 + i as f32 * 320.0;
-            let wave = (i as f32 * 1.37).sin();
+        for i in 0..36 {
+            let y = 420.0 + i as f32 * 340.0;
             self.gates.push(Gate {
                 y,
-                x: WIDTH as f32 * 0.5 + wave * 245.0,
+                x: course_center(y),
                 width: if i % 5 == 4 { 190.0 } else { 235.0 },
                 passed: false,
-            });
-        }
-
-        for i in 0..26 {
-            let y = 650.0 + i as f32 * 215.0;
-            let x = 115.0 + ((i * 173) % 730) as f32;
-            self.rocks.push(Rock {
-                y,
-                x,
-                radius: 24.0 + (i % 3) as f32 * 7.0,
             });
         }
     }
 
     fn start(&mut self) {
         self.state = GameState::Countdown;
-        self.player_x = WIDTH as f32 * 0.5;
+        self.player_x = course_center(0.0);
         self.speed = 0.0;
         self.distance = 0.0;
         self.elapsed = 0.0;
@@ -111,6 +96,8 @@ impl Game {
         self.health = 3;
         self.missed = 0;
         self.shake = 0.0;
+        self.fall_timer = 0.0;
+        self.lean = 0.0;
         self.wake.clear();
         self.build_course();
     }
@@ -145,6 +132,23 @@ impl Game {
         self.elapsed += dt;
         self.shake = (self.shake - dt).max(0.0);
 
+        if self.fall_timer > 0.0 {
+            self.fall_timer -= dt;
+            self.lean *= (1.0 - 2.5 * dt).max(0.0);
+            self.speed = (self.speed - 520.0 * dt).max(0.0);
+            if self.fall_timer <= 0.0 {
+                self.health -= 1;
+                self.distance = (self.distance - 150.0).max(0.0);
+                self.player_x = course_center(self.distance);
+                self.speed = 230.0;
+                self.boost *= 0.55;
+                if self.health <= 0 {
+                    self.health = 3;
+                }
+            }
+            return;
+        }
+
         let mut steering = 0.0;
         if rl.is_key_down(KeyboardKey::KEY_LEFT) || rl.is_key_down(KeyboardKey::KEY_A) {
             steering -= 1.0;
@@ -152,13 +156,14 @@ impl Game {
         if rl.is_key_down(KeyboardKey::KEY_RIGHT) || rl.is_key_down(KeyboardKey::KEY_D) {
             steering += 1.0;
         }
+        self.lean += (steering - self.lean) * (8.0 * dt).min(1.0);
 
         let boosting = (rl.is_key_down(KeyboardKey::KEY_SPACE)
             || rl.is_key_down(KeyboardKey::KEY_UP))
             && self.boost > 0.02;
         let target_speed = if boosting { 555.0 } else { 360.0 };
         self.speed += (target_speed - self.speed) * (2.7 * dt).min(1.0);
-        self.player_x += steering * (315.0 + self.speed * 0.18) * dt;
+        self.player_x += steering * (345.0 + self.speed * 0.24) * dt;
         self.player_x = self.player_x.clamp(70.0, WIDTH as f32 - 70.0);
 
         if boosting {
@@ -170,6 +175,13 @@ impl Game {
         let previous_distance = self.distance;
         self.distance += self.speed * dt;
 
+        if (self.player_x - course_center(self.distance)).abs() > ROAD_HALF_WIDTH - 28.0 {
+            self.fall_timer = 0.85;
+            self.shake = 0.40;
+            self.wake.clear();
+            return;
+        }
+
         for gate in &mut self.gates {
             if !gate.passed && previous_distance < gate.y && self.distance >= gate.y {
                 gate.passed = true;
@@ -179,21 +191,6 @@ impl Game {
                     self.missed += 1;
                     self.speed *= 0.68;
                     self.shake = 0.28;
-                }
-            }
-        }
-
-        for rock in &self.rocks {
-            if previous_distance < rock.y + 18.0 && self.distance >= rock.y + 18.0 {
-                if (self.player_x - rock.x).abs() < rock.radius + 31.0 {
-                    self.health -= 1;
-                    self.speed *= 0.48;
-                    self.shake = 0.45;
-                    if self.health <= 0 {
-                        self.health = 3;
-                        self.distance = (self.distance - 280.0).max(0.0);
-                        self.player_x = WIDTH as f32 * 0.5;
-                    }
                 }
             }
         }
@@ -217,10 +214,11 @@ impl Game {
             return;
         }
         let phase = self.distance * 0.09;
+        let screen_x = WIDTH as f32 * 0.5 + self.player_x - course_center(self.distance);
         for side in [-1.0_f32, 1.0] {
             self.wake.push(WakeParticle {
                 position: Vector2::new(
-                    self.player_x + side * (30.0 + phase.sin() * 3.0),
+                    screen_x + side * (30.0 + phase.sin() * 3.0),
                     PLAYER_Y + 20.0,
                 ),
                 velocity: Vector2::new(side * (18.0 + steering * 12.0), 85.0),
@@ -242,6 +240,11 @@ fn main() {
     let manta_sheet = rl
         .load_texture(&thread, "assets/sprites/manta_ray_sheet.png")
         .expect("No se pudo cargar assets/sprites/manta_ray_sheet.png");
+    let water_texture = rl
+        .load_texture(&thread, "assets/textures/water_circuit/water_flow.png")
+        .expect("No se pudo cargar assets/textures/water_circuit/water_flow.png");
+    manta_sheet.set_texture_filter(&thread, TextureFilter::TEXTURE_FILTER_POINT);
+    water_texture.set_texture_filter(&thread, TextureFilter::TEXTURE_FILTER_POINT);
 
     let mut game = Game::new();
     while !rl.window_should_close() {
@@ -249,11 +252,16 @@ fn main() {
         game.update(&mut rl, dt);
         let mut d = rl.begin_drawing(&thread);
         d.clear_background(Color::new(6, 40, 76, 255));
-        draw_game(&mut d, &game, &manta_sheet);
+        draw_game(&mut d, &game, &manta_sheet, &water_texture);
     }
 }
 
-fn draw_game(d: &mut RaylibDrawHandle, game: &Game, manta_sheet: &Texture2D) {
+fn draw_game(
+    d: &mut RaylibDrawHandle,
+    game: &Game,
+    manta_sheet: &Texture2D,
+    water_texture: &Texture2D,
+) {
     let shake_x = if game.shake > 0.0 {
         (game.elapsed * 91.0).sin() * 7.0
     } else {
@@ -265,7 +273,7 @@ fn draw_game(d: &mut RaylibDrawHandle, game: &Game, manta_sheet: &Texture2D) {
         0.0
     };
 
-    draw_water(d, game.distance, shake_x, shake_y);
+    draw_water(d, water_texture, game.distance, shake_x, shake_y);
     draw_course(d, game, shake_x, shake_y);
 
     for particle in &game.wake {
@@ -280,10 +288,20 @@ fn draw_game(d: &mut RaylibDrawHandle, game: &Game, manta_sheet: &Texture2D) {
     draw_rider(
         d,
         manta_sheet,
-        game.player_x + shake_x,
-        PLAYER_Y + shake_y,
+        WIDTH as f32 * 0.5 + game.player_x - course_center(game.distance) + shake_x,
+        PLAYER_Y + shake_y + game.fall_timer * 115.0,
         game.elapsed,
+        game.lean,
     );
+    if game.fall_timer > 0.0 {
+        centered_text(
+            d,
+            "¡FUERA DEL AGUA!",
+            330,
+            34,
+            Color::new(255, 225, 80, 255),
+        );
+    }
     draw_hud(d, game);
 
     match game.state {
@@ -294,7 +312,13 @@ fn draw_game(d: &mut RaylibDrawHandle, game: &Game, manta_sheet: &Texture2D) {
     }
 }
 
-fn draw_water(d: &mut RaylibDrawHandle, distance: f32, shake_x: f32, shake_y: f32) {
+fn draw_water(
+    d: &mut RaylibDrawHandle,
+    water_texture: &Texture2D,
+    distance: f32,
+    shake_x: f32,
+    shake_y: f32,
+) {
     d.draw_rectangle_gradient_v(
         0,
         0,
@@ -303,6 +327,60 @@ fn draw_water(d: &mut RaylibDrawHandle, distance: f32, shake_x: f32, shake_y: f3
         Color::new(6, 72, 125, 255),
         Color::new(4, 35, 78, 255),
     );
+
+    // Cada franja sigue el centro curvo de la pista y conserva píxeles nítidos.
+    let road_top = HORIZON_Y + shake_y;
+    let road_bottom = HEIGHT as f32;
+    let strip_height = 4.0;
+    let scroll = (distance * 0.72).rem_euclid(water_texture.height as f32);
+    let mut y = road_top;
+    while y < road_bottom {
+        let perspective = ((y - road_top) / (PLAYER_Y - HORIZON_Y)).clamp(0.075, 1.45);
+        let depth = if y <= PLAYER_Y {
+            620.0 * (1.0 / perspective - 1.0)
+        } else {
+            -(y - PLAYER_Y) / 1.15
+        };
+        let world_y = distance + depth;
+        let (center_x, _, scale) = project_point(course_center(world_y), world_y, distance);
+        let half_width = ROAD_HALF_WIDTH * scale;
+        let source_y = (scroll + perspective * water_texture.height as f32)
+            .rem_euclid(water_texture.height as f32);
+        d.draw_texture_pro(
+            water_texture,
+            Rectangle::new(0.0, source_y, water_texture.width as f32, 5.0),
+            Rectangle::new(
+                center_x - half_width + shake_x,
+                y,
+                half_width * 2.0,
+                strip_height + 1.0,
+            ),
+            Vector2::zero(),
+            0.0,
+            Color::new(255, 255, 255, 220),
+        );
+        let curb_index = ((world_y / 72.0).floor() as i32).rem_euclid(2);
+        let edge_color = if curb_index == 0 {
+            Color::new(255, 218, 55, 245)
+        } else {
+            Color::new(121, 245, 255, 245)
+        };
+        d.draw_rectangle(
+            (center_x - half_width + shake_x) as i32,
+            y as i32,
+            3,
+            (strip_height + 1.0) as i32,
+            edge_color,
+        );
+        d.draw_rectangle(
+            (center_x + half_width + shake_x - 3.0) as i32,
+            y as i32,
+            3,
+            (strip_height + 1.0) as i32,
+            edge_color,
+        );
+        y += strip_height;
+    }
     d.draw_circle_gradient(
         WIDTH / 2,
         HORIZON_Y as i32 - 18,
@@ -310,44 +388,36 @@ fn draw_water(d: &mut RaylibDrawHandle, distance: f32, shake_x: f32, shake_y: f3
         Color::new(255, 226, 139, 190),
         Color::new(255, 226, 139, 0),
     );
+}
 
-    // Límites de la pista convergen hacia el horizonte y producen profundidad 3D.
-    let vanishing = Vector2::new(WIDTH as f32 * 0.5 + shake_x, HORIZON_Y + shake_y);
-    d.draw_triangle(
-        vanishing,
-        Vector2::new(28.0 + shake_x, HEIGHT as f32),
-        Vector2::new(95.0 + shake_x, HEIGHT as f32),
-        Color::new(3, 26, 49, 225),
-    );
-    d.draw_triangle(
-        vanishing,
-        Vector2::new(WIDTH as f32 - 28.0 + shake_x, HEIGHT as f32),
-        Vector2::new(WIDTH as f32 - 95.0 + shake_x, HEIGHT as f32),
-        Color::new(3, 26, 49, 225),
-    );
+fn course_center(world_y: f32) -> f32 {
+    // Línea central cerrada con curvas arcade, eses rápidas y dos horquillas.
+    // Catmull-Rom hace que cada giro sea continuo y redondeado.
+    const CENTERS: [f32; 16] = [
+        480.0, 690.0, 815.0, 690.0, 355.0, 112.0, 188.0, 535.0, 828.0, 742.0, 410.0, 128.0, 205.0,
+        588.0, 790.0, 610.0,
+    ];
 
-    for lane in -4..=4 {
-        let bottom_x = WIDTH as f32 * 0.5 + lane as f32 * 112.0 + shake_x;
-        d.draw_line_ex(
-            vanishing,
-            Vector2::new(bottom_x, HEIGHT as f32),
-            1.5,
-            Color::new(100, 220, 234, 42),
-        );
-    }
+    let progress = world_y.rem_euclid(CIRCUIT_SECTION_LENGTH) / CIRCUIT_SECTION_LENGTH;
+    let scaled = progress * CENTERS.len() as f32;
+    let index = scaled.floor() as usize % CENTERS.len();
+    let t = scaled - scaled.floor();
+    let p0 = CENTERS[(index + CENTERS.len() - 1) % CENTERS.len()];
+    let p1 = CENTERS[index];
+    let p2 = CENTERS[(index + 1) % CENTERS.len()];
+    let p3 = CENTERS[(index + 2) % CENTERS.len()];
+    let t2 = t * t;
+    let t3 = t2 * t;
 
-    // Franjas que se acercan a cámara; el espaciado aumenta con la perspectiva.
-    for row in 0..18 {
-        let depth = ((row as f32 * 115.0 - distance * 0.55).rem_euclid(2070.0)) + 25.0;
-        let (_, y, scale) = project_point(WIDTH as f32 * 0.5, depth + distance, distance);
-        let half_width = 430.0 * scale;
-        d.draw_line_ex(
-            Vector2::new(WIDTH as f32 * 0.5 - half_width + shake_x, y + shake_y),
-            Vector2::new(WIDTH as f32 * 0.5 + half_width + shake_x, y + shake_y),
-            (1.0 + 3.0 * scale).max(1.0),
-            Color::new(120, 230, 240, (35.0 + 75.0 * scale) as u8),
-        );
-    }
+    0.5 * ((2.0 * p1)
+        + (-p0 + p2) * t
+        + (2.0 * p0 - 5.0 * p1 + 4.0 * p2 - p3) * t2
+        + (-p0 + 3.0 * p1 - 3.0 * p2 + p3) * t3)
+}
+
+fn course_tangent(world_y: f32) -> f32 {
+    let sample = 28.0;
+    (course_center(world_y + sample) - course_center(world_y - sample)) / (sample * 2.0)
 }
 
 fn project_point(world_x: f32, world_y: f32, distance: f32) -> (f32, f32, f32) {
@@ -357,7 +427,12 @@ fn project_point(world_x: f32, world_y: f32, distance: f32) -> (f32, f32, f32) {
     } else {
         (1.0 - depth / 210.0).clamp(1.0, 1.7)
     };
-    let screen_x = WIDTH as f32 * 0.5 + (world_x - WIDTH as f32 * 0.5) * scale;
+    // La cámara permanece sobre la línea central actual. Los puntos futuros
+    // se rotan por la tangente actual, como una cámara que mira hacia el giro.
+    let camera_center = course_center(distance);
+    let camera_heading = course_tangent(distance);
+    let heading_offset = camera_heading * depth;
+    let screen_x = WIDTH as f32 * 0.5 + (world_x - camera_center - heading_offset) * scale * 1.90;
     let screen_y = if depth >= 0.0 {
         HORIZON_Y + (PLAYER_Y - HORIZON_Y) * scale
     } else {
@@ -380,64 +455,16 @@ fn draw_course(d: &mut RaylibDrawHandle, game: &Game, sx: f32, sy: f32) {
         };
         let left = center_x - gate.width * 0.5 * scale + sx;
         let right = center_x + gate.width * 0.5 * scale + sx;
-        let post_radius = 17.0 * scale;
-        d.draw_circle_v(Vector2::new(left, y), post_radius, color);
-        d.draw_circle_v(Vector2::new(right, y), post_radius, color);
-        d.draw_line_ex(
-            Vector2::new(left, y),
-            Vector2::new(right, y),
-            (5.0 * scale).max(1.0),
-            Color::new(color.r, color.g, color.b, 105),
-        );
-        d.draw_triangle(
-            Vector2::new(left - 13.0 * scale, y - 42.0 * scale),
-            Vector2::new(left + 13.0 * scale, y - 42.0 * scale),
-            Vector2::new(left, y - 5.0 * scale),
-            color,
-        );
-        d.draw_triangle(
-            Vector2::new(right - 13.0 * scale, y - 42.0 * scale),
-            Vector2::new(right + 13.0 * scale, y - 42.0 * scale),
-            Vector2::new(right, y - 5.0 * scale),
-            color,
-        );
+        draw_pixel_gate(d, left, right, y, scale, color, gate.passed);
     }
 
-    for rock in &game.rocks {
-        let (x, y, scale) = project_point(rock.x, rock.y, game.distance);
-        let y = y + sy;
-        if y < -70.0 || y > HEIGHT as f32 + 70.0 {
-            continue;
-        }
-        let x = x + sx;
-        let radius = rock.radius * scale;
-        d.draw_ellipse(
-            x as i32,
-            (y + radius * 0.75) as i32,
-            radius * 1.35,
-            radius * 0.42,
-            Color::new(4, 24, 39, 120),
-        );
-        d.draw_circle_v(
-            Vector2::new(x + 5.0 * scale, y + 7.0 * scale),
-            radius,
-            Color::new(15, 34, 50, 135),
-        );
-        d.draw_circle_v(Vector2::new(x, y), radius, Color::new(62, 77, 85, 255));
-        d.draw_circle_v(
-            Vector2::new(x - radius * 0.25, y - radius * 0.3),
-            radius * 0.35,
-            Color::new(99, 117, 119, 255),
-        );
-    }
-
-    let (_, finish_y, finish_scale) =
-        project_point(WIDTH as f32 * 0.5, COURSE_LENGTH, game.distance);
+    let (finish_x, finish_y, finish_scale) =
+        project_point(course_center(COURSE_LENGTH), COURSE_LENGTH, game.distance);
     let finish_y = finish_y + sy;
     if finish_y > -100.0 && finish_y < HEIGHT as f32 + 100.0 {
         for i in 0..12 {
             let tile_width = 68.0 * finish_scale;
-            let x = WIDTH as f32 * 0.5 - tile_width * 6.0 + i as f32 * tile_width;
+            let x = finish_x - tile_width * 6.0 + i as f32 * tile_width;
             let color = if i % 2 == 0 {
                 Color::WHITE
             } else {
@@ -463,7 +490,116 @@ fn draw_course(d: &mut RaylibDrawHandle, game: &Game, sx: f32, sy: f32) {
     }
 }
 
-fn draw_rider(d: &mut RaylibDrawHandle, manta_sheet: &Texture2D, x: f32, y: f32, time: f32) {
+fn draw_pixel_gate(
+    d: &mut RaylibDrawHandle,
+    left: f32,
+    right: f32,
+    water_y: f32,
+    scale: f32,
+    color: Color,
+    passed: bool,
+) {
+    let alpha = if passed { 115 } else { 255 };
+    let dark = Color::new(34, 38, 76, alpha);
+    let gold = Color::new(color.r, color.g, color.b, alpha);
+    let cyan = Color::new(104, 240, 255, alpha);
+    let white = Color::new(238, 253, 255, alpha);
+    let post_width = (22.0 * scale).max(3.0);
+    let post_height = (82.0 * scale).max(9.0);
+    let outline = (4.0 * scale).max(1.0);
+    let top_y = water_y - post_height;
+
+    for x in [left, right] {
+        d.draw_rectangle(
+            (x - post_width * 0.5 - outline) as i32,
+            (top_y - outline) as i32,
+            (post_width + outline * 2.0).ceil() as i32,
+            (post_height + outline * 2.0).ceil() as i32,
+            dark,
+        );
+        d.draw_rectangle(
+            (x - post_width * 0.5) as i32,
+            top_y as i32,
+            post_width.ceil() as i32,
+            post_height.ceil() as i32,
+            gold,
+        );
+
+        // Luces cuadradas alternas, sin suavizado, como hardware de 16 bits.
+        for block in 0..4 {
+            let block_size = (8.0 * scale).max(2.0);
+            let block_y = top_y + (13.0 + block as f32 * 17.0) * scale;
+            d.draw_rectangle(
+                (x - block_size * 0.5) as i32,
+                block_y as i32,
+                block_size.ceil() as i32,
+                block_size.ceil() as i32,
+                if block % 2 == 0 { cyan } else { white },
+            );
+        }
+
+        // Base escalonada para que el pilar tenga una silueta sólida.
+        d.draw_rectangle(
+            (x - post_width * 0.75) as i32,
+            (water_y - 8.0 * scale) as i32,
+            (post_width * 1.5).ceil() as i32,
+            (10.0 * scale).max(2.0).ceil() as i32,
+            dark,
+        );
+        d.draw_rectangle(
+            (x - post_width * 0.58) as i32,
+            (water_y - 7.0 * scale) as i32,
+            (post_width * 1.16).ceil() as i32,
+            (6.0 * scale).max(1.0).ceil() as i32,
+            cyan,
+        );
+    }
+
+    // Arco hecho de bloques individuales sobre una curva, no una línea simple.
+    let segments = 11;
+    let span = right - left;
+    for segment in 0..segments {
+        let u = segment as f32 / (segments - 1) as f32;
+        let x = left + span * u;
+        let arch = (u * std::f32::consts::PI).sin();
+        let y = top_y - arch * 29.0 * scale;
+        let block_width = (span / segments as f32 + 3.0 * scale).max(3.0);
+        let block_height = (13.0 * scale).max(2.0);
+        d.draw_rectangle(
+            (x - block_width * 0.5 - outline) as i32,
+            (y - block_height * 0.5 - outline) as i32,
+            (block_width + outline * 2.0).ceil() as i32,
+            (block_height + outline * 2.0).ceil() as i32,
+            dark,
+        );
+        d.draw_rectangle(
+            (x - block_width * 0.5) as i32,
+            (y - block_height * 0.5) as i32,
+            block_width.ceil() as i32,
+            block_height.ceil() as i32,
+            if segment % 2 == 0 { gold } else { cyan },
+        );
+        if !passed && segment % 3 == 1 {
+            let shine = (4.0 * scale).max(1.0);
+            d.draw_rectangle(
+                (x - shine * 0.5) as i32,
+                (y - shine * 0.5) as i32,
+                shine.ceil() as i32,
+                shine.ceil() as i32,
+                white,
+            );
+        }
+    }
+}
+
+fn draw_rider(
+    d: &mut RaylibDrawHandle,
+    manta_sheet: &Texture2D,
+    x: f32,
+    y: f32,
+    time: f32,
+    lean: f32,
+) {
     const COLUMNS: i32 = 4;
     const ROWS: i32 = 2;
     const FRAME_COUNT: i32 = 8;
@@ -491,7 +627,7 @@ fn draw_rider(d: &mut RaylibDrawHandle, manta_sheet: &Texture2D, x: f32, y: f32,
         source,
         Rectangle::new(x, y, 150.0, 150.0),
         Vector2::new(75.0, 75.0),
-        0.0,
+        -lean * 13.0,
         Color::WHITE,
     );
 }
@@ -615,9 +751,9 @@ fn draw_finish(d: &mut RaylibDrawHandle, game: &Game) {
         25,
         Color::new(185, 230, 240, 255),
     );
-    let rank = if game.elapsed < 14.0 && game.missed == 0 {
+    let rank = if game.elapsed < 30.0 && game.missed == 0 {
         "RANGO S"
-    } else if game.elapsed < 18.0 {
+    } else if game.elapsed < 39.0 {
         "RANGO A"
     } else {
         "RANGO B"
