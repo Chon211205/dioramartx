@@ -1339,6 +1339,20 @@ fn create_galaxy_selector_scene(
             0.20,
         );
 
+    add_selector_nebula(
+        &mut objects,
+        centers[0],
+        0,
+        time,
+    );
+
+    add_selector_nebula(
+        &mut objects,
+        centers[1],
+        1,
+        time,
+    );
+
     add_selector_galaxy(
         &mut objects,
         centers[0],
@@ -1600,6 +1614,258 @@ fn add_selector_galaxy(
                         ),
                     0.12,
                     current_material,
+                ),
+            ),
+        );
+    }
+}
+
+fn add_selector_nebula(
+    objects: &mut Vec<Object>,
+    center: Vec3,
+    galaxy_index: usize,
+    time: f32,
+) {
+    let (
+        color_a,
+        color_b,
+        color_c,
+    ) =
+        if galaxy_index == 0 {
+            (
+                Vec3::new(
+                    0.05,
+                    0.32,
+                    0.65,
+                ),
+                Vec3::new(
+                    0.05,
+                    0.75,
+                    0.85,
+                ),
+                Vec3::new(
+                    0.08,
+                    0.55,
+                    0.28,
+                ),
+            )
+        } else {
+            (
+                Vec3::new(
+                    0.35,
+                    0.05,
+                    0.55,
+                ),
+                Vec3::new(
+                    0.85,
+                    0.08,
+                    0.45,
+                ),
+                Vec3::new(
+                    1.0,
+                    0.28,
+                    0.05,
+                ),
+            )
+        };
+
+    let material_a =
+        Material::new(
+            color_a,
+            0.80,
+            0.45,
+            0.0,
+            0.08,
+        );
+
+    let material_b =
+        Material::new(
+            color_b,
+            0.85,
+            0.55,
+            0.0,
+            0.10,
+        );
+
+    let material_c =
+        Material::new(
+            color_c,
+            0.90,
+            0.65,
+            0.0,
+            0.12,
+        );
+
+    let arms =
+        3;
+
+    let particles_per_arm =
+        42;
+
+    let direction =
+        if galaxy_index == 0 {
+            1.0
+        } else {
+            -1.0
+        };
+
+    for arm in 0..arms {
+        let arm_offset =
+            arm as f32
+                / arms as f32
+                * std::f32::consts::PI
+                * 2.0;
+
+        for i in 0..particles_per_arm {
+            let t =
+                i as f32
+                    / particles_per_arm
+                        as f32;
+
+            let radius =
+                0.65
+                    + t
+                        * 2.45;
+
+            let spiral =
+                arm_offset
+                    + direction
+                        * (
+                            t
+                                * 5.8
+                            + time
+                                * 0.08
+                        );
+
+            let wobble =
+                (
+                    i as f32
+                        * 1.73
+                    + arm as f32
+                        * 2.9
+                )
+                    .sin()
+                    * 0.16;
+
+            let x =
+                spiral.cos()
+                    * radius;
+
+            let y =
+                spiral.sin()
+                    * radius
+                    * 0.42;
+
+            let z =
+                -0.55
+                    - t
+                        * 0.28
+                    + wobble
+                        * 0.10;
+
+            let jitter_x =
+                (
+                    i as f32
+                        * 5.31
+                    + arm as f32
+                )
+                    .sin()
+                    * 0.10;
+
+            let jitter_y =
+                (
+                    i as f32
+                        * 3.77
+                    + arm as f32
+                        * 1.9
+                )
+                    .cos()
+                    * 0.08;
+
+            let position =
+                center
+                    + Vec3::new(
+                        x
+                            + jitter_x,
+                        y
+                            + jitter_y,
+                        z,
+                    );
+
+            let radius_particle =
+                0.045
+                    + (
+                        i as f32
+                            * 0.91
+                    )
+                        .sin()
+                        .abs()
+                        * 0.045;
+
+            let material =
+                match i % 3 {
+                    0 => {
+                        material_a
+                    }
+
+                    1 => {
+                        material_b
+                    }
+
+                    _ => {
+                        material_c
+                    }
+                };
+
+            objects.push(
+                Object::Sphere(
+                    Sphere::new(
+                        position,
+                        radius_particle,
+                        material,
+                    ),
+                ),
+            );
+        }
+    }
+
+    for i in 0..28 {
+        let angle =
+            i as f32
+                / 28.0
+                * std::f32::consts::PI
+                * 2.0
+                + time
+                    * 0.03
+                    * direction;
+
+        let radius =
+            0.30
+                + (
+                    i as f32
+                        * 1.91
+                )
+                    .sin()
+                    .abs()
+                    * 0.50;
+
+        let position =
+            center
+                + Vec3::new(
+                    angle.cos()
+                        * radius,
+                    angle.sin()
+                        * radius
+                        * 0.50,
+                    -0.72,
+                );
+
+        objects.push(
+            Object::Sphere(
+                Sphere::new(
+                    position,
+                    0.06,
+                    material_b,
                 ),
             ),
         );
