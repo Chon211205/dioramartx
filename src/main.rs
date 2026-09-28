@@ -1171,6 +1171,60 @@ fn main() {
                 destination_height,
             );
 
+        let transition_alpha =
+            if state == SceneState::Galaxy {
+                match galaxy_transition {
+                    GalaxyTransition::None => {
+                        255
+                    }
+
+                    GalaxyTransition::ZoomOut => {
+                        let t =
+                            (
+                                transition_timer
+                                    / 0.85
+                            )
+                                .clamp(
+                                    0.0,
+                                    1.0,
+                                );
+
+                        (
+                            255.0
+                                * (
+                                    1.0
+                                        - smoothstep(t)
+                                )
+                        )
+                            as u8
+                    }
+
+                    GalaxyTransition::Warp => {
+                        0
+                    }
+
+                    GalaxyTransition::ZoomIn => {
+                        let t =
+                            (
+                                transition_timer
+                                    / 1.0
+                            )
+                                .clamp(
+                                    0.0,
+                                    1.0,
+                                );
+
+                        (
+                            255.0
+                                * smoothstep(t)
+                        )
+                            as u8
+                    }
+                }
+            } else {
+                255
+            };
+
         d.draw_texture_pro(
             &render_texture,
             source,
@@ -1180,7 +1234,12 @@ fn main() {
                 0.0,
             ),
             0.0,
-            Color::WHITE,
+            Color::new(
+                255,
+                255,
+                255,
+                transition_alpha,
+            ),
         );
 
         if galaxy_selector_open {
