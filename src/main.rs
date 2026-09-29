@@ -117,6 +117,13 @@ fn main() {
     world_1_music.set_looping(true);
     world_1_music.set_volume(1.0);
 
+    let mut world_2_music = audio
+        .new_music("assets/sounds/w2.mp3")
+        .expect("No se pudo cargar w2.mp3");
+
+    world_2_music.set_looping(true);
+    world_2_music.set_volume(1.0);
+
     let monitor = raylib::core::window::get_current_monitor();
 
     let screen_width = raylib::core::window::get_monitor_width(monitor);
@@ -498,14 +505,36 @@ fn main() {
             continue;
         }
 
-        if current_galaxy == 0 {
-            world_1_music.update_stream();
+        if state == SceneState::Galaxy && !galaxy_selector_open {
+            if current_galaxy == 0 {
+                if world_2_music.is_stream_playing() {
+                    world_2_music.stop_stream();
+                }
 
-            if !world_1_music.is_stream_playing() {
-                world_1_music.play_stream();
+                world_1_music.update_stream();
+
+                if !world_1_music.is_stream_playing() {
+                    world_1_music.play_stream();
+                }
+            } else if current_galaxy == 1 {
+                if world_1_music.is_stream_playing() {
+                    world_1_music.stop_stream();
+                }
+
+                world_2_music.update_stream();
+
+                if !world_2_music.is_stream_playing() {
+                    world_2_music.play_stream();
+                }
             }
-        } else if world_1_music.is_stream_playing() {
-            world_1_music.stop_stream();
+        } else {
+            if world_1_music.is_stream_playing() {
+                world_1_music.stop_stream();
+            }
+
+            if world_2_music.is_stream_playing() {
+                world_2_music.stop_stream();
+            }
         }
 
         if state == SceneState::Galaxy
