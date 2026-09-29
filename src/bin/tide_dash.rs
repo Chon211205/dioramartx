@@ -229,7 +229,44 @@ impl Game {
     }
 }
 
-fn main() {
+pub struct EmbeddedGame {
+    game: Game,
+    manta_sheet: Texture2D,
+    water_texture: Texture2D,
+}
+
+impl EmbeddedGame {
+    pub fn new(rl: &mut RaylibHandle, thread: &RaylibThread) -> Self {
+        let manta_sheet = rl
+            .load_texture(thread, "assets/sprites/manta_ray_sheet.png")
+            .expect("No se pudo cargar assets/sprites/manta_ray_sheet.png");
+        let water_texture = rl
+            .load_texture(thread, "assets/textures/water_circuit/water_flow.png")
+            .expect("No se pudo cargar assets/textures/water_circuit/water_flow.png");
+        manta_sheet.set_texture_filter(thread, TextureFilter::TEXTURE_FILTER_POINT);
+        water_texture.set_texture_filter(thread, TextureFilter::TEXTURE_FILTER_POINT);
+
+        Self {
+            game: Game::new(),
+            manta_sheet,
+            water_texture,
+        }
+    }
+
+    pub fn start(&mut self) {
+        self.game.start();
+    }
+
+    pub fn update(&mut self, rl: &mut RaylibHandle, dt: f32) {
+        self.game.update(rl, dt);
+    }
+
+    pub fn draw(&self, d: &mut RaylibDrawHandle) {
+        draw_game(d, &self.game, &self.manta_sheet, &self.water_texture);
+    }
+}
+
+pub fn run() {
     let (mut rl, thread) = raylib::init()
         .size(WIDTH, HEIGHT)
         .title("Tide Dash - Carrera 2.5D")
@@ -237,23 +274,19 @@ fn main() {
         .build();
     rl.set_target_fps(60);
 
-    let manta_sheet = rl
-        .load_texture(&thread, "assets/sprites/manta_ray_sheet.png")
-        .expect("No se pudo cargar assets/sprites/manta_ray_sheet.png");
-    let water_texture = rl
-        .load_texture(&thread, "assets/textures/water_circuit/water_flow.png")
-        .expect("No se pudo cargar assets/textures/water_circuit/water_flow.png");
-    manta_sheet.set_texture_filter(&thread, TextureFilter::TEXTURE_FILTER_POINT);
-    water_texture.set_texture_filter(&thread, TextureFilter::TEXTURE_FILTER_POINT);
-
-    let mut game = Game::new();
+    let mut embedded = EmbeddedGame::new(&mut rl, &thread);
     while !rl.window_should_close() {
         let dt = rl.get_frame_time().min(0.033);
-        game.update(&mut rl, dt);
+        embedded.update(&mut rl, dt);
         let mut d = rl.begin_drawing(&thread);
         d.clear_background(Color::new(6, 40, 76, 255));
-        draw_game(&mut d, &game, &manta_sheet, &water_texture);
+        embedded.draw(&mut d);
     }
+}
+
+#[allow(dead_code)]
+fn main() {
+    run();
 }
 
 fn draw_game(
