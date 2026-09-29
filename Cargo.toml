@@ -6,3 +6,7 @@ default-run = "diorama"
 
 [dependencies]
 raylib = "6.0.0"
+
+[[bin]]
+name = "tide_dash"
+path = "src/minigame/tide_dash.rs"
