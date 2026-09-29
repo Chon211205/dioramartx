@@ -13,9 +13,13 @@ static CASTLE_NORMAL: OnceLock<TextureMap> = OnceLock::new();
 static CASTLE_ROUGHNESS: OnceLock<TextureMap> = OnceLock::new();
 static CASTLE_AO: OnceLock<TextureMap> = OnceLock::new();
 
-static LAVA_COLOR: OnceLock<TextureMap> = OnceLock::new();
-static LAVA_NORMAL: OnceLock<TextureMap> = OnceLock::new();
-static LAVA_ROUGHNESS: OnceLock<TextureMap> = OnceLock::new();
+static LAVA002_COLOR: OnceLock<TextureMap> = OnceLock::new();
+static LAVA002_NORMAL: OnceLock<TextureMap> = OnceLock::new();
+static LAVA002_ROUGHNESS: OnceLock<TextureMap> = OnceLock::new();
+
+static LAVA004_COLOR: OnceLock<TextureMap> = OnceLock::new();
+static LAVA004_NORMAL: OnceLock<TextureMap> = OnceLock::new();
+static LAVA004_ROUGHNESS: OnceLock<TextureMap> = OnceLock::new();
 
 static ROCK_COLOR: OnceLock<TextureMap> = OnceLock::new();
 static ROCK_NORMAL: OnceLock<TextureMap> = OnceLock::new();
@@ -53,26 +57,50 @@ fn castle_ao() -> &'static TextureMap {
     })
 }
 
-fn lava_color() -> &'static TextureMap {
-    LAVA_COLOR.get_or_init(|| {
+fn lava002_color() -> &'static TextureMap {
+    LAVA002_COLOR.get_or_init(|| {
         TextureMap::from_file(
             "assets/textures/lava/Lava002_1K-PNG_Color.png",
         )
     })
 }
 
-fn lava_normal() -> &'static TextureMap {
-    LAVA_NORMAL.get_or_init(|| {
+fn lava002_normal() -> &'static TextureMap {
+    LAVA002_NORMAL.get_or_init(|| {
         TextureMap::from_file(
             "assets/textures/lava/Lava002_1K-PNG_NormalGL.png",
         )
     })
 }
 
-fn lava_roughness() -> &'static TextureMap {
-    LAVA_ROUGHNESS.get_or_init(|| {
+fn lava002_roughness() -> &'static TextureMap {
+    LAVA002_ROUGHNESS.get_or_init(|| {
         TextureMap::from_file(
             "assets/textures/lava/Lava002_1K-PNG_Roughness.png",
+        )
+    })
+}
+
+fn lava004_color() -> &'static TextureMap {
+    LAVA004_COLOR.get_or_init(|| {
+        TextureMap::from_file(
+            "assets/textures/lava/Lava004_1K-PNG_Color.png",
+        )
+    })
+}
+
+fn lava004_normal() -> &'static TextureMap {
+    LAVA004_NORMAL.get_or_init(|| {
+        TextureMap::from_file(
+            "assets/textures/lava/Lava004_1K-PNG_NormalGL.png",
+        )
+    })
+}
+
+fn lava004_roughness() -> &'static TextureMap {
+    LAVA004_ROUGHNESS.get_or_init(|| {
+        TextureMap::from_file(
+            "assets/textures/lava/Lava004_1K-PNG_Roughness.png",
         )
     })
 }
@@ -103,9 +131,9 @@ fn rock_roughness() -> &'static TextureMap {
 
 fn castle_material() -> Material {
     Material::textured(
-        Vec3::new(0.75, 0.75, 0.75),
+        Vec3::new(0.82, 0.82, 0.82),
         1.0,
-        0.35,
+        0.30,
         0.0,
         0.02,
         Some(castle_color()),
@@ -115,25 +143,39 @@ fn castle_material() -> Material {
     )
 }
 
-fn lava_material() -> Material {
+fn lava_curved_material() -> Material {
     Material::textured(
-        Vec3::new(1.0, 0.45, 0.15),
+        Vec3::new(1.0, 0.72, 0.52),
         1.0,
-        0.90,
+        0.75,
         0.0,
-        0.08,
-        Some(lava_color()),
-        Some(lava_normal()),
-        Some(lava_roughness()),
+        0.06,
+        Some(lava002_color()),
+        Some(lava002_normal()),
+        Some(lava002_roughness()),
+        None,
+    )
+}
+
+fn lava_flat_material() -> Material {
+    Material::textured(
+        Vec3::new(1.0, 0.82, 0.62),
+        1.0,
+        0.80,
+        0.0,
+        0.06,
+        Some(lava004_color()),
+        Some(lava004_normal()),
+        Some(lava004_roughness()),
         None,
     )
 }
 
 fn rock_material() -> Material {
     Material::textured(
-        Vec3::new(0.45, 0.40, 0.38),
+        Vec3::new(0.65, 0.62, 0.60),
         1.0,
-        0.20,
+        0.18,
         0.0,
         0.0,
         Some(rock_color()),
@@ -147,7 +189,7 @@ fn portal_outer_material() -> Material {
     Material::new(
         Vec3::new(0.24, 0.00, 0.30),
         1.0,
-        0.30,
+        0.25,
         0.0,
         0.0,
     )
@@ -155,19 +197,19 @@ fn portal_outer_material() -> Material {
 
 fn portal_inner_material() -> Material {
     Material::new(
-        Vec3::new(0.82, 0.05, 0.95),
+        Vec3::new(0.82, 0.04, 0.95),
         1.0,
-        0.80,
+        0.90,
         0.0,
-        0.10,
+        0.12,
     )
 }
 
 fn pole_material() -> Material {
     Material::new(
-        Vec3::new(0.18, 0.18, 0.18),
+        Vec3::new(0.16, 0.16, 0.16),
         1.0,
-        0.50,
+        0.45,
         0.0,
         0.0,
     )
@@ -175,9 +217,9 @@ fn pole_material() -> Material {
 
 fn flag_material() -> Material {
     Material::new(
-        Vec3::new(0.90, 0.04, 0.04),
+        Vec3::new(0.92, 0.03, 0.03),
         1.0,
-        0.50,
+        0.45,
         0.0,
         0.0,
     )
@@ -195,25 +237,26 @@ pub fn create_castle_planet() -> Vec<Object> {
 }
 
 fn add_base(objects: &mut Vec<Object>) {
-    let lava = lava_material();
     let rock = rock_material();
+    let lava_curved = lava_curved_material();
+    let lava_flat = lava_flat_material();
 
     objects.push(
         Object::Hemisphere(
             Hemisphere::new_with_materials(
                 Vec3::new(
                     0.0,
-                    -1.55,
+                    -1.58,
                     0.0,
                 ),
-                3.00,
+                2.75,
                 Vec3::new(
                     0.0,
                     -1.0,
                     0.0,
                 ),
                 rock,
-                lava,
+                rock,
             ),
         ),
     );
@@ -223,12 +266,27 @@ fn add_base(objects: &mut Vec<Object>) {
             Cylinder::new(
                 Vec3::new(
                     0.0,
-                    -1.32,
+                    -1.34,
                     0.0,
                 ),
-                3.08,
-                0.34,
-                lava,
+                3.05,
+                0.46,
+                lava_curved,
+            ),
+        ),
+    );
+
+    objects.push(
+        Object::Cylinder(
+            Cylinder::new(
+                Vec3::new(
+                    0.0,
+                    -1.08,
+                    0.0,
+                ),
+                2.92,
+                0.08,
+                lava_flat,
             ),
         ),
     );
@@ -242,11 +300,26 @@ fn add_castle(objects: &mut Vec<Object>) {
             Cylinder::new(
                 Vec3::new(
                     0.0,
+                    -0.05,
+                    0.0,
+                ),
+                1.76,
+                1.95,
+                castle,
+            ),
+        ),
+    );
+
+    objects.push(
+        Object::Cylinder(
+            Cylinder::new(
+                Vec3::new(
+                    0.0,
+                    1.08,
                     -0.10,
-                    0.0,
                 ),
-                1.85,
-                2.20,
+                1.23,
+                1.18,
                 castle,
             ),
         ),
@@ -256,12 +329,12 @@ fn add_castle(objects: &mut Vec<Object>) {
         Object::Cylinder(
             Cylinder::new(
                 Vec3::new(
-                    0.0,
-                    1.15,
-                    -0.05,
+                    -1.28,
+                    0.03,
+                    0.08,
                 ),
-                1.30,
-                1.20,
+                0.54,
+                1.72,
                 castle,
             ),
         ),
@@ -271,12 +344,12 @@ fn add_castle(objects: &mut Vec<Object>) {
         Object::Cylinder(
             Cylinder::new(
                 Vec3::new(
-                    -1.30,
-                    0.05,
-                    0.05,
+                    1.28,
+                    0.03,
+                    0.08,
                 ),
-                0.55,
-                1.85,
+                0.54,
+                1.72,
                 castle,
             ),
         ),
@@ -286,24 +359,9 @@ fn add_castle(objects: &mut Vec<Object>) {
         Object::Cylinder(
             Cylinder::new(
                 Vec3::new(
-                    1.30,
-                    0.05,
-                    0.05,
-                ),
-                0.55,
-                1.85,
-                castle,
-            ),
-        ),
-    );
-
-    objects.push(
-        Object::Cylinder(
-            Cylinder::new(
-                Vec3::new(
-                    -1.30,
-                    1.04,
-                    0.05,
+                    -1.28,
+                    0.94,
+                    0.08,
                 ),
                 0.66,
                 0.16,
@@ -316,9 +374,9 @@ fn add_castle(objects: &mut Vec<Object>) {
         Object::Cylinder(
             Cylinder::new(
                 Vec3::new(
-                    1.30,
-                    1.04,
-                    0.05,
+                    1.28,
+                    0.94,
+                    0.08,
                 ),
                 0.66,
                 0.16,
@@ -332,11 +390,11 @@ fn add_castle(objects: &mut Vec<Object>) {
             Cylinder::new(
                 Vec3::new(
                     0.0,
-                    1.84,
-                    -0.05,
+                    1.75,
+                    -0.10,
                 ),
-                1.40,
-                0.17,
+                1.34,
+                0.18,
                 castle,
             ),
         ),
@@ -357,8 +415,8 @@ fn add_lower_battlements(
     objects: &mut Vec<Object>,
     material: Material,
 ) {
+    let radius = 1.60;
     let count = 10;
-    let radius = 1.68;
 
     for i in 0..count {
         let angle =
@@ -367,23 +425,18 @@ fn add_lower_battlements(
                 * std::f32::consts::PI
                 * 2.0;
 
-        let x =
-            angle.cos()
-                * radius;
-
-        let z =
-            angle.sin()
-                * radius;
+        let x = angle.cos() * radius;
+        let z = angle.sin() * radius;
 
         objects.push(
             Object::Cube(
                 Cube::new(
                     Vec3::new(
                         x,
-                        1.20,
+                        1.09,
                         z,
                     ),
-                    0.32,
+                    0.30,
                     material,
                 ),
             ),
@@ -395,8 +448,8 @@ fn add_upper_battlements(
     objects: &mut Vec<Object>,
     material: Material,
 ) {
+    let radius = 1.08;
     let count = 8;
-    let radius = 1.14;
 
     for i in 0..count {
         let angle =
@@ -405,24 +458,21 @@ fn add_upper_battlements(
                 * std::f32::consts::PI
                 * 2.0;
 
-        let x =
-            angle.cos()
-                * radius;
+        let x = angle.cos() * radius;
 
         let z =
-            angle.sin()
-                * radius
-                - 0.05;
+            angle.sin() * radius
+                - 0.10;
 
         objects.push(
             Object::Cube(
                 Cube::new(
                     Vec3::new(
                         x,
-                        2.08,
+                        1.97,
                         z,
                     ),
-                    0.28,
+                    0.26,
                     material,
                 ),
             ),
@@ -439,10 +489,10 @@ fn add_portal(objects: &mut Vec<Object>) {
             Cube::new(
                 Vec3::new(
                     0.0,
-                    -0.55,
-                    1.90,
+                    -0.48,
+                    1.77,
                 ),
-                0.82,
+                0.76,
                 outer,
             ),
         ),
@@ -453,10 +503,10 @@ fn add_portal(objects: &mut Vec<Object>) {
             Cube::new(
                 Vec3::new(
                     0.0,
-                    -0.55,
-                    2.02,
+                    -0.48,
+                    1.89,
                 ),
-                0.58,
+                0.52,
                 inner,
             ),
         ),
@@ -472,10 +522,10 @@ fn add_flag(objects: &mut Vec<Object>) {
             Cylinder::new(
                 Vec3::new(
                     0.0,
-                    2.95,
-                    -0.05,
+                    2.87,
+                    -0.10,
                 ),
-                0.025,
+                0.020,
                 1.55,
                 pole,
             ),
@@ -486,11 +536,11 @@ fn add_flag(objects: &mut Vec<Object>) {
         Object::Cube(
             Cube::new(
                 Vec3::new(
-                    0.27,
-                    3.43,
-                    -0.05,
+                    0.23,
+                    3.36,
+                    -0.10,
                 ),
-                0.26,
+                0.22,
                 flag,
             ),
         ),
