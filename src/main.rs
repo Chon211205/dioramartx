@@ -1401,19 +1401,14 @@ fn main() {
                 }
 
                 SceneState::Focused => {
-                    if let Some(index) =
-                        selected_planet
-                    {
-                        renderer::raytracer::
-                            render_with_skybox(
-                                &mut framebuffer,
-                                &focused_scenes
-                                    [current_galaxy]
-                                    [index],
-                                &light,
-                                &camera,
-                                current_galaxy,
-                            );
+                    if let Some(index) = selected_planet {
+                        renderer::raytracer::render_with_skybox(
+                            &mut framebuffer,
+                            &focused_scenes[current_galaxy][index],
+                            &light,
+                            &camera,
+                            current_galaxy,
+                        );
                     }
                 }
             }

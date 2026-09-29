@@ -249,6 +249,102 @@ fn cast_ray(
 
     let mut final_color = surface_color * diffuse_light;
 
+    let lava_light_position =
+        Vec3::new(
+            0.0,
+            -0.85,
+            0.0,
+        );
+
+    let lava_light_color =
+        Vec3::new(
+            1.0,
+            0.20,
+            0.02,
+        );
+
+    let lava_light_intensity =
+        2.8;
+
+    let lava_light_radius =
+        6.0;
+
+    let to_lava_light =
+        lava_light_position
+            - hit_point;
+
+    let lava_distance =
+        to_lava_light.length();
+
+    if lava_distance < lava_light_radius {
+        let lava_direction =
+            to_lava_light
+                / lava_distance.max(0.001);
+
+        let lava_ndotl =
+            normal
+                .dot(
+                    &lava_direction,
+                )
+                .max(
+                    0.0,
+                );
+
+        if lava_ndotl > 0.0 {
+            let lava_shadow_origin =
+                hit_point
+                    + normal
+                        * EPSILON;
+
+            let lava_in_shadow =
+                scene
+                    .bvh
+                    .any_hit(
+                        &lava_shadow_origin,
+                        &lava_direction,
+                        lava_distance
+                            - EPSILON,
+                        &scene.objects,
+                    );
+
+            let attenuation =
+                (
+                    1.0
+                        - lava_distance
+                            / lava_light_radius
+                )
+                    .clamp(
+                        0.0,
+                        1.0,
+                    );
+
+            let attenuation =
+                attenuation
+                    * attenuation;
+
+            let shadow_factor =
+                if lava_in_shadow {
+                    0.18
+                } else {
+                    1.0
+                };
+
+            let lava_diffuse =
+                lava_ndotl
+                    * lava_light_intensity
+                    * attenuation
+                    * shadow_factor;
+
+            final_color =
+                final_color
+                    + multiply_vec3(
+                        surface_color,
+                        lava_light_color,
+                    )
+                        * lava_diffuse;
+        }
+    }
+
     final_color = final_color + light.color * (specular * light.intensity);
 
     let reflectivity = material.reflectivity.clamp(0.0, 1.0);

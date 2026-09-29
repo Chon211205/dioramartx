@@ -11,6 +11,7 @@ pub mod industrial_planet;
 pub mod brick_planet;
 pub mod pokeball_planet;
 pub mod galaga_planet;
+pub mod castle_planet;
 
 use crate::core::vec3::Vec3;
 use crate::scene::planet::PlanetDefinition;
