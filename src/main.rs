@@ -633,7 +633,31 @@ fn main() {
                             .map(|planet| planet.position + planet.node_offset)
                             .collect();
 
-                        if nodes.len() > 1 {
+                        if current_galaxy == 1 && nodes.len() >= 4 {
+                            add_path_scaled(
+                                &mut galaxy_objects,
+                                nodes[0],
+                                nodes[1],
+                                path_yellow_material,
+                                1.0,
+                            );
+
+                            add_path_scaled(
+                                &mut galaxy_objects,
+                                nodes[1],
+                                nodes[2],
+                                path_yellow_material,
+                                1.0,
+                            );
+
+                            add_path_scaled(
+                                &mut galaxy_objects,
+                                nodes[1],
+                                nodes[3],
+                                path_yellow_material,
+                                1.0,
+                            );
+                        } else if nodes.len() > 1 {
                             for index in 0..nodes.len() - 1 {
                                 add_path_scaled(
                                     &mut galaxy_objects,
