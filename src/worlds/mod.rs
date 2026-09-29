@@ -6,6 +6,7 @@ pub mod ice_lava;
 pub mod tree_planet;
 pub mod water;
 pub mod water_circuit;
+pub mod pyramid_planet;
 
 use crate::core::vec3::Vec3;
 use crate::scene::planet::PlanetDefinition;
