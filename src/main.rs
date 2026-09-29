@@ -8,7 +8,7 @@ mod scene;
 mod textures;
 mod worlds;
 
-#[path = "bin/tide_dash.rs"]
+#[path = "minigame/tide_dash.rs"]
 mod tide_dash_game;
 
 use raylib::audio::RaylibAudio;
