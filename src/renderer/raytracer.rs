@@ -7,7 +7,7 @@ use crate::core::camera::Camera;
 use crate::core::framebuffer::Framebuffer;
 use crate::core::vec3::Vec3;
 
-use crate::materials::material::MaterialPattern;
+use crate::materials::material::{Material, MaterialPattern};
 
 use crate::objects::cone::Cone;
 use crate::objects::cube::Cube;
@@ -249,35 +249,50 @@ fn cast_ray(
     let mut surface_color =
         material.color;
 
-    if let Some(texture) =
-        material.albedo_texture
-    {
-        let texture_color =
-            texture.sample(
-                u,
-                v,
-            );
+    match material.pattern {
+        MaterialPattern::Kirby => {
+            surface_color =
+                kirby_decal_color(
+                    &material,
+                    u,
+                    v,
+                );
+        }
 
-        surface_color =
-            multiply_vec3(
-                surface_color,
-                texture_color,
-            );
-    } else {
-        match material.pattern {
-            MaterialPattern::Grass => {
+        _ => {
+            if let Some(texture) =
+                material.albedo_texture
+            {
+                let texture_color =
+                    texture.sample(
+                        u,
+                        v,
+                    );
+
                 surface_color =
                     multiply_vec3(
                         surface_color,
-                        procedural_grass(
-                            u,
-                            v,
-                            &hit_point,
-                        ),
+                        texture_color,
                     );
-            }
+            } else {
+                match material.pattern {
+                    MaterialPattern::Grass => {
+                        surface_color =
+                            multiply_vec3(
+                                surface_color,
+                                procedural_grass(
+                                    u,
+                                    v,
+                                    &hit_point,
+                                ),
+                            );
+                    }
 
-            MaterialPattern::Solid => {}
+                    MaterialPattern::Solid => {}
+
+                    MaterialPattern::Kirby => {}
+                }
+            }
         }
     }
 
@@ -2603,6 +2618,34 @@ fn multiply_vec3(
         a.y * b.y,
         a.z * b.z,
     )
+}
+
+fn kirby_decal_color(
+    material: &Material,
+    u: f32,
+    v: f32,
+) -> Vec3 {
+    let pink = material.color;
+
+    let u_min = 0.33;
+    let u_max = 0.67;
+
+    let v_min = 0.28;
+    let v_max = 0.72;
+
+    if u < u_min || u > u_max || v < v_min || v > v_max {
+        return pink;
+    }
+
+    let decal_u = 1.0 - ((u - u_min) / (u_max - u_min));
+    let decal_v = 1.0 - ((v - v_min) / (v_max - v_min));
+
+    if let Some(texture) = material.albedo_texture {
+        let (texture_color, alpha) = texture.sample_rgba(decal_u, decal_v);
+        pink * (1.0 - alpha) + texture_color * alpha
+    } else {
+        pink
+    }
 }
 
 fn to_color(
