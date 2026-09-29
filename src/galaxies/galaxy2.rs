@@ -81,9 +81,9 @@ pub fn create_galaxy() -> Vec<PlanetDefinition> {
             "Brick Planet",
             create_brick_planet,
             Vec3::new(
-                5.0,
+                5.8,
                 0.6,
-                0.0,
+                -2.0,
             ),
             0.32,
             1.55,

@@ -657,6 +657,15 @@ fn main() {
                                 path_yellow_material,
                                 1.0,
                             );
+
+                            add_path_scaled(
+                                &mut galaxy_objects,
+                                nodes[2],
+                                nodes[4],
+                                path_yellow_material,
+                                1.0,
+                            );
+
                         } else if nodes.len() > 1 {
                             for index in 0..nodes.len() - 1 {
                                 add_path_scaled(
