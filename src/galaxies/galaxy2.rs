@@ -4,6 +4,7 @@ use crate::scene::planet::PlanetDefinition;
 use crate::worlds::cube_planet::create_cube_planet;
 use crate::worlds::water_circuit::create_water_circuit_world;
 use crate::worlds::pyramid_planet::create_pyramid_planet;
+use crate::worlds::industrial_planet::create_industrial_planet;
 
 pub fn create_galaxy() -> Vec<PlanetDefinition> {
     vec![
@@ -39,7 +40,24 @@ pub fn create_galaxy() -> Vec<PlanetDefinition> {
                 -1.05,
                 0.10,
             ),
-        )
+        ),
+
+        PlanetDefinition::new(
+            "Industrial Planet",
+            create_industrial_planet,
+            Vec3::new(
+                6.5,
+                0.55,
+                0.0,
+            ),
+            0.30,
+            1.60,
+            Vec3::new(
+                0.0,
+                -1.05,
+                0.10,
+            ),
+        ),
 
     ]
 }
