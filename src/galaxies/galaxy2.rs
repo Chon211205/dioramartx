@@ -119,7 +119,7 @@ pub fn create_galaxy() -> Vec<PlanetDefinition> {
             Vec3::new(
                 9.2,
                 0.6,
-                2.0,
+                0.0,
             ),
             0.22,
             1.75,
