@@ -7,6 +7,7 @@ use crate::objects::cylinder::Cylinder;
 use crate::objects::hemisphere::Hemisphere;
 use crate::objects::object::Object;
 use crate::textures::texture::TextureMap;
+use crate::objects::sphere::Sphere;
 
 static CASTLE_COLOR: OnceLock<TextureMap> = OnceLock::new();
 static CASTLE_NORMAL: OnceLock<TextureMap> = OnceLock::new();
@@ -489,8 +490,37 @@ fn add_upper_battlements(
 }
 
 fn add_portal(objects: &mut Vec<Object>) {
-    let outer = portal_outer_material();
-    let inner = portal_inner_material();
+    let outer = Material::new(
+        Vec3::new(0.12, 0.00, 0.18),
+        1.0,
+        0.35,
+        0.0,
+        0.10,
+    );
+
+    let middle = Material::new(
+        Vec3::new(0.45, 0.02, 0.70),
+        1.0,
+        0.75,
+        0.0,
+        0.18,
+    );
+
+    let inner = Material::new(
+        Vec3::new(0.82, 0.08, 1.00),
+        1.0,
+        1.0,
+        0.0,
+        0.28,
+    );
+
+    let core = Material::new(
+        Vec3::new(1.00, 0.35, 1.00),
+        1.0,
+        1.0,
+        0.0,
+        0.35,
+    );
 
     objects.push(
         Object::Cube(
@@ -498,9 +528,9 @@ fn add_portal(objects: &mut Vec<Object>) {
                 Vec3::new(
                     0.0,
                     -0.48,
-                    1.77,
+                    1.78,
                 ),
-                0.76,
+                0.86,
                 outer,
             ),
         ),
@@ -512,13 +542,62 @@ fn add_portal(objects: &mut Vec<Object>) {
                 Vec3::new(
                     0.0,
                     -0.48,
-                    1.89,
+                    1.91,
+                ),
+                0.68,
+                middle,
+            ),
+        ),
+    );
+
+    objects.push(
+        Object::Cube(
+            Cube::new(
+                Vec3::new(
+                    0.0,
+                    -0.48,
+                    2.03,
                 ),
                 0.52,
                 inner,
             ),
         ),
     );
+
+    objects.push(
+        Object::Cube(
+            Cube::new(
+                Vec3::new(
+                    0.0,
+                    -0.48,
+                    2.14,
+                ),
+                0.32,
+                core,
+            ),
+        ),
+    );
+
+    let glow_points = [
+        Vec3::new(-0.42, -0.86, 2.17),
+        Vec3::new(0.42, -0.86, 2.17),
+        Vec3::new(-0.42, -0.10, 2.17),
+        Vec3::new(0.42, -0.10, 2.17),
+        Vec3::new(0.0, -0.92, 2.17),
+        Vec3::new(0.0, -0.04, 2.17),
+    ];
+
+    for position in glow_points {
+        objects.push(
+            Object::Sphere(
+                Sphere::new(
+                    position,
+                    0.08,
+                    core,
+                ),
+            ),
+        );
+    }
 }
 
 fn add_flag(objects: &mut Vec<Object>) {
