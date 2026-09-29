@@ -1,8 +1,138 @@
+use std::sync::OnceLock;
+
 use crate::core::vec3::Vec3;
 use crate::materials::material::Material;
 use crate::objects::cylinder::Cylinder;
 use crate::objects::object::Object;
 use crate::objects::sphere::Sphere;
+use crate::textures::texture::TextureMap;
+
+fn ground_color() -> &'static TextureMap {
+    static TEX: OnceLock<TextureMap> =
+        OnceLock::new();
+
+    TEX.get_or_init(|| {
+        TextureMap::from_file(
+            "assets/textures/ground/Ground048_1K-PNG_Color.png",
+        )
+    })
+}
+
+fn ground_normal() -> &'static TextureMap {
+    static TEX: OnceLock<TextureMap> =
+        OnceLock::new();
+
+    TEX.get_or_init(|| {
+        TextureMap::from_file(
+            "assets/textures/ground/Ground048_1K-PNG_NormalGL.png",
+        )
+    })
+}
+
+fn ground_roughness() -> &'static TextureMap {
+    static TEX: OnceLock<TextureMap> =
+        OnceLock::new();
+
+    TEX.get_or_init(|| {
+        TextureMap::from_file(
+            "assets/textures/ground/Ground048_1K-PNG_Roughness.png",
+        )
+    })
+}
+
+fn ground_ao() -> &'static TextureMap {
+    static TEX: OnceLock<TextureMap> =
+        OnceLock::new();
+
+    TEX.get_or_init(|| {
+        TextureMap::from_file(
+            "assets/textures/ground/Ground048_1K-PNG_AmbientOcclusion.png",
+        )
+    })
+}
+
+fn metal_color() -> &'static TextureMap {
+    static TEX: OnceLock<TextureMap> =
+        OnceLock::new();
+
+    TEX.get_or_init(|| {
+        TextureMap::from_file(
+            "assets/textures/metal/Metal056C_1K-PNG_Color.png",
+        )
+    })
+}
+
+fn metal_normal() -> &'static TextureMap {
+    static TEX: OnceLock<TextureMap> =
+        OnceLock::new();
+
+    TEX.get_or_init(|| {
+        TextureMap::from_file(
+            "assets/textures/metal/Metal056C_1K-PNG_NormalGL.png",
+        )
+    })
+}
+
+fn metal_roughness() -> &'static TextureMap {
+    static TEX: OnceLock<TextureMap> =
+        OnceLock::new();
+
+    TEX.get_or_init(|| {
+        TextureMap::from_file(
+            "assets/textures/metal/Metal056C_1K-PNG_Roughness.png",
+        )
+    })
+}
+
+fn create_ground_material() -> Material {
+    Material::textured(
+        Vec3::new(
+            1.0,
+            1.0,
+            1.0,
+        ),
+        1.0,
+        0.30,
+        0.0,
+        0.02,
+        Some(
+            ground_color(),
+        ),
+        Some(
+            ground_normal(),
+        ),
+        Some(
+            ground_roughness(),
+        ),
+        Some(
+            ground_ao(),
+        ),
+    )
+}
+
+fn create_metal_material() -> Material {
+    Material::textured(
+        Vec3::new(
+            1.0,
+            1.0,
+            1.0,
+        ),
+        1.0,
+        0.75,
+        0.0,
+        0.08,
+        Some(
+            metal_color(),
+        ),
+        Some(
+            metal_normal(),
+        ),
+        Some(
+            metal_roughness(),
+        ),
+        None,
+    )
+}
 
 pub fn create_industrial_planet() -> Vec<Object> {
     let mut objects =
@@ -10,70 +140,11 @@ pub fn create_industrial_planet() -> Vec<Object> {
             40,
         );
 
-    let rock =
-        Material::new(
-            Vec3::new(
-                0.34,
-                0.32,
-                0.27,
-            ),
-            0.88,
-            0.20,
-            0.0,
-            0.02,
-        );
+    let ground_material =
+        create_ground_material();
 
-    let rock_dark =
-        Material::new(
-            Vec3::new(
-                0.22,
-                0.21,
-                0.18,
-            ),
-            0.85,
-            0.15,
-            0.0,
-            0.01,
-        );
-
-    let rusty_metal =
-        Material::new(
-            Vec3::new(
-                0.55,
-                0.20,
-                0.07,
-            ),
-            0.82,
-            0.75,
-            0.0,
-            0.10,
-        );
-
-    let rusty_dark =
-        Material::new(
-            Vec3::new(
-                0.32,
-                0.10,
-                0.035,
-            ),
-            0.82,
-            0.60,
-            0.0,
-            0.06,
-        );
-
-    let metal_band =
-        Material::new(
-            Vec3::new(
-                0.68,
-                0.27,
-                0.08,
-            ),
-            0.88,
-            0.90,
-            0.0,
-            0.13,
-        );
+    let metal_material =
+        create_metal_material();
 
     objects.push(
         Object::Sphere(
@@ -84,21 +155,7 @@ pub fn create_industrial_planet() -> Vec<Object> {
                     0.0,
                 ),
                 2.65,
-                rock,
-            ),
-        ),
-    );
-
-    objects.push(
-        Object::Sphere(
-            Sphere::new(
-                Vec3::new(
-                    -1.75,
-                    0.30,
-                    1.70,
-                ),
-                0.50,
-                rock_dark,
+                ground_material,
             ),
         ),
     );
@@ -119,9 +176,8 @@ pub fn create_industrial_planet() -> Vec<Object> {
         2.55,
         1.18,
         0.82,
-        rusty_metal,
-        rusty_dark,
-        metal_band,
+        metal_material,
+        ground_material,
     );
 
     add_tower(
@@ -135,13 +191,13 @@ pub fn create_industrial_planet() -> Vec<Object> {
             -1.0,
             -0.05,
             0.0,
-        ),
+        )
+            .normalize(),
         1.85,
         1.05,
         0.75,
-        rusty_metal,
-        rusty_dark,
-        metal_band,
+        metal_material,
+        ground_material,
     );
 
     add_tower(
@@ -160,9 +216,8 @@ pub fn create_industrial_planet() -> Vec<Object> {
         2.00,
         1.12,
         0.78,
-        rusty_metal,
-        rusty_dark,
-        metal_band,
+        metal_material,
+        ground_material,
     );
 
     add_tower(
@@ -181,15 +236,13 @@ pub fn create_industrial_planet() -> Vec<Object> {
         1.95,
         1.05,
         0.72,
-        rusty_metal,
-        rusty_dark,
-        metal_band,
+        metal_material,
+        ground_material,
     );
 
     objects
 }
 
-#[allow(clippy::too_many_arguments)]
 fn add_tower(
     objects: &mut Vec<Object>,
     base: Vec3,
@@ -197,9 +250,8 @@ fn add_tower(
     height: f32,
     base_radius: f32,
     top_radius: f32,
-    rusty_metal: Material,
-    rusty_dark: Material,
-    metal_band: Material,
+    metal_material: Material,
+    ground_material: Material,
 ) {
     let axis =
         axis.normalize();
@@ -241,15 +293,6 @@ fn add_tower(
                             )
                     );
 
-        let material =
-            if i % 2
-                == 0
-            {
-                rusty_metal
-            } else {
-                rusty_dark
-            };
-
         objects.push(
             Object::Cylinder(
                 Cylinder::new_oriented(
@@ -258,14 +301,13 @@ fn add_tower(
                     radius,
                     section_height
                         + 0.05,
-                    material,
+                    metal_material,
                 ),
             ),
         );
 
         if i
-            < sections
-                - 1
+            < sections - 1
         {
             let band_center =
                 base
@@ -286,7 +328,7 @@ fn add_tower(
                         radius
                             + 0.08,
                         0.10,
-                        metal_band,
+                        metal_material,
                     ),
                 ),
             );
@@ -306,12 +348,12 @@ fn add_tower(
                 base_radius
                     + 0.12,
                 0.18,
-                metal_band,
+                metal_material,
             ),
         ),
     );
 
-    let top =
+    let tower_end =
         base
             + axis
                 * height;
@@ -319,27 +361,28 @@ fn add_tower(
     objects.push(
         Object::Cylinder(
             Cylinder::new_oriented(
-                top,
+                tower_end,
                 axis,
                 top_radius
                     + 0.14,
                 0.20,
-                metal_band,
+                metal_material,
             ),
         ),
     );
 
+    let ground_cap_center =
+        tower_end
+            + axis * 0.08;
+
     objects.push(
         Object::Cylinder(
             Cylinder::new_oriented(
-                top
-                    + axis
-                        * 0.02,
+                ground_cap_center,
                 axis,
-                top_radius
-                    * 0.78,
-                0.08,
-                rusty_dark,
+                top_radius * 0.92,
+                0.16,
+                ground_material,
             ),
         ),
     );
