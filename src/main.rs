@@ -94,6 +94,12 @@ fn main() {
 
     level_music.set_looping(true);
 
+    let mut race_music = audio
+        .new_music("assets/sounds/race.mp3")
+        .expect("No se pudo cargar race.mp3");
+    race_music.set_looping(true);
+    race_music.set_volume(0.90);
+
     let mut world_1_music = audio
         .new_music("assets/sounds/w1.mp3")
         .expect("No se pudo cargar w1.mp3");
@@ -204,7 +210,13 @@ fn main() {
             calculate_viewport(current_screen_width as f32, current_screen_height as f32);
 
         if water_game_active {
+            race_music.update_stream();
+            if !race_music.is_stream_playing() {
+                race_music.play_stream();
+            }
+
             if rl.is_key_pressed(KeyboardKey::KEY_BACKSPACE) {
+                race_music.stop_stream();
                 water_game_active = false;
             } else {
                 water_game.update(&mut rl, dt);
@@ -490,6 +502,7 @@ fn main() {
                         water_game.start();
                         water_game_active = true;
                         level_music.stop_stream();
+                        race_music.play_stream();
                     }
 
                     if rl.is_key_pressed(KeyboardKey::KEY_BACKSPACE) {
