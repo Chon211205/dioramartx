@@ -6,6 +6,7 @@ pub enum MaterialPattern {
     Solid,
     Grass,
     Kirby,
+    Webcam,
 }
 
 #[derive(Clone, Copy)]
@@ -137,6 +138,26 @@ impl Material {
             pattern: MaterialPattern::Kirby,
 
             albedo_texture,
+            normal_texture: None,
+            roughness_texture: None,
+            ao_texture: None,
+        }
+    }
+
+    pub fn webcam(
+        color: Vec3,
+        albedo: f32,
+        specular: f32,
+        reflectivity: f32,
+    ) -> Self {
+        Self {
+            color,
+            albedo,
+            specular,
+            transparency: 0.0,
+            reflectivity,
+            pattern: MaterialPattern::Webcam,
+            albedo_texture: None,
             normal_texture: None,
             roughness_texture: None,
             ao_texture: None,

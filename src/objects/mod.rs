@@ -2,6 +2,7 @@ pub mod object;
 
 pub mod cone;
 pub mod cube;
+pub mod cuboid;
 pub mod cylinder;
 pub mod ellipsoid;
 pub mod hemisphere;
