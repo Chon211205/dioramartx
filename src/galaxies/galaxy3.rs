@@ -2,6 +2,7 @@ use crate::core::vec3::Vec3;
 use crate::scene::planet::PlanetDefinition;
 use crate::worlds::chomp_planet::create_chomp_planet_world;
 use crate::worlds::brothers_planet::create_brothers_planet_world;
+use crate::worlds::castle_planet::create_castle_planet;
 use crate::worlds::kirby_planet::create_kirby_planet_world;
 use crate::worlds::mirror_planet::{create_mirror_planet_preview, create_mirror_planet_world};
 
@@ -65,6 +66,14 @@ pub fn create_galaxy() -> Vec<PlanetDefinition> {
             0.62,
             1.25,
             Vec3::new(0.0, -1.35, 0.0),
+        ),
+        PlanetDefinition::new(
+            "Castle Planet",
+            create_castle_planet,
+            Vec3::new(13.0, 3.0, 5.0),
+            0.90,
+            3.40,
+            Vec3::new(0.0, -4.80, 0.0),
         ),
     ]
 }
