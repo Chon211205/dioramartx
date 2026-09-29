@@ -7,6 +7,7 @@ mod renderer;
 mod scene;
 mod textures;
 mod worlds;
+mod webcam;
 
 #[path = "minigame/tide_dash.rs"]
 mod tide_dash_game;
@@ -24,6 +25,7 @@ use crate::materials::material::Material;
 
 use crate::objects::cone::Cone;
 use crate::objects::cube::Cube;
+use crate::objects::cuboid::Cuboid;
 use crate::objects::cylinder::Cylinder;
 use crate::objects::ellipsoid::Ellipsoid;
 use crate::objects::hemisphere::Hemisphere;
@@ -248,6 +250,8 @@ fn main() {
     let mut selected_planet:
         Option<usize> =
         None;
+
+    let mut _webcam_capture: Option<webcam::WebcamCapture> = None;
 
     let mut sparkles:
         Vec<Sparkle> =
@@ -940,6 +944,11 @@ fn main() {
                                         index,
                                     );
 
+                                _webcam_capture = None;
+                                if planets[index].name == "Mirror Planet" {
+                                    _webcam_capture = Some(webcam::WebcamCapture::start());
+                                }
+
                                 focused_velocity_x =
                                     50.0;
 
@@ -1071,6 +1080,8 @@ fn main() {
 
                         state =
                             SceneState::Galaxy;
+
+                        _webcam_capture = None;
 
                         selected_planet =
                             None;
@@ -1403,7 +1414,7 @@ fn main() {
 
                         for planet in planets {
                             let preview = transform_objects_rotated(
-                                (planet.create)(),
+                                (planet.create_preview)(),
                                 planet.position,
                                 planet.preview_scale,
                                 rotation,
@@ -5034,6 +5045,23 @@ fn transform_objects_rotated(
                             cube.bottom_material,
                             cube.front_material,
                             cube.back_material,
+                        ),
+                    ),
+
+                Object::Cuboid(cuboid) =>
+                    Object::Cuboid(
+                        Cuboid::from_basis_faces(
+                            rotate_y(cuboid.center * scale, rotation) + offset,
+                            cuboid.half_extents * (2.0 * scale),
+                            rotate_y(cuboid.right, rotation),
+                            rotate_y(cuboid.up, rotation),
+                            rotate_y(cuboid.forward, rotation),
+                            cuboid.right_material,
+                            cuboid.left_material,
+                            cuboid.top_material,
+                            cuboid.bottom_material,
+                            cuboid.front_material,
+                            cuboid.back_material,
                         ),
                     ),
 

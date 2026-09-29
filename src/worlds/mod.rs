@@ -15,6 +15,7 @@ pub mod castle_planet;
 pub mod chomp_planet;
 pub mod brothers_planet;
 pub mod kirby_planet;
+pub mod mirror_planet;
 
 use crate::core::vec3::Vec3;
 use crate::scene::planet::PlanetDefinition;

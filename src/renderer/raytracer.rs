@@ -11,6 +11,7 @@ use crate::materials::material::{Material, MaterialPattern};
 
 use crate::objects::cone::Cone;
 use crate::objects::cube::Cube;
+use crate::objects::cuboid::Cuboid;
 use crate::objects::cylinder::Cylinder;
 use crate::objects::ellipsoid::Ellipsoid;
 use crate::objects::hemisphere::Hemisphere;
@@ -250,6 +251,10 @@ fn cast_ray(
         material.color;
 
     match material.pattern {
+        MaterialPattern::Webcam => {
+            surface_color = crate::webcam::sample_webcam(u, v);
+        }
+
         MaterialPattern::Kirby => {
             surface_color =
                 kirby_decal_color(
@@ -291,6 +296,8 @@ fn cast_ray(
                     MaterialPattern::Solid => {}
 
                     MaterialPattern::Kirby => {}
+
+                    MaterialPattern::Webcam => {}
                 }
             }
         }
@@ -644,6 +651,9 @@ fn object_uv(
                 point,
             ),
 
+        Object::Cuboid(cuboid) =>
+            cuboid_uv(cuboid, point),
+
         Object::Hemisphere(hemisphere) =>
             hemisphere_uv(
                 hemisphere,
@@ -987,6 +997,37 @@ fn cube_uv(
 
             (local.y + 1.0)
                 * 0.5,
+        )
+    }
+}
+
+fn cuboid_uv(cuboid: &Cuboid, point: &Vec3) -> (f32, f32) {
+    let delta = *point - cuboid.center;
+    let local = Vec3::new(
+        delta.dot(&cuboid.right),
+        delta.dot(&cuboid.up),
+        delta.dot(&cuboid.forward),
+    );
+    let distances = Vec3::new(
+        (local.x.abs() - cuboid.half_extents.x).abs(),
+        (local.y.abs() - cuboid.half_extents.y).abs(),
+        (local.z.abs() - cuboid.half_extents.z).abs(),
+    );
+
+    if distances.x <= distances.y && distances.x <= distances.z {
+        (
+            0.5 + local.z / (cuboid.half_extents.z * 2.0),
+            0.5 + local.y / (cuboid.half_extents.y * 2.0),
+        )
+    } else if distances.y <= distances.z {
+        (
+            0.5 + local.x / (cuboid.half_extents.x * 2.0),
+            0.5 + local.z / (cuboid.half_extents.z * 2.0),
+        )
+    } else {
+        (
+            0.5 + local.x / (cuboid.half_extents.x * 2.0),
+            0.5 + local.y / (cuboid.half_extents.y * 2.0),
         )
     }
 }
@@ -1408,6 +1449,26 @@ fn object_tangent_basis(
                     bitangent,
                 )
             }
+        }
+
+        Object::Cuboid(cuboid) => {
+            let delta = *point - cuboid.center;
+            let local = Vec3::new(
+                delta.dot(&cuboid.right),
+                delta.dot(&cuboid.up),
+                delta.dot(&cuboid.forward),
+            );
+            let distances = Vec3::new(
+                (local.x.abs() - cuboid.half_extents.x).abs(),
+                (local.y.abs() - cuboid.half_extents.y).abs(),
+                (local.z.abs() - cuboid.half_extents.z).abs(),
+            );
+            let tangent = if distances.x <= distances.y && distances.x <= distances.z {
+                cuboid.forward.normalize()
+            } else {
+                cuboid.right.normalize()
+            };
+            (tangent, normal.cross(&tangent).normalize())
         }
 
         Object::Hemisphere(

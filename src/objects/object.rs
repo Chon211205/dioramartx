@@ -4,6 +4,7 @@ use crate::materials::material::Material;
 
 use crate::objects::cone::Cone;
 use crate::objects::cube::Cube;
+use crate::objects::cuboid::Cuboid;
 use crate::objects::cylinder::Cylinder;
 use crate::objects::ellipsoid::Ellipsoid;
 use crate::objects::hemisphere::Hemisphere;
@@ -17,6 +18,7 @@ pub enum Object {
     Cylinder(Cylinder),
     Cone(Cone),
     Cube(Cube),
+    Cuboid(Cuboid),
     Hemisphere(Hemisphere),
     Torus(Torus),
     Ellipsoid(Ellipsoid),
@@ -35,9 +37,9 @@ impl Object {
 
             Object::Cube(cube) => cube.intersect(origin, direction),
 
-            Object::Hemisphere(hemisphere) => hemisphere.intersect(origin, direction),
+            Object::Cuboid(cuboid) => cuboid.intersect(origin, direction),
 
-            Object::Torus(torus) => torus.intersect(origin, direction),
+            Object::Hemisphere(hemisphere) => hemisphere.intersect(origin, direction),
 
             Object::Torus(torus) => torus.intersect(origin, direction),
 
@@ -56,6 +58,8 @@ impl Object {
             Object::Cone(cone) => cone.normal_at(point),
 
             Object::Cube(cube) => cube.normal_at(point),
+
+            Object::Cuboid(cuboid) => cuboid.normal_at(point),
 
             Object::Hemisphere(hemisphere) => hemisphere.normal_at(point),
 
@@ -77,6 +81,8 @@ impl Object {
 
             Object::Cube(cube) => cube.material,
 
+            Object::Cuboid(cuboid) => cuboid.front_material,
+
             Object::Hemisphere(hemisphere) => hemisphere.material,
 
             Object::Torus(torus) => torus.material,
@@ -96,6 +102,8 @@ impl Object {
             Object::Cone(cone) => cone.material,
 
             Object::Cube(cube) => cube.material_at(point),
+
+            Object::Cuboid(cuboid) => cuboid.material_at(point),
 
             Object::Hemisphere(hemisphere) => hemisphere.material_at(point),
 
@@ -149,6 +157,11 @@ impl Object {
             Object::Cube(cube) => {
                 let (min, max) = cube.aabb();
 
+                Some(Aabb::new(min, max))
+            }
+
+            Object::Cuboid(cuboid) => {
+                let (min, max) = cuboid.aabb();
                 Some(Aabb::new(min, max))
             }
 

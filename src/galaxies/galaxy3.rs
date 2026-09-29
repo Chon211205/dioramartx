@@ -3,6 +3,7 @@ use crate::scene::planet::PlanetDefinition;
 use crate::worlds::chomp_planet::create_chomp_planet_world;
 use crate::worlds::brothers_planet::create_brothers_planet_world;
 use crate::worlds::kirby_planet::create_kirby_planet_world;
+use crate::worlds::mirror_planet::{create_mirror_planet_preview, create_mirror_planet_world};
 
 pub fn create_galaxy() -> Vec<PlanetDefinition> {
     vec![
@@ -55,6 +56,15 @@ pub fn create_galaxy() -> Vec<PlanetDefinition> {
                 -1.10,
                 0.0,
             ),
+        ),
+        PlanetDefinition::new_with_preview(
+            "Mirror Planet",
+            create_mirror_planet_world,
+            create_mirror_planet_preview,
+            Vec3::new(9.0, 0.75, -2.8),
+            0.62,
+            1.25,
+            Vec3::new(0.0, -1.35, 0.0),
         ),
     ]
 }
