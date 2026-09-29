@@ -145,11 +145,15 @@ fn castle_material() -> Material {
 
 fn lava_curved_material() -> Material {
     Material::textured(
-        Vec3::new(1.0, 0.72, 0.52),
+        Vec3::new(
+            1.0,
+            0.65,
+            0.45,
+        ),
         1.0,
-        0.75,
+        0.85,
         0.0,
-        0.06,
+        0.05,
         Some(lava002_color()),
         Some(lava002_normal()),
         Some(lava002_roughness()),
@@ -159,11 +163,15 @@ fn lava_curved_material() -> Material {
 
 fn lava_flat_material() -> Material {
     Material::textured(
-        Vec3::new(1.0, 0.82, 0.62),
+        Vec3::new(
+            1.0,
+            0.85,
+            0.60,
+        ),
         1.0,
-        0.80,
+        0.95,
         0.0,
-        0.06,
+        0.05,
         Some(lava004_color()),
         Some(lava004_normal()),
         Some(lava004_roughness()),
