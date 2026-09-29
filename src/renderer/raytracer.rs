@@ -398,7 +398,7 @@ fn object_uv(object: &Object, point: &Vec3, rotation_y: f32) -> (f32, f32) {
     match object {
         Object::Sphere(sphere) => sphere_uv(sphere, point, rotation_y),
         Object::Plane(plane) => planar_uv(plane, point),
-        Object::Cylinder(cylinder) => cylinder_uv(cylinder, point),
+        Object::Cylinder(cylinder) => cylinder_uv(cylinder, point, rotation_y),
         Object::Cone(cone) => cone_uv(cone, point),
         Object::Cube(cube) => cube_uv(cube, point),
         Object::Hemisphere(hemisphere) => hemisphere_uv(hemisphere, point, rotation_y),
@@ -439,40 +439,110 @@ fn planar_uv(plane: &Plane, point: &Vec3) -> (f32, f32) {
     (local.dot(&tangent) * 0.5, local.dot(&bitangent) * 0.5)
 }
 
-fn cylinder_uv(cylinder: &Cylinder, point: &Vec3) -> (f32, f32) {
-    let axis = cylinder.axis.normalize();
+fn cylinder_uv(
+    cylinder: &Cylinder,
+    point: &Vec3,
+    rotation_y: f32,
+) -> (f32, f32) {
+    let local_world =
+        *point - cylinder.center;
 
-    let local = *point - cylinder.center;
+    let local =
+        rotate_y_inverse(
+            local_world,
+            rotation_y,
+        );
 
-    let axial = local.dot(&axis);
+    let axis =
+        rotate_y_inverse(
+            cylinder.axis,
+            rotation_y,
+        )
+        .normalize();
 
-    let (tangent, bitangent) = axis_basis(axis);
+    let axial =
+        local.dot(
+            &axis,
+        );
 
-    let radial = local - axis * axial;
+    let (
+        tangent,
+        bitangent,
+    ) =
+        axis_basis(
+            axis,
+        );
 
-    let x = radial.dot(&tangent);
+    let radial =
+        local
+            - axis
+                * axial;
 
-    let z = radial.dot(&bitangent);
+    let x =
+        radial.dot(
+            &tangent,
+        );
 
-    let half_height = cylinder.height * 0.5;
+    let z =
+        radial.dot(
+            &bitangent,
+        );
 
-    let cap_epsilon = 0.015;
+    let half_height =
+        cylinder.height
+            * 0.5;
 
-    if axial.abs() >= half_height - cap_epsilon {
-        let u = 0.5 + x / (cylinder.radius * 2.0);
+    let cap_epsilon =
+        0.015;
 
-        let v = 0.5 + z / (cylinder.radius * 2.0);
+    if axial.abs()
+        >= half_height
+            - cap_epsilon
+    {
+        let u =
+            0.5
+                + x
+                    / (
+                        cylinder.radius
+                            * 2.0
+                    );
 
-        return (u, v);
+        let v =
+            0.5
+                + z
+                    / (
+                        cylinder.radius
+                            * 2.0
+                    );
+
+        return (
+            u,
+            v,
+        );
     }
 
-    let angle = z.atan2(x);
+    let angle =
+        z.atan2(
+            x,
+        );
 
-    let u = 0.5 + angle / (2.0 * PI);
+    let u =
+        0.5
+            + angle
+                / (
+                    2.0
+                        * PI
+                );
 
-    let v = axial / cylinder.height + 0.5;
+    let v =
+        axial
+            / cylinder.height
+            + 0.5;
 
-    (u * 2.0, v * 1.5)
+    (
+        u * 2.0,
+        v * 1.5,
+    )
 }
 
 fn cone_uv(cone: &Cone, point: &Vec3) -> (f32, f32) {

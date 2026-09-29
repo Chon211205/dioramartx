@@ -1363,21 +1363,15 @@ fn main() {
                             );
                         }
 
-                        for planet in
-                            planets
-                        {
-                            let preview =
-                                transform_objects_rotated(
-                                    (planet.create)(),
-                                    planet.position,
-                                    planet.preview_scale,
-                                    rotation,
-                                );
+                        for planet in planets {
+                            let preview = transform_objects_rotated(
+                                (planet.create)(),
+                                planet.position,
+                                planet.preview_scale,
+                                rotation,
+                            );
 
-                            galaxy_objects
-                                .extend(
-                                    preview,
-                                );
+                            galaxy_objects.extend(preview);
                         }
 
                         let galaxy_scene =
