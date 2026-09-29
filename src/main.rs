@@ -8,6 +8,9 @@ mod scene;
 mod textures;
 mod worlds;
 
+#[path = "bin/tide_dash.rs"]
+mod tide_dash_game;
+
 use raylib::audio::RaylibAudio;
 use raylib::prelude::*;
 
@@ -126,6 +129,9 @@ fn main() {
 
     render_texture.set_texture_filter(&thread, TextureFilter::TEXTURE_FILTER_BILINEAR);
 
+    let mut water_game = tide_dash_game::EmbeddedGame::new(&mut rl, &thread);
+    let mut water_game_active = false;
+
     let galaxies_planets: Vec<Vec<PlanetDefinition>> =
         vec![galaxies::galaxy_registry(0), galaxies::galaxy_registry(1)];
 
@@ -196,6 +202,40 @@ fn main() {
 
         let viewport =
             calculate_viewport(current_screen_width as f32, current_screen_height as f32);
+
+        if water_game_active {
+            if rl.is_key_pressed(KeyboardKey::KEY_BACKSPACE) {
+                water_game_active = false;
+            } else {
+                water_game.update(&mut rl, dt);
+            }
+
+            let mut d = rl.begin_drawing(&thread);
+            d.clear_background(Color::BLACK);
+            let scale =
+                (current_screen_width as f32 / 960.0).min(current_screen_height as f32 / 640.0);
+            let game_camera = Camera2D {
+                offset: Vector2::new(
+                    (current_screen_width as f32 - 960.0 * scale) * 0.5,
+                    (current_screen_height as f32 - 640.0 * scale) * 0.5,
+                ),
+                target: Vector2::zero(),
+                rotation: 0.0,
+                zoom: scale,
+            };
+            {
+                let mut game_view = d.begin_mode2D(game_camera);
+                water_game.draw(&mut game_view);
+            }
+            d.draw_text(
+                "BACKSPACE - Volver al planeta",
+                24,
+                current_screen_height - 42,
+                22,
+                Color::WHITE,
+            );
+            continue;
+        }
 
         if current_galaxy == 0 {
             world_1_music.update_stream();
@@ -444,6 +484,14 @@ fn main() {
                 }
 
                 SceneState::Focused => {
+                    let water_circuit_selected = current_galaxy == 1 && selected_planet == Some(1);
+
+                    if water_circuit_selected && rl.is_key_pressed(KeyboardKey::KEY_P) {
+                        water_game.start();
+                        water_game_active = true;
+                        level_music.stop_stream();
+                    }
+
                     if rl.is_key_pressed(KeyboardKey::KEY_BACKSPACE) {
                         level_music.stop_stream();
 
@@ -790,6 +838,21 @@ fn main() {
                     d.draw_text("Rueda - Zoom", 30, 135, 20, Color::LIGHTGRAY);
 
                     d.draw_text("BACKSPACE - Regresar", 30, 165, 20, Color::LIGHTGRAY);
+
+                    if current_galaxy == 1 && selected_planet == Some(1) {
+                        d.draw_rectangle_rounded(
+                            Rectangle::new(24.0, 202.0, 270.0, 58.0),
+                            0.22,
+                            8,
+                            Color::new(7, 78, 130, 225),
+                        );
+                        d.draw_rectangle_lines_ex(
+                            Rectangle::new(24.0, 202.0, 270.0, 58.0),
+                            3.0,
+                            Color::new(92, 235, 255, 255),
+                        );
+                        d.draw_text("P - JUGAR CARRERA", 46, 220, 23, Color::WHITE);
+                    }
                 }
             }
         }
