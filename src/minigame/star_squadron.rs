@@ -604,6 +604,28 @@ impl Game {
     }
 }
 
+pub struct EmbeddedGame {
+    game: Game,
+}
+
+impl EmbeddedGame {
+    pub fn new() -> Self {
+        Self { game: Game::new() }
+    }
+
+    pub fn start(&mut self) {
+        self.game.start();
+    }
+
+    pub fn update(&mut self, rl: &mut RaylibHandle, dt: f32) {
+        self.game.update(rl, dt);
+    }
+
+    pub fn draw(&self, d: &mut RaylibDrawHandle) {
+        self.game.draw(d);
+    }
+}
+
 fn draw_player(d: &mut RaylibDrawHandle, x: f32, invulnerable: f32, shield: i32) {
     if invulnerable > 0.0 && (invulnerable * 12.0) as i32 % 2 == 0 {
         return;
@@ -796,6 +818,7 @@ fn centered(d: &mut RaylibDrawHandle, text: &str, y: i32, size: i32, color: Colo
     d.draw_text(text, (WIDTH - width) / 2, y, size, color);
 }
 
+#[allow(dead_code)]
 fn main() {
     let (mut rl, thread) = raylib::init()
         .size(WIDTH, HEIGHT)
@@ -812,7 +835,7 @@ fn main() {
     galaga_music.set_volume(0.85);
     galaga_music.play_stream();
 
-    let mut game = Game::new();
+    let mut game = EmbeddedGame::new();
     while !rl.window_should_close() {
         galaga_music.update_stream();
         if !galaga_music.is_stream_playing() {

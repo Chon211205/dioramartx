@@ -10,6 +10,8 @@ mod worlds;
 
 #[path = "minigame/tide_dash.rs"]
 mod tide_dash_game;
+#[path = "minigame/star_squadron.rs"]
+mod star_squadron_game;
 
 use raylib::audio::RaylibAudio;
 use raylib::prelude::*;
@@ -101,6 +103,13 @@ fn main() {
     race_music.set_looping(true);
     race_music.set_volume(0.90);
 
+    let mut galaga_music = audio
+        .new_music("assets/sounds/galaga.mp3")
+        .expect("No se pudo cargar galaga.mp3");
+
+    galaga_music.set_looping(true);
+    galaga_music.set_volume(0.85);
+
     let mut world_1_music = audio
         .new_music("assets/sounds/w1.mp3")
         .expect("No se pudo cargar w1.mp3");
@@ -146,6 +155,11 @@ fn main() {
         );
 
     let mut water_game_active = false;
+
+    let mut galaga_game =
+        star_squadron_game::EmbeddedGame::new();
+
+    let mut galaga_game_active = false;
 
     let galaxies_planets: Vec<Vec<PlanetDefinition>> =
         vec![
@@ -382,6 +396,93 @@ fn main() {
                     );
 
                 water_game.draw(
+                    &mut game_view,
+                );
+            }
+
+            d.draw_text(
+                "BACKSPACE - Volver al planeta",
+                24,
+                current_screen_height - 42,
+                22,
+                Color::WHITE,
+            );
+
+            continue;
+        }
+
+        if galaga_game_active {
+            galaga_music.update_stream();
+
+            if !galaga_music.is_stream_playing() {
+                galaga_music.play_stream();
+            }
+
+            if rl.is_key_pressed(
+                KeyboardKey::KEY_BACKSPACE,
+            ) {
+                galaga_music.stop_stream();
+                galaga_game_active = false;
+            } else {
+                galaga_game.update(
+                    &mut rl,
+                    dt,
+                );
+            }
+
+            let mut d =
+                rl.begin_drawing(
+                    &thread,
+                );
+
+            d.clear_background(
+                Color::BLACK,
+            );
+
+            let scale =
+                (
+                    current_screen_width as f32
+                        / 960.0
+                )
+                .min(
+                    current_screen_height as f32
+                        / 720.0,
+                );
+
+            let game_camera =
+                Camera2D {
+                    offset:
+                        Vector2::new(
+                            (
+                                current_screen_width
+                                    as f32
+                                    - 960.0
+                                        * scale
+                            )
+                                * 0.5,
+                            (
+                                current_screen_height
+                                    as f32
+                                    - 720.0
+                                        * scale
+                            )
+                                * 0.5,
+                        ),
+                    target:
+                        Vector2::zero(),
+                    rotation:
+                        0.0,
+                    zoom:
+                        scale,
+                };
+
+            {
+                let mut game_view =
+                    d.begin_mode2D(
+                        game_camera,
+                    );
+
+                galaga_game.draw(
                     &mut game_view,
                 );
             }
@@ -894,6 +995,11 @@ fn main() {
                             && selected_planet
                                 == Some(1);
 
+                    let galaga_planet_selected =
+                        current_galaxy == 1
+                            && selected_planet
+                                == Some(6);
+
                     if water_circuit_selected
                         && rl.is_key_pressed(
                             KeyboardKey::KEY_P,
@@ -908,6 +1014,23 @@ fn main() {
                             .stop_stream();
 
                         race_music
+                            .play_stream();
+                    }
+
+                    if galaga_planet_selected
+                        && rl.is_key_pressed(
+                            KeyboardKey::KEY_P,
+                        )
+                    {
+                        galaga_game.start();
+
+                        galaga_game_active =
+                            true;
+
+                        level_music
+                            .stop_stream();
+
+                        galaga_music
                             .play_stream();
                     }
 
@@ -1675,8 +1798,10 @@ fn main() {
 
                     if current_galaxy
                         == 1
-                        && selected_planet
+                        && (selected_planet
                             == Some(1)
+                            || selected_planet
+                                == Some(6))
                     {
                         d.draw_rectangle_rounded(
                             Rectangle::new(
@@ -1712,7 +1837,13 @@ fn main() {
                         );
 
                         d.draw_text(
-                            "P - JUGAR CARRERA",
+                            if selected_planet
+                                == Some(6)
+                            {
+                                "P - JUGAR GALAGA"
+                            } else {
+                                "P - JUGAR CARRERA"
+                            },
                             46,
                             220,
                             23,
