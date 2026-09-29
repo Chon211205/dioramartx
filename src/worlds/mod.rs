@@ -13,6 +13,7 @@ pub mod pokeball_planet;
 pub mod galaga_planet;
 pub mod castle_planet;
 pub mod chomp_planet;
+pub mod brothers_planet;
 
 use crate::core::vec3::Vec3;
 use crate::scene::planet::PlanetDefinition;
