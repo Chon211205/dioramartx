@@ -505,7 +505,7 @@ fn main() {
             continue;
         }
 
-        if state == SceneState::Galaxy && !galaxy_selector_open {
+        if state == SceneState::Galaxy {
             if current_galaxy == 0 {
                 if world_2_music.is_stream_playing() {
                     world_2_music.stop_stream();
