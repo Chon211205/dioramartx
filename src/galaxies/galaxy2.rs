@@ -2,36 +2,53 @@ use crate::core::vec3::Vec3;
 use crate::scene::planet::PlanetDefinition;
 
 use crate::worlds::cube_planet::create_cube_planet;
-use crate::worlds::water_circuit::create_water_circuit_world;
-use crate::worlds::pyramid_planet::create_pyramid_planet;
 use crate::worlds::industrial_planet::create_industrial_planet;
+use crate::worlds::pyramid_planet::create_pyramid_planet;
+use crate::worlds::water_circuit::create_water_circuit_world;
 
 pub fn create_galaxy() -> Vec<PlanetDefinition> {
     vec![
         PlanetDefinition::new(
             "Cube Planet",
             create_cube_planet,
-            Vec3::new(-2.5, 0.45, 0.0),
+            Vec3::new(
+                -4.2,
+                0.6,
+                0.0,
+            ),
             0.42,
             1.50,
-            Vec3::new(0.0, -1.05, 0.10),
+            Vec3::new(
+                0.0,
+                -1.05,
+                0.10,
+            ),
         ),
+
         PlanetDefinition::new(
-            "Water Circuit",
+            "Water Race",
             create_water_circuit_world,
-            Vec3::new(2.5, 0.55, 0.0),
-            0.15,
+            Vec3::new(
+                -1.3,
+                0.6,
+                0.0,
+            ),
+            0.12,
             1.50,
-            Vec3::new(0.0, -1.05, 0.10),
+            Vec3::new(
+                0.0,
+                -1.05,
+                0.10,
+            ),
         ),
 
         PlanetDefinition::new(
             "Pyramid Planet",
             create_pyramid_planet,
             Vec3::new(
-                5.0,
+                2.4,
                 0.6,
-                0.0,
+                -2.0,
             ),
             0.30,
             1.60,
@@ -46,9 +63,9 @@ pub fn create_galaxy() -> Vec<PlanetDefinition> {
             "Industrial Planet",
             create_industrial_planet,
             Vec3::new(
-                6.5,
-                0.55,
-                0.0,
+                2.4,
+                0.6,
+                2.0,
             ),
             0.30,
             1.60,
@@ -58,6 +75,5 @@ pub fn create_galaxy() -> Vec<PlanetDefinition> {
                 0.10,
             ),
         ),
-
     ]
 }
