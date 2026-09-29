@@ -126,6 +126,13 @@ fn main() {
     world_2_music.set_looping(true);
     world_2_music.set_volume(1.0);
 
+    let mut world_3_music = audio
+        .new_music("assets/sounds/w3.mp3")
+        .expect("No se pudo cargar w3.mp3");
+
+    world_3_music.set_looping(true);
+    world_3_music.set_volume(1.0);
+
     let monitor = raylib::core::window::get_current_monitor();
 
     let screen_width = raylib::core::window::get_monitor_width(monitor);
@@ -516,6 +523,10 @@ fn main() {
                     world_2_music.stop_stream();
                 }
 
+                if world_3_music.is_stream_playing() {
+                    world_3_music.stop_stream();
+                }
+
                 world_1_music.update_stream();
 
                 if !world_1_music.is_stream_playing() {
@@ -526,10 +537,28 @@ fn main() {
                     world_1_music.stop_stream();
                 }
 
+                if world_3_music.is_stream_playing() {
+                    world_3_music.stop_stream();
+                }
+
                 world_2_music.update_stream();
 
                 if !world_2_music.is_stream_playing() {
                     world_2_music.play_stream();
+                }
+            } else if current_galaxy == 2 {
+                if world_1_music.is_stream_playing() {
+                    world_1_music.stop_stream();
+                }
+
+                if world_2_music.is_stream_playing() {
+                    world_2_music.stop_stream();
+                }
+
+                world_3_music.update_stream();
+
+                if !world_3_music.is_stream_playing() {
+                    world_3_music.play_stream();
                 }
             }
         } else {
@@ -539,6 +568,10 @@ fn main() {
 
             if world_2_music.is_stream_playing() {
                 world_2_music.stop_stream();
+            }
+
+            if world_3_music.is_stream_playing() {
+                world_3_music.stop_stream();
             }
         }
 
