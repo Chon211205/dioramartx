@@ -5,6 +5,7 @@ use crate::textures::texture::TextureMap;
 pub enum MaterialPattern {
     Solid,
     Grass,
+    Kirby,
 }
 
 #[derive(Clone, Copy)]
@@ -37,6 +38,7 @@ impl Material {
             transparency,
             reflectivity,
             pattern: MaterialPattern::Solid,
+
             albedo_texture: None,
             normal_texture: None,
             roughness_texture: None,
@@ -58,6 +60,7 @@ impl Material {
             transparency,
             reflectivity,
             pattern: MaterialPattern::Grass,
+
             albedo_texture: None,
             normal_texture: None,
             roughness_texture: None,
@@ -83,6 +86,7 @@ impl Material {
             transparency,
             reflectivity,
             pattern: MaterialPattern::Solid,
+
             albedo_texture,
             normal_texture,
             roughness_texture,
@@ -108,10 +112,34 @@ impl Material {
             transparency,
             reflectivity,
             pattern: MaterialPattern::Grass,
+
             albedo_texture,
             normal_texture,
             roughness_texture,
             ao_texture,
+        }
+    }
+
+    pub fn kirby_textured(
+        color: Vec3,
+        albedo: f32,
+        specular: f32,
+        transparency: f32,
+        reflectivity: f32,
+        albedo_texture: Option<&'static TextureMap>,
+    ) -> Self {
+        Self {
+            color,
+            albedo,
+            specular,
+            transparency,
+            reflectivity,
+            pattern: MaterialPattern::Kirby,
+
+            albedo_texture,
+            normal_texture: None,
+            roughness_texture: None,
+            ao_texture: None,
         }
     }
 }

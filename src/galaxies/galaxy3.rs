@@ -2,6 +2,7 @@ use crate::core::vec3::Vec3;
 use crate::scene::planet::PlanetDefinition;
 use crate::worlds::chomp_planet::create_chomp_planet_world;
 use crate::worlds::brothers_planet::create_brothers_planet_world;
+use crate::worlds::kirby_planet::create_kirby_planet_world;
 
 pub fn create_galaxy() -> Vec<PlanetDefinition> {
     vec![
@@ -35,6 +36,23 @@ pub fn create_galaxy() -> Vec<PlanetDefinition> {
             Vec3::new(
                 0.0,
                 -1.20,
+                0.0,
+            ),
+        ),
+
+        PlanetDefinition::new(
+            "Kirby Planet",
+            create_kirby_planet_world,
+            Vec3::new(
+                6.8,
+                0.5,
+                0.0,
+            ),
+            0.46,
+            2.30,
+            Vec3::new(
+                0.0,
+                -1.10,
                 0.0,
             ),
         ),
