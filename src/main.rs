@@ -39,7 +39,7 @@ use crate::scene::state::SceneState;
 
 const RENDER_WIDTH: i32 = 1280;
 const RENDER_HEIGHT: i32 = 720;
-const GALAXY_COUNT: usize = 2;
+const GALAXY_COUNT: usize =3;
 
 struct Sparkle {
     position: Vector2,
@@ -172,6 +172,7 @@ fn main() {
         vec![
             galaxies::galaxy_registry(0),
             galaxies::galaxy_registry(1),
+            galaxies::galaxy_registry(2),
         ];
 
     let focused_scenes: Vec<Vec<Scene>> =
@@ -2050,23 +2051,16 @@ fn create_selector_camera() -> Camera {
             0.0,
             0.0,
         ),
-        11.5,
+        13.5,
         52.0,
     )
 }
 
 fn selector_centers() -> [Vec3; GALAXY_COUNT] {
     [
-        Vec3::new(
-            -3.45,
-            0.0,
-            0.0,
-        ),
-        Vec3::new(
-            3.45,
-            0.0,
-            0.0,
-        ),
+        Vec3::new(-5.0, 0.0, 0.0),
+        Vec3::new(0.0, 0.0, 0.0),
+        Vec3::new(5.0, 0.0, 0.0),
     ]
 }
 
@@ -2075,11 +2069,9 @@ fn create_galaxy_selector_scene(
     current: usize,
     time: f32,
 ) -> Scene {
-    let mut objects =
-        Vec::new();
+    let mut objects = Vec::new();
 
-    let centers =
-        selector_centers();
+    let centers = selector_centers();
 
     let blue_core =
         Material::new(
@@ -2131,6 +2123,32 @@ fn create_galaxy_selector_scene(
             1.0,
             0.0,
             0.20,
+        );
+
+    let white_core =
+        Material::new(
+            Vec3::new(
+                0.92,
+                0.95,
+                1.0,
+            ),
+            1.0,
+            1.0,
+            0.0,
+            0.28,
+        );
+
+    let silver_inner =
+        Material::new(
+            Vec3::new(
+                0.48,
+                0.58,
+                0.72,
+            ),
+            0.95,
+            0.90,
+            0.0,
+            0.22,
         );
 
     let green_planet =
@@ -2214,6 +2232,14 @@ fn create_galaxy_selector_scene(
         time,
     );
 
+    add_selector_nebula(
+        &mut objects,
+        centers[2],
+        2,
+        selected == 2,
+        time,
+    );
+
     add_selector_galaxy(
         &mut objects,
         centers[0],
@@ -2246,7 +2272,23 @@ fn create_galaxy_selector_scene(
         current_material,
     );
 
-    let bridge_start =
+    add_selector_galaxy(
+        &mut objects,
+        centers[2],
+        2,
+        selected,
+        current,
+        time,
+        white_core,
+        silver_inner,
+        green_planet,
+        dark_planet,
+        yellow,
+        selected_material,
+        current_material,
+    );
+
+    let bridge_1_start =
         centers[0]
             + Vec3::new(
                 1.30,
@@ -2254,7 +2296,7 @@ fn create_galaxy_selector_scene(
                 0.0,
             );
 
-    let bridge_end =
+    let bridge_1_end =
         centers[1]
             + Vec3::new(
                 -1.30,
@@ -2264,15 +2306,37 @@ fn create_galaxy_selector_scene(
 
     add_selector_bridge(
         &mut objects,
-        bridge_start,
-        bridge_end,
+        bridge_1_start,
+        bridge_1_end,
         yellow,
         time,
     );
 
-    Scene::new(
-        objects,
-    )
+    let bridge_2_start =
+        centers[1]
+            + Vec3::new(
+                1.30,
+                0.55,
+                0.0,
+            );
+
+    let bridge_2_end =
+        centers[2]
+            + Vec3::new(
+                -1.30,
+                0.55,
+                0.0,
+            );
+
+    add_selector_bridge(
+        &mut objects,
+        bridge_2_start,
+        bridge_2_end,
+        yellow,
+        time,
+    );
+
+    Scene::new(objects)
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -2373,58 +2437,39 @@ fn add_selector_galaxy(
     for i in
         0..planet_count
     {
-        let ring =
-            match i % 3 {
-                0 => 1.18,
-                1 => 1.65,
-                _ => 2.12,
-            };
+        let ring = match i % 3 {
+            0 => 1.18,
+            1 => 1.65,
+            _ => 2.12,
+        };
 
-        let speed =
-            if galaxy_index
-                == 0
-            {
-                0.25
-                    + i as f32
-                        * 0.018
-            } else {
-                -0.30
-                    - i as f32
-                        * 0.015
-            };
+        let speed = match galaxy_index {
+            0 => 0.25 + i as f32 * 0.018,
+            1 => -0.30 - i as f32 * 0.015,
+            2 => 0.18 + i as f32 * 0.012,
+            _ => 0.20,
+        };
 
         let angle =
             i as f32
-                / planet_count
-                    as f32
+                / planet_count as f32
                 * std::f32::consts::PI
                 * 2.0
-                + time
-                    * speed;
+                + time * speed;
 
-        let squash =
-            if galaxy_index
-                == 0
-            {
-                0.55
-            } else {
-                0.48
-            };
+        let squash = match galaxy_index {
+            0 => 0.55,
+            1 => 0.48,
+            2 => 0.62,
+            _ => 0.50,
+        };
 
         let position =
             center
                 + Vec3::new(
-                    angle.cos()
-                        * ring,
-                    angle.sin()
-                        * ring
-                        * squash,
-                    (
-                        angle
-                            * 1.7
-                    )
-                        .sin()
-                        * 0.20,
+                    angle.cos() * ring,
+                    angle.sin() * ring * squash,
+                    (angle * 1.7).sin() * 0.20,
                 );
 
         let radius =
@@ -2523,46 +2568,79 @@ fn add_selector_nebula(
         color_a,
         color_b,
         color_c,
-    ) =
-        if galaxy_index
-            == 0
-        {
-            (
-                Vec3::new(
-                    0.05,
-                    0.32,
-                    0.65,
-                ),
-                Vec3::new(
-                    0.05,
-                    0.75,
-                    0.85,
-                ),
-                Vec3::new(
-                    0.08,
-                    0.55,
-                    0.28,
-                ),
-            )
-        } else {
-            (
-                Vec3::new(
-                    0.35,
-                    0.05,
-                    0.55,
-                ),
-                Vec3::new(
-                    0.85,
-                    0.08,
-                    0.45,
-                ),
-                Vec3::new(
-                    1.0,
-                    0.28,
-                    0.05,
-                ),
-            )
-        };
+    ) = match galaxy_index {
+        0 => (
+            Vec3::new(
+                0.05,
+                0.32,
+                0.65,
+            ),
+            Vec3::new(
+                0.05,
+                0.75,
+                0.85,
+            ),
+            Vec3::new(
+                0.08,
+                0.55,
+                0.28,
+            ),
+        ),
+
+        1 => (
+            Vec3::new(
+                0.35,
+                0.05,
+                0.55,
+            ),
+            Vec3::new(
+                0.85,
+                0.08,
+                0.45,
+            ),
+            Vec3::new(
+                1.0,
+                0.28,
+                0.05,
+            ),
+        ),
+
+        2 => (
+            Vec3::new(
+                0.42,
+                0.48,
+                0.58,
+            ),
+            Vec3::new(
+                0.82,
+                0.88,
+                1.0,
+            ),
+            Vec3::new(
+                1.0,
+                0.98,
+                0.82,
+            ),
+        ),
+
+        _ => (
+            Vec3::new(
+                0.10,
+                0.10,
+                0.10,
+            ),
+            Vec3::new(
+                0.30,
+                0.30,
+                0.30,
+            ),
+            Vec3::new(
+                0.50,
+                0.50,
+                0.50,
+            ),
+        ),
+    };
 
     let brightness =
         if is_selected {
@@ -2917,16 +2995,23 @@ fn draw_selector_interface(
     let centers =
         selector_centers();
 
-    let left =
+    let galaxy_1 =
         world_to_screen(
             centers[0],
             &selector_camera,
             viewport,
         );
 
-    let right =
+    let galaxy_2 =
         world_to_screen(
             centers[1],
+            &selector_camera,
+            viewport,
+        );
+
+    let galaxy_3 =
+        world_to_screen(
+            centers[2],
             &selector_camera,
             viewport,
         );
@@ -2953,7 +3038,7 @@ fn draw_selector_interface(
     );
 
     if let Some(point) =
-        left
+        galaxy_1
     {
         draw_selector_label(
             d,
@@ -2965,7 +3050,7 @@ fn draw_selector_interface(
     }
 
     if let Some(point) =
-        right
+        galaxy_2
     {
         draw_selector_label(
             d,
@@ -2976,16 +3061,33 @@ fn draw_selector_interface(
         );
     }
 
+    if let Some(point) =
+        galaxy_3
+    {
+        draw_selector_label(
+            d,
+            point,
+            "GALAXIA 3",
+            selected == 2,
+            current == 2,
+        );
+    }
+
     let selected_text =
         match selected {
-            0 =>
-                "Galaxia 1 seleccionada",
+            0 => {
+                "Galaxia 1 seleccionada"
+            }
 
-            1 =>
-                "Galaxia 2 seleccionada",
+            1 => {
+                "Galaxia 2 seleccionada"
+            }
 
-            _ =>
-                "",
+            2 => {
+                "Galaxia 3 seleccionada"
+            }
+
+            _ => "",
         };
 
     let size =
@@ -3001,8 +3103,7 @@ fn draw_selector_interface(
         selected_text,
         screen_width / 2
             - width / 2,
-        screen_height
-            - 105,
+        screen_height - 105,
         size,
         Color::new(
             255,
@@ -3028,8 +3129,7 @@ fn draw_selector_interface(
         controls,
         screen_width / 2
             - width / 2,
-        screen_height
-            - 65,
+        screen_height - 65,
         size,
         Color::LIGHTGRAY,
     );
@@ -3317,61 +3417,41 @@ fn draw_warp(
 ) {
     let center =
         Vector2::new(
-            width as f32
-                * 0.5,
-            height as f32
-                * 0.5,
+            width as f32 * 0.5,
+            height as f32 * 0.5,
         );
 
     let max_distance =
-        width
-            .max(
-                height,
-            )
-            as f32
+        width.max(height) as f32
             * 0.75;
 
-    for i in
-        0..100
-    {
+    for i in 0..100 {
         let seed =
-            i as f32
-                * 19.731
-                + 3.17;
+            i as f32 * 19.731 + 3.17;
 
         let angle =
-            pseudo_random(
-                seed,
-            )
+            pseudo_random(seed)
                 * std::f32::consts::PI
                 * 2.0;
 
         let base =
             pseudo_random(
-                seed
-                    * 2.31,
+                seed * 2.31,
             );
 
         let speed =
             0.25
                 + pseudo_random(
-                    seed
-                        * 4.91,
+                    seed * 4.91,
                 )
                     * 0.75;
 
         let movement =
-            (
-                progress
-                    * speed
-            )
+            (progress * speed)
                 .fract();
 
         let distance =
-            (
-                base
-                    + movement
-            )
+            (base + movement)
                 .fract()
                 * max_distance;
 
@@ -3380,8 +3460,7 @@ fn draw_warp(
                 + progress
                     * 140.0
                 + pseudo_random(
-                    seed
-                        * 7.11,
+                    seed * 7.11,
                 )
                     * 40.0;
 
@@ -3390,6 +3469,7 @@ fn draw_warp(
                 center.x
                     + angle.cos()
                         * distance,
+
                 center.y
                     + angle.sin()
                         * distance,
@@ -3403,6 +3483,7 @@ fn draw_warp(
                             distance
                                 + streak
                         ),
+
                 center.y
                     + angle.sin()
                         * (
@@ -3413,32 +3494,25 @@ fn draw_warp(
 
         let value =
             pseudo_random(
-                seed
-                    * 9.7,
+                seed * 9.7,
             );
 
         let color =
-            if value
-                < 0.25
-            {
+            if value < 0.25 {
                 Color::new(
                     120,
                     190,
                     255,
                     230,
                 )
-            } else if value
-                < 0.50
-            {
+            } else if value < 0.50 {
                 Color::new(
                     210,
                     150,
                     255,
                     230,
                 )
-            } else if value
-                < 0.75
-            {
+            } else if value < 0.75 {
                 Color::new(
                     255,
                     240,
