@@ -6,8 +6,8 @@ use crate::objects::cube::Cube;
 use crate::objects::cylinder::Cylinder;
 use crate::objects::hemisphere::Hemisphere;
 use crate::objects::object::Object;
-use crate::textures::texture::TextureMap;
 use crate::objects::sphere::Sphere;
+use crate::textures::texture::TextureMap;
 
 static CASTLE_COLOR: OnceLock<TextureMap> = OnceLock::new();
 static CASTLE_NORMAL: OnceLock<TextureMap> = OnceLock::new();
@@ -132,7 +132,11 @@ fn rock_roughness() -> &'static TextureMap {
 
 fn castle_material() -> Material {
     Material::textured(
-        Vec3::new(0.82, 0.82, 0.82),
+        Vec3::new(
+            0.82,
+            0.82,
+            0.82,
+        ),
         1.0,
         0.30,
         0.0,
@@ -148,13 +152,13 @@ fn lava_curved_material() -> Material {
     Material::textured(
         Vec3::new(
             1.0,
-            0.65,
-            0.45,
+            0.60,
+            0.20,
         ),
         1.0,
         0.85,
         0.0,
-        0.05,
+        0.06,
         Some(lava002_color()),
         Some(lava002_normal()),
         Some(lava002_roughness()),
@@ -166,13 +170,13 @@ fn lava_flat_material() -> Material {
     Material::textured(
         Vec3::new(
             1.0,
-            0.85,
-            0.60,
+            0.82,
+            0.35,
         ),
         1.0,
-        0.95,
+        0.90,
         0.0,
-        0.05,
+        0.06,
         Some(lava004_color()),
         Some(lava004_normal()),
         Some(lava004_roughness()),
@@ -182,7 +186,11 @@ fn lava_flat_material() -> Material {
 
 fn rock_material() -> Material {
     Material::textured(
-        Vec3::new(0.65, 0.62, 0.60),
+        Vec3::new(
+            0.58,
+            0.55,
+            0.52,
+        ),
         1.0,
         0.18,
         0.0,
@@ -196,27 +204,67 @@ fn rock_material() -> Material {
 
 fn portal_outer_material() -> Material {
     Material::new(
-        Vec3::new(0.24, 0.00, 0.30),
+        Vec3::new(
+            0.12,
+            0.0,
+            0.18,
+        ),
         1.0,
-        0.25,
+        0.35,
         0.0,
+        0.10,
+    )
+}
+
+fn portal_middle_material() -> Material {
+    Material::new(
+        Vec3::new(
+            0.45,
+            0.02,
+            0.70,
+        ),
+        1.0,
+        0.75,
         0.0,
+        0.18,
     )
 }
 
 fn portal_inner_material() -> Material {
     Material::new(
-        Vec3::new(0.82, 0.04, 0.95),
+        Vec3::new(
+            0.82,
+            0.08,
+            1.0,
+        ),
         1.0,
-        0.90,
+        1.0,
         0.0,
-        0.12,
+        0.28,
+    )
+}
+
+fn portal_core_material() -> Material {
+    Material::new(
+        Vec3::new(
+            1.0,
+            0.35,
+            1.0,
+        ),
+        1.0,
+        1.0,
+        0.0,
+        0.35,
     )
 }
 
 fn pole_material() -> Material {
     Material::new(
-        Vec3::new(0.16, 0.16, 0.16),
+        Vec3::new(
+            0.15,
+            0.15,
+            0.15,
+        ),
         1.0,
         0.45,
         0.0,
@@ -226,7 +274,11 @@ fn pole_material() -> Material {
 
 fn flag_material() -> Material {
     Material::new(
-        Vec3::new(0.92, 0.03, 0.03),
+        Vec3::new(
+            0.92,
+            0.03,
+            0.03,
+        ),
         1.0,
         0.45,
         0.0,
@@ -245,7 +297,9 @@ pub fn create_castle_planet() -> Vec<Object> {
     objects
 }
 
-fn add_base(objects: &mut Vec<Object>) {
+fn add_base(
+    objects: &mut Vec<Object>,
+) {
     let rock = rock_material();
     let lava_curved = lava_curved_material();
     let lava_flat = lava_flat_material();
@@ -255,7 +309,7 @@ fn add_base(objects: &mut Vec<Object>) {
             Hemisphere::new_with_materials(
                 Vec3::new(
                     0.0,
-                    -1.58,
+                    -1.65,
                     0.0,
                 ),
                 2.75,
@@ -275,11 +329,11 @@ fn add_base(objects: &mut Vec<Object>) {
             Cylinder::new(
                 Vec3::new(
                     0.0,
-                    -1.34,
+                    -1.32,
                     0.0,
                 ),
                 3.05,
-                0.46,
+                0.42,
                 lava_curved,
             ),
         ),
@@ -301,7 +355,9 @@ fn add_base(objects: &mut Vec<Object>) {
     );
 }
 
-fn add_castle(objects: &mut Vec<Object>) {
+fn add_castle(
+    objects: &mut Vec<Object>,
+) {
     let castle = castle_material();
 
     objects.push(
@@ -309,11 +365,11 @@ fn add_castle(objects: &mut Vec<Object>) {
             Cylinder::new(
                 Vec3::new(
                     0.0,
-                    -0.05,
+                    -0.08,
                     0.0,
                 ),
-                1.76,
-                1.95,
+                1.72,
+                1.90,
                 castle,
             ),
         ),
@@ -324,11 +380,11 @@ fn add_castle(objects: &mut Vec<Object>) {
             Cylinder::new(
                 Vec3::new(
                     0.0,
-                    1.08,
-                    -0.10,
+                    1.05,
+                    0.0,
                 ),
-                1.23,
                 1.18,
+                1.15,
                 castle,
             ),
         ),
@@ -339,11 +395,11 @@ fn add_castle(objects: &mut Vec<Object>) {
             Cylinder::new(
                 Vec3::new(
                     -1.28,
-                    0.03,
-                    0.08,
+                    0.02,
+                    0.0,
                 ),
-                0.54,
-                1.72,
+                0.52,
+                1.70,
                 castle,
             ),
         ),
@@ -354,11 +410,11 @@ fn add_castle(objects: &mut Vec<Object>) {
             Cylinder::new(
                 Vec3::new(
                     1.28,
-                    0.03,
-                    0.08,
+                    0.02,
+                    0.0,
                 ),
-                0.54,
-                1.72,
+                0.52,
+                1.70,
                 castle,
             ),
         ),
@@ -369,10 +425,10 @@ fn add_castle(objects: &mut Vec<Object>) {
             Cylinder::new(
                 Vec3::new(
                     -1.28,
-                    0.94,
-                    0.08,
+                    0.92,
+                    0.0,
                 ),
-                0.66,
+                0.64,
                 0.16,
                 castle,
             ),
@@ -384,10 +440,10 @@ fn add_castle(objects: &mut Vec<Object>) {
             Cylinder::new(
                 Vec3::new(
                     1.28,
-                    0.94,
-                    0.08,
+                    0.92,
+                    0.0,
                 ),
-                0.66,
+                0.64,
                 0.16,
                 castle,
             ),
@@ -399,10 +455,10 @@ fn add_castle(objects: &mut Vec<Object>) {
             Cylinder::new(
                 Vec3::new(
                     0.0,
-                    1.75,
-                    -0.10,
+                    1.70,
+                    0.0,
                 ),
-                1.34,
+                1.30,
                 0.18,
                 castle,
             ),
@@ -424,7 +480,7 @@ fn add_lower_battlements(
     objects: &mut Vec<Object>,
     material: Material,
 ) {
-    let radius = 1.60;
+    let radius = 1.58;
     let count = 10;
 
     for i in 0..count {
@@ -434,18 +490,23 @@ fn add_lower_battlements(
                 * std::f32::consts::PI
                 * 2.0;
 
-        let x = angle.cos() * radius;
-        let z = angle.sin() * radius;
+        let x =
+            angle.cos()
+                * radius;
+
+        let z =
+            angle.sin()
+                * radius;
 
         objects.push(
             Object::Cube(
                 Cube::new(
                     Vec3::new(
                         x,
-                        1.09,
+                        1.05,
                         z,
                     ),
-                    0.30,
+                    0.28,
                     material,
                 ),
             ),
@@ -457,7 +518,7 @@ fn add_upper_battlements(
     objects: &mut Vec<Object>,
     material: Material,
 ) {
-    let radius = 1.08;
+    let radius = 1.05;
     let count = 8;
 
     for i in 0..count {
@@ -467,21 +528,23 @@ fn add_upper_battlements(
                 * std::f32::consts::PI
                 * 2.0;
 
-        let x = angle.cos() * radius;
+        let x =
+            angle.cos()
+                * radius;
 
         let z =
-            angle.sin() * radius
-                - 0.10;
+            angle.sin()
+                * radius;
 
         objects.push(
             Object::Cube(
                 Cube::new(
                     Vec3::new(
                         x,
-                        1.97,
+                        1.92,
                         z,
                     ),
-                    0.26,
+                    0.24,
                     material,
                 ),
             ),
@@ -489,48 +552,30 @@ fn add_upper_battlements(
     }
 }
 
-fn add_portal(objects: &mut Vec<Object>) {
-    let outer = Material::new(
-        Vec3::new(0.12, 0.00, 0.18),
-        1.0,
-        0.35,
-        0.0,
-        0.10,
-    );
+fn add_portal(
+    objects: &mut Vec<Object>,
+) {
+    let outer =
+        portal_outer_material();
 
-    let middle = Material::new(
-        Vec3::new(0.45, 0.02, 0.70),
-        1.0,
-        0.75,
-        0.0,
-        0.18,
-    );
+    let middle =
+        portal_middle_material();
 
-    let inner = Material::new(
-        Vec3::new(0.82, 0.08, 1.00),
-        1.0,
-        1.0,
-        0.0,
-        0.28,
-    );
+    let inner =
+        portal_inner_material();
 
-    let core = Material::new(
-        Vec3::new(1.00, 0.35, 1.00),
-        1.0,
-        1.0,
-        0.0,
-        0.35,
-    );
+    let core =
+        portal_core_material();
 
     objects.push(
         Object::Cube(
             Cube::new(
                 Vec3::new(
                     0.0,
-                    -0.48,
-                    1.78,
+                    -0.46,
+                    1.72,
                 ),
-                0.86,
+                0.84,
                 outer,
             ),
         ),
@@ -541,10 +586,10 @@ fn add_portal(objects: &mut Vec<Object>) {
             Cube::new(
                 Vec3::new(
                     0.0,
-                    -0.48,
-                    1.91,
+                    -0.46,
+                    1.84,
                 ),
-                0.68,
+                0.66,
                 middle,
             ),
         ),
@@ -555,10 +600,10 @@ fn add_portal(objects: &mut Vec<Object>) {
             Cube::new(
                 Vec3::new(
                     0.0,
-                    -0.48,
-                    2.03,
+                    -0.46,
+                    1.95,
                 ),
-                0.52,
+                0.50,
                 inner,
             ),
         ),
@@ -569,22 +614,46 @@ fn add_portal(objects: &mut Vec<Object>) {
             Cube::new(
                 Vec3::new(
                     0.0,
-                    -0.48,
-                    2.14,
+                    -0.46,
+                    2.05,
                 ),
-                0.32,
+                0.30,
                 core,
             ),
         ),
     );
 
     let glow_points = [
-        Vec3::new(-0.42, -0.86, 2.17),
-        Vec3::new(0.42, -0.86, 2.17),
-        Vec3::new(-0.42, -0.10, 2.17),
-        Vec3::new(0.42, -0.10, 2.17),
-        Vec3::new(0.0, -0.92, 2.17),
-        Vec3::new(0.0, -0.04, 2.17),
+        Vec3::new(
+            -0.40,
+            -0.82,
+            2.08,
+        ),
+        Vec3::new(
+            0.40,
+            -0.82,
+            2.08,
+        ),
+        Vec3::new(
+            -0.40,
+            -0.10,
+            2.08,
+        ),
+        Vec3::new(
+            0.40,
+            -0.10,
+            2.08,
+        ),
+        Vec3::new(
+            0.0,
+            -0.88,
+            2.08,
+        ),
+        Vec3::new(
+            0.0,
+            -0.04,
+            2.08,
+        ),
     ];
 
     for position in glow_points {
@@ -592,7 +661,7 @@ fn add_portal(objects: &mut Vec<Object>) {
             Object::Sphere(
                 Sphere::new(
                     position,
-                    0.08,
+                    0.07,
                     core,
                 ),
             ),
@@ -600,20 +669,25 @@ fn add_portal(objects: &mut Vec<Object>) {
     }
 }
 
-fn add_flag(objects: &mut Vec<Object>) {
-    let pole = pole_material();
-    let flag = flag_material();
+fn add_flag(
+    objects: &mut Vec<Object>,
+) {
+    let pole =
+        pole_material();
+
+    let flag =
+        flag_material();
 
     objects.push(
         Object::Cylinder(
             Cylinder::new(
                 Vec3::new(
                     0.0,
-                    2.87,
-                    -0.10,
+                    2.82,
+                    0.0,
                 ),
                 0.020,
-                1.55,
+                1.50,
                 pole,
             ),
         ),
@@ -623,11 +697,39 @@ fn add_flag(objects: &mut Vec<Object>) {
         Object::Cube(
             Cube::new(
                 Vec3::new(
-                    0.23,
-                    3.36,
-                    -0.10,
+                    0.15,
+                    3.28,
+                    0.0,
                 ),
-                0.22,
+                0.16,
+                flag,
+            ),
+        ),
+    );
+
+    objects.push(
+        Object::Cube(
+            Cube::new(
+                Vec3::new(
+                    0.31,
+                    3.28,
+                    0.0,
+                ),
+                0.16,
+                flag,
+            ),
+        ),
+    );
+
+    objects.push(
+        Object::Cube(
+            Cube::new(
+                Vec3::new(
+                    0.47,
+                    3.28,
+                    0.0,
+                ),
+                0.16,
                 flag,
             ),
         ),
