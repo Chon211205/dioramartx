@@ -6,29 +6,11 @@ use crate::objects::object::Object;
 pub fn create_galaga_planet() -> Vec<Object> {
     let mut objects = Vec::new();
 
-    let white = Material::new(
-        Vec3::new(0.95, 0.95, 0.95),
-        1.0,
-        0.45,
-        0.0,
-        0.02,
-    );
+    let white = Material::new(Vec3::new(0.95, 0.95, 0.95), 1.0, 0.45, 0.0, 0.02);
 
-    let red = Material::new(
-        Vec3::new(0.95, 0.02, 0.02),
-        1.0,
-        0.55,
-        0.0,
-        0.03,
-    );
+    let red = Material::new(Vec3::new(0.95, 0.02, 0.02), 1.0, 0.55, 0.0, 0.03);
 
-    let blue = Material::new(
-        Vec3::new(0.02, 0.20, 0.95),
-        1.0,
-        0.55,
-        0.0,
-        0.03,
-    );
+    let blue = Material::new(Vec3::new(0.02, 0.20, 0.95), 1.0, 0.55, 0.0, 0.03);
 
     let pixel_size = 0.34;
     let spacing = 0.34;
@@ -67,61 +49,27 @@ pub fn create_galaga_planet() -> Vec<Object> {
                 _ => white,
             };
 
-            let x =
-                (col as f32 - (cols as f32 - 1.0) * 0.5)
-                    * spacing;
+            let x = (col as f32 - (cols as f32 - 1.0) * 0.5) * spacing;
 
-            let y =
-                ((rows as f32 - 1.0) * 0.5 - row as f32)
-                    * spacing;
+            let y = ((rows as f32 - 1.0) * 0.5 - row as f32) * spacing;
 
-            add_pixel(
-                &mut objects,
-                Vec3::new(
-                    x,
-                    y,
-                    0.0,
-                ),
-                pixel_size,
-                material,
-            );
+            add_pixel(&mut objects, Vec3::new(x, y, 0.0), pixel_size, material);
         }
     }
 
     objects
 }
 
-fn add_pixel(
-    objects: &mut Vec<Object>,
-    center: Vec3,
-    size: f32,
-    material: Material,
-) {
-    objects.push(
-        Object::Cube(
-            Cube::new(
-                Vec3::new(
-                    center.x,
-                    center.y,
-                    -0.15,
-                ),
-                size,
-                material,
-            ),
-        ),
-    );
+fn add_pixel(objects: &mut Vec<Object>, center: Vec3, size: f32, material: Material) {
+    objects.push(Object::Cube(Cube::new(
+        Vec3::new(center.x, center.y, -0.15),
+        size,
+        material,
+    )));
 
-    objects.push(
-        Object::Cube(
-            Cube::new(
-                Vec3::new(
-                    center.x,
-                    center.y,
-                    0.15,
-                ),
-                size,
-                material,
-            ),
-        ),
-    );
+    objects.push(Object::Cube(Cube::new(
+        Vec3::new(center.x, center.y, 0.15),
+        size,
+        material,
+    )));
 }

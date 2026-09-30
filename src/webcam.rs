@@ -3,13 +3,17 @@ use std::sync::{Arc, OnceLock, RwLock};
 use std::thread::{self, JoinHandle};
 use std::time::Duration;
 
+use nokhwa::Camera;
 use nokhwa::pixel_format::RgbFormat;
 use nokhwa::utils::{CameraIndex, RequestedFormat, RequestedFormatType};
-use nokhwa::Camera;
 
 use crate::core::vec3::Vec3;
 
-const FALLBACK_COLOR: Vec3 = Vec3 { x: 0.10, y: 0.12, z: 0.15 };
+const FALLBACK_COLOR: Vec3 = Vec3 {
+    x: 0.10,
+    y: 0.12,
+    z: 0.15,
+};
 
 pub struct WebcamFrame {
     width: usize,
@@ -19,7 +23,11 @@ pub struct WebcamFrame {
 
 impl WebcamFrame {
     fn fallback() -> Self {
-        Self { width: 1, height: 1, data: vec![FALLBACK_COLOR] }
+        Self {
+            width: 1,
+            height: 1,
+            data: vec![FALLBACK_COLOR],
+        }
     }
 
     fn sample(&self, u: f32, v: f32) -> Vec3 {
@@ -68,7 +76,8 @@ impl WebcamCapture {
         let worker_stop = Arc::clone(&stop);
         let frame = Arc::clone(shared_frame());
         let worker = thread::spawn(move || {
-            let format = RequestedFormat::new::<RgbFormat>(RequestedFormatType::AbsoluteHighestFrameRate);
+            let format =
+                RequestedFormat::new::<RgbFormat>(RequestedFormatType::AbsoluteHighestFrameRate);
             let mut camera = match Camera::new(CameraIndex::Index(0), format) {
                 Ok(camera) => camera,
                 Err(error) => {
@@ -83,21 +92,30 @@ impl WebcamCapture {
             }
 
             while !worker_stop.load(Ordering::Relaxed) {
-                match camera.frame().and_then(|buffer| buffer.decode_image::<RgbFormat>()) {
+                match camera
+                    .frame()
+                    .and_then(|buffer| buffer.decode_image::<RgbFormat>())
+                {
                     Ok(image) => {
                         let width = image.width() as usize;
                         let height = image.height() as usize;
                         let data = image
                             .as_raw()
                             .chunks_exact(3)
-                            .map(|pixel| Vec3::new(
-                                pixel[0] as f32 / 255.0,
-                                pixel[1] as f32 / 255.0,
-                                pixel[2] as f32 / 255.0,
-                            ))
+                            .map(|pixel| {
+                                Vec3::new(
+                                    pixel[0] as f32 / 255.0,
+                                    pixel[1] as f32 / 255.0,
+                                    pixel[2] as f32 / 255.0,
+                                )
+                            })
                             .collect();
                         if let Ok(mut destination) = frame.write() {
-                            *destination = WebcamFrame { width, height, data };
+                            *destination = WebcamFrame {
+                                width,
+                                height,
+                                data,
+                            };
                         }
                     }
                     Err(error) => {
@@ -110,7 +128,10 @@ impl WebcamCapture {
             let _ = camera.stop_stream();
         });
 
-        Self { stop, worker: Some(worker) }
+        Self {
+            stop,
+            worker: Some(worker),
+        }
     }
 }
 

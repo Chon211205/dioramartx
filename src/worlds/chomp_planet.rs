@@ -10,16 +10,12 @@ use crate::textures::texture::TextureMap;
 
 fn chomp_color() -> &'static TextureMap {
     static TEX: OnceLock<TextureMap> = OnceLock::new();
-    TEX.get_or_init(|| {
-        TextureMap::from_file("assets/textures/chomp/Metal046B_1K-PNG_Color.png")
-    })
+    TEX.get_or_init(|| TextureMap::from_file("assets/textures/chomp/Metal046B_1K-PNG_Color.png"))
 }
 
 fn chomp_normal() -> &'static TextureMap {
     static TEX: OnceLock<TextureMap> = OnceLock::new();
-    TEX.get_or_init(|| {
-        TextureMap::from_file("assets/textures/chomp/Metal046B_1K-PNG_NormalGL.png")
-    })
+    TEX.get_or_init(|| TextureMap::from_file("assets/textures/chomp/Metal046B_1K-PNG_NormalGL.png"))
 }
 
 fn chomp_roughness() -> &'static TextureMap {
@@ -38,23 +34,17 @@ fn chomp_metalness() -> &'static TextureMap {
 
 fn lava_color() -> &'static TextureMap {
     static TEX: OnceLock<TextureMap> = OnceLock::new();
-    TEX.get_or_init(|| {
-        TextureMap::from_file("assets/textures/lava/Lava002_1K-PNG_Color.png")
-    })
+    TEX.get_or_init(|| TextureMap::from_file("assets/textures/lava/Lava002_1K-PNG_Color.png"))
 }
 
 fn lava_normal() -> &'static TextureMap {
     static TEX: OnceLock<TextureMap> = OnceLock::new();
-    TEX.get_or_init(|| {
-        TextureMap::from_file("assets/textures/lava/Lava002_1K-PNG_NormalGL.png")
-    })
+    TEX.get_or_init(|| TextureMap::from_file("assets/textures/lava/Lava002_1K-PNG_NormalGL.png"))
 }
 
 fn lava_roughness() -> &'static TextureMap {
     static TEX: OnceLock<TextureMap> = OnceLock::new();
-    TEX.get_or_init(|| {
-        TextureMap::from_file("assets/textures/lava/Lava002_1K-PNG_Roughness.png")
-    })
+    TEX.get_or_init(|| TextureMap::from_file("assets/textures/lava/Lava002_1K-PNG_Roughness.png"))
 }
 
 fn create_chomp_material() -> Material {
@@ -106,21 +96,9 @@ pub fn create_chomp_planet_world() -> Vec<Object> {
     let black_soft = create_chomp_soft_material();
     let lava_base = create_lava_base_material();
 
-    let white = Material::new(
-        Vec3::new(1.0, 1.0, 1.0),
-        1.0,
-        0.95,
-        0.0,
-        0.08,
-    );
+    let white = Material::new(Vec3::new(1.0, 1.0, 1.0), 1.0, 0.95, 0.0, 0.08);
 
-    let gray = Material::new(
-        Vec3::new(0.42, 0.45, 0.48),
-        1.0,
-        0.75,
-        0.0,
-        0.12,
-    );
+    let gray = Material::new(Vec3::new(0.42, 0.45, 0.48), 1.0, 0.75, 0.0, 0.12);
 
     objects.push(Object::Cube(Cube::new(
         Vec3::new(0.0, 0.18, 0.0),
@@ -176,35 +154,19 @@ pub fn create_chomp_planet_world() -> Vec<Object> {
     ];
 
     for position in bolt_positions {
-        objects.push(Object::Sphere(Sphere::new(
-            position,
-            0.075,
-            gray,
-        )));
+        objects.push(Object::Sphere(Sphere::new(position, 0.075, gray)));
     }
 
     let body_center = Vec3::new(0.0, 2.12, 0.0);
 
-    objects.push(Object::Sphere(Sphere::new(
-        body_center,
-        1.38,
-        black,
-    )));
+    objects.push(Object::Sphere(Sphere::new(body_center, 1.38, black)));
 
     let left_eye = body_center + Vec3::new(-0.46, 0.86, 0.96);
     let right_eye = body_center + Vec3::new(0.36, 0.88, 0.96);
 
-    objects.push(Object::Sphere(Sphere::new(
-        left_eye,
-        0.33,
-        white,
-    )));
+    objects.push(Object::Sphere(Sphere::new(left_eye, 0.33, white)));
 
-    objects.push(Object::Sphere(Sphere::new(
-        right_eye,
-        0.33,
-        white,
-    )));
+    objects.push(Object::Sphere(Sphere::new(right_eye, 0.33, white)));
 
     objects.push(Object::Sphere(Sphere::new(
         left_eye + Vec3::new(0.00, 0.20, 0.12),
@@ -243,15 +205,13 @@ pub fn create_chomp_planet_world() -> Vec<Object> {
     for (x, tilt) in upper_teeth {
         let axis = Vec3::new(tilt, -1.0, 0.10).normalize();
 
-        objects.push(Object::Cone(
-            Cone::new_oriented(
-                body_center + Vec3::new(x, 0.04, 1.33),
-                axis,
-                0.17,
-                0.34,
-                white,
-            ),
-        ));
+        objects.push(Object::Cone(Cone::new_oriented(
+            body_center + Vec3::new(x, 0.04, 1.33),
+            axis,
+            0.17,
+            0.34,
+            white,
+        )));
     }
 
     let lower_teeth_main = [
@@ -266,43 +226,37 @@ pub fn create_chomp_planet_world() -> Vec<Object> {
     for (x, tilt) in lower_teeth_main {
         let axis = Vec3::new(tilt, 1.0, 0.10).normalize();
 
-        objects.push(Object::Cone(
-            Cone::new_oriented(
-                body_center + Vec3::new(x, -0.04, 1.31),
-                axis,
-                0.17,
-                0.34,
-                white,
-            ),
-        ));
+        objects.push(Object::Cone(Cone::new_oriented(
+            body_center + Vec3::new(x, -0.04, 1.31),
+            axis,
+            0.17,
+            0.34,
+            white,
+        )));
     }
 
     for (x, tilt) in lower_teeth_main {
         let axis = Vec3::new(tilt, 0.97, 0.24).normalize();
 
-        objects.push(Object::Cone(
-            Cone::new_oriented(
-                body_center + Vec3::new(x, -0.12, 1.29),
-                axis,
-                0.18,
-                0.42,
-                white,
-            ),
-        ));
+        objects.push(Object::Cone(Cone::new_oriented(
+            body_center + Vec3::new(x, -0.12, 1.29),
+            axis,
+            0.18,
+            0.42,
+            white,
+        )));
     }
 
     for (x, tilt) in upper_teeth {
         let axis = Vec3::new(tilt, -0.995, 0.10).normalize();
 
-        objects.push(Object::Cone(
-            Cone::new_oriented(
-                body_center + Vec3::new(x, 0.12, 1.18),
-                axis,
-                0.14,
-                0.31,
-                white,
-            ),
-        ));
+        objects.push(Object::Cone(Cone::new_oriented(
+            body_center + Vec3::new(x, 0.12, 1.18),
+            axis,
+            0.14,
+            0.31,
+            white,
+        )));
     }
 
     let lower_teeth_secondary = [
@@ -318,15 +272,13 @@ pub fn create_chomp_planet_world() -> Vec<Object> {
     for (x, tilt) in lower_teeth_secondary {
         let axis = Vec3::new(tilt, 0.995, 0.10).normalize();
 
-        objects.push(Object::Cone(
-            Cone::new_oriented(
-                body_center + Vec3::new(x, -0.02, 1.17),
-                axis,
-                0.14,
-                0.31,
-                white,
-            ),
-        ));
+        objects.push(Object::Cone(Cone::new_oriented(
+            body_center + Vec3::new(x, -0.02, 1.17),
+            axis,
+            0.14,
+            0.31,
+            white,
+        )));
     }
 
     objects

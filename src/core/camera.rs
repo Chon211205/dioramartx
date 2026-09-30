@@ -166,38 +166,17 @@ impl Camera {
         self.position.z = self.target.z + horizontal_distance * self.yaw.cos();
     }
 
-    pub fn pan(
-        &mut self,
-        forward_input: f32,
-        right_input: f32,
-        speed: f32,
-    ) {
-        let forward = Vec3::new(
-            self.yaw.sin(),
-            0.0,
-            self.yaw.cos(),
-        )
-        .normalize();
+    pub fn pan(&mut self, forward_input: f32, right_input: f32, speed: f32) {
+        let forward = Vec3::new(self.yaw.sin(), 0.0, self.yaw.cos()).normalize();
 
-        let right = Vec3::new(
-            forward.z,
-            0.0,
-            -forward.x,
-        )
-        .normalize();
+        let right = Vec3::new(forward.z, 0.0, -forward.x).normalize();
 
-        let movement =
-            forward * forward_input * speed
-                + right * right_input * speed;
+        let movement = forward * forward_input * speed + right * right_input * speed;
 
-        self.target =
-            self.target
-                + movement;
+        self.target = self.target + movement;
 
-        self.target_goal =
-            self.target;
+        self.target_goal = self.target;
 
         self.update_position();
     }
-
 }

@@ -1,12 +1,12 @@
 use crate::core::vec3::Vec3;
 use crate::scene::planet::PlanetDefinition;
 
+use crate::worlds::castle_planet::create_castle_planet;
 use crate::worlds::egg::create_egg_diorama;
 use crate::worlds::forest::create_forest_diorama;
 use crate::worlds::ice_lava::create_ice_lava_diorama;
 use crate::worlds::tree_planet::create_tree_planet_world;
 use crate::worlds::water::create_water_diorama;
-use crate::worlds::castle_planet::create_castle_planet;
 
 pub fn create_galaxy() -> Vec<PlanetDefinition> {
     vec![
@@ -50,23 +50,13 @@ pub fn create_galaxy() -> Vec<PlanetDefinition> {
             1.10,
             Vec3::new(0.0, -0.95, 0.12),
         ),
-
         PlanetDefinition::new(
             "Castle World",
             create_castle_planet,
-            Vec3::new(
-                8.0,
-                0.6,
-                0.0,
-            ),
+            Vec3::new(8.0, 0.6, 0.0),
             0.24,
             1.80,
-            Vec3::new(
-                0.0,
-                -1.05,
-                0.10,
-            ),
+            Vec3::new(0.0, -1.05, 0.10),
         ),
-
     ]
 }

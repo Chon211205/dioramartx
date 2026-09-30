@@ -40,6 +40,14 @@ impl PlanetDefinition {
         hit_radius: f32,
         node_offset: Vec3,
     ) -> Self {
-        Self { name, create, create_preview, position, preview_scale, hit_radius, node_offset }
+        Self {
+            name,
+            create,
+            create_preview,
+            position,
+            preview_scale,
+            hit_radius,
+            node_offset,
+        }
     }
 }

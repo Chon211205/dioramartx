@@ -144,12 +144,7 @@ impl Material {
         }
     }
 
-    pub fn webcam(
-        color: Vec3,
-        albedo: f32,
-        specular: f32,
-        reflectivity: f32,
-    ) -> Self {
+    pub fn webcam(color: Vec3, albedo: f32, specular: f32, reflectivity: f32) -> Self {
         Self {
             color,
             albedo,
