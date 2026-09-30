@@ -5,6 +5,7 @@ use crate::worlds::brothers_planet::create_brothers_planet_world;
 use crate::worlds::castle_planet::create_castle_planet;
 use crate::worlds::kirby_planet::create_kirby_planet_world;
 use crate::worlds::mirror_planet::{create_mirror_planet_preview, create_mirror_planet_world};
+use crate::worlds::rainbow_kart_planet::create_rainbow_kart_world;
 
 pub fn create_galaxy() -> Vec<PlanetDefinition> {
     vec![
@@ -74,6 +75,14 @@ pub fn create_galaxy() -> Vec<PlanetDefinition> {
             0.90,
             3.40,
             Vec3::new(0.0, -4.80, 0.0),
+        ),
+        PlanetDefinition::new(
+            "Rainbow Kart Circuit",
+            create_rainbow_kart_world,
+            Vec3::new(22.0, 1.0, 5.0),
+            0.24,
+            2.6,
+            Vec3::new(-5.0, -2.80, 0.0),
         ),
     ]
 }
