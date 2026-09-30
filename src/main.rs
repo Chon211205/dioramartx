@@ -42,6 +42,8 @@ use crate::scene::state::SceneState;
 const RENDER_WIDTH: i32 = 1280;
 const RENDER_HEIGHT: i32 = 720;
 const GALAXY_COUNT: usize =3;
+const HUNGRY_STAR_COST: u32 = 10;
+const TOWER_HOUSE_INDEX: usize = 5;
 
 struct Sparkle {
     position: Vector2,
@@ -56,6 +58,13 @@ struct Sparkle {
 struct PlanetCollider {
     center: Vector2,
     radius: f32,
+}
+
+struct HungryFeedProjectile {
+    start: Vector2,
+    target: Vector2,
+    progress: f32,
+    feeds_star: bool,
 }
 
 struct Viewport {
@@ -268,6 +277,24 @@ fn main() {
         u32 =
         0;
 
+    let mut hungry_star_fed:
+        u32 =
+        0;
+
+    let mut tower_house_unlocked =
+        false;
+
+    let mut hungry_unlock_timer:
+        f32 =
+        -1.0;
+
+    let mut hungry_feed_projectiles:
+        Vec<HungryFeedProjectile> =
+        Vec::new();
+
+    let mut hungry_shot_ready =
+        true;
+
     let mut sparkle_spawn_timer:
         f32 =
         0.0;
@@ -336,11 +363,41 @@ fn main() {
         let mouse_position =
             rl.get_mouse_position();
 
+        if rl.is_mouse_button_released(MouseButton::MOUSE_BUTTON_LEFT) {
+            hungry_shot_ready = true;
+        }
+
         let viewport =
             calculate_viewport(
                 current_screen_width as f32,
                 current_screen_height as f32,
             );
+
+        if hungry_unlock_timer >= 0.0 {
+            hungry_unlock_timer += dt;
+            if hungry_unlock_timer >= 0.72 {
+                tower_house_unlocked = true;
+            }
+            if hungry_unlock_timer >= 1.85 {
+                hungry_unlock_timer = -2.0;
+            }
+        }
+
+        let mut arrived_destellos=0_u32;
+        for projectile in &mut hungry_feed_projectiles {
+            projectile.progress += dt*1.85;
+            if projectile.progress >= 1.0 && projectile.feeds_star {
+                arrived_destellos+=1;
+            }
+        }
+        hungry_feed_projectiles.retain(|projectile|projectile.progress<1.0);
+        if arrived_destellos>0 && hungry_unlock_timer<0.0 {
+            hungry_star_fed=(hungry_star_fed+arrived_destellos).min(HUNGRY_STAR_COST);
+            if hungry_star_fed>=HUNGRY_STAR_COST {
+                hungry_unlock_timer=0.0;
+                transition_refresh_scene=true;
+            }
+        }
 
         if water_game_active {
             race_music.update_stream();
@@ -924,9 +981,37 @@ fn main() {
                                     RENDER_HEIGHT as f32,
                                 );
 
-                            let planets =
+                            if current_galaxy == 2
+                                && !tower_house_unlocked
+                                && hungry_unlock_timer < 0.0
+                                && sparkle_score > 0
+                                && hungry_shot_ready
+                                && hungry_star_fed+(hungry_feed_projectiles.len() as u32)<HUNGRY_STAR_COST
+                            {
+                                let hungry_screen=world_to_screen(
+                                    hungry_star_world_position(current_time),&camera,&viewport,
+                                );
+                                let feeds_star=hungry_screen.map(|p|
+                                    (p.x-mouse_position.x).powi(2)+(p.y-mouse_position.y).powi(2)<85.0_f32.powi(2)
+                                ).unwrap_or(false);
+                                sparkle_score-=1;
+                                hungry_shot_ready=false;
+                                starbit_sound.play();
+                                hungry_feed_projectiles.push(HungryFeedProjectile{
+                                    start:Vector2::new(viewport.x+viewport.width*0.5,viewport.y+viewport.height-35.0),
+                                    target:mouse_position,progress:0.0,feeds_star,
+                                });
+                                continue;
+                            }
+
+                            let planets_all =
                                 &galaxies_planets
                                     [current_galaxy];
+
+                            let visible_count=if current_galaxy==2 && !tower_house_unlocked {
+                                TOWER_HOUSE_INDEX
+                            } else { planets_all.len() };
+                            let planets=&planets_all[..visible_count];
 
                             let mut closest =
                                 f32::INFINITY;
@@ -1258,9 +1343,21 @@ fn main() {
                     0.0;
             }
 
-            let planets =
+            let planets_all =
                 &galaxies_planets
                     [current_galaxy];
+
+            let visible_count =
+                if current_galaxy == 2
+                    && !tower_house_unlocked
+                {
+                    TOWER_HOUSE_INDEX
+                } else {
+                    planets_all.len()
+                };
+
+            let planets =
+                &planets_all[..visible_count];
 
             let planet_colliders =
                 create_planet_colliders(
@@ -1329,9 +1426,14 @@ fn main() {
                             current_time
                                 * 0.25;
 
-                        let planets =
+                        let planets_all =
                             &galaxies_planets
                                 [current_galaxy];
+
+                        let visible_count=if current_galaxy==2 && !tower_house_unlocked {
+                                TOWER_HOUSE_INDEX
+                            } else { planets_all.len() };
+                        let planets=&planets_all[..visible_count];
 
                         let mut galaxy_objects =
                             Vec::new();
@@ -1416,6 +1518,13 @@ fn main() {
                                 path_yellow_material,
                                 1.0,
                             );
+                        } else if current_galaxy == 2 {
+                            for index in 0..nodes.len().min(TOWER_HOUSE_INDEX).saturating_sub(1) {
+                                add_path_scaled(
+                                    &mut galaxy_objects,nodes[index],nodes[index+1],
+                                    path_yellow_material,1.0,
+                                );
+                            }
                         } else if nodes.len()
                             > 1
                         {
@@ -1445,11 +1554,17 @@ fn main() {
                             );
                         }
 
-                        for planet in planets {
+                        for (planet_index,planet) in planets.iter().enumerate() {
+                            let appearance=if current_galaxy==2
+                                && planet_index==TOWER_HOUSE_INDEX
+                                && hungry_unlock_timer>=0.0
+                            {
+                                ((hungry_unlock_timer-0.72)/0.82).clamp(0.04,1.0)
+                            } else { 1.0 };
                             let preview = transform_objects_rotated(
                                 (planet.create_preview)(),
                                 planet.position,
-                                planet.preview_scale,
+                                planet.preview_scale*appearance,
                                 rotation,
                             );
 
@@ -1460,15 +1575,20 @@ fn main() {
                             let hungry_base =
                                 Vec3::new(17.0, -1.80, 5.0);
 
-                            if let Some(last_node) =
-                                nodes.last()
-                            {
+                            if nodes.len() >= TOWER_HOUSE_INDEX {
                                 add_path_scaled(
                                     &mut galaxy_objects,
-                                    *last_node,
+                                    nodes[TOWER_HOUSE_INDEX-1],
                                     hungry_base,
                                     path_yellow_material,
                                     1.0,
+                                );
+                            }
+
+                            if tower_house_unlocked && nodes.len() > TOWER_HOUSE_INDEX {
+                                add_path_scaled(
+                                    &mut galaxy_objects,hungry_base,nodes[TOWER_HOUSE_INDEX],
+                                    path_yellow_material,1.0,
                                 );
                             }
 
@@ -1478,14 +1598,18 @@ fn main() {
                                 path_yellow_material,
                             );
 
-                            add_hungry_star_3d(
-                                &mut galaxy_objects,
-                                hungry_star_world_position(
-                                    current_time,
-                                ),
-                                camera.position,
-                                current_time,
-                            );
+                            if hungry_unlock_timer < 0.0 && !tower_house_unlocked {
+                                add_hungry_star_3d(
+                                    &mut galaxy_objects,hungry_star_world_position(current_time),
+                                    camera.position,current_time,
+                                );
+                            } else if hungry_unlock_timer >= 0.0 {
+                                add_hungry_star_explosion(
+                                    &mut galaxy_objects,hungry_star_world_position(current_time),
+                                    hungry_unlock_timer,
+                                );
+                            }
+
                         }
 
                         let galaxy_scene =
@@ -1793,6 +1917,11 @@ fn main() {
                         &sparkles,
                     );
 
+                    draw_hungry_feed_projectiles(
+                        &mut d,
+                        &hungry_feed_projectiles,
+                    );
+
                     d.draw_text(
                         &format!(
                             "Galaxia {}",
@@ -1848,15 +1977,45 @@ fn main() {
                         &mut d,
                         sparkle_score,
                     );
+
+                    let hungry_hovered=current_galaxy==2
+                        && !tower_house_unlocked
+                        && hungry_unlock_timer<0.0
+                        && world_to_screen(hungry_star_world_position(current_time),&camera,&viewport)
+                            .map(|p|(p.x-mouse_position.x).powi(2)+(p.y-mouse_position.y).powi(2)<85.0_f32.powi(2))
+                            .unwrap_or(false);
+
+                    if hungry_hovered {
+                        d.draw_rectangle_rounded(
+                            Rectangle::new(22.0,218.0,390.0,70.0),0.18,8,Color::new(35,8,45,220),
+                        );
+                        d.draw_text(
+                            &format!("DESTELLOS REQUERIDOS: {}/{}",hungry_star_fed,HUNGRY_STAR_COST),
+                            34,230,22,Color::new(255,170,215,255),
+                        );
+                        d.draw_text(
+                            "Clic para alimentar",34,260,18,Color::WHITE,
+                        );
+                    } else if current_galaxy == 2 && tower_house_unlocked && hungry_unlock_timer < 0.0 {
+                        d.draw_text(
+                            "TOWER HOUSE DESBLOQUEADA",
+                            30,230,22,Color::YELLOW,
+                        );
+                    }
                 }
 
                 SceneState::Focused => {
                     if let Some(index) =
                         selected_planet
                     {
-                        let planets =
+                        let planets_all =
                             &galaxies_planets
                                 [current_galaxy];
+
+                        let visible_count=if current_galaxy==2 && !tower_house_unlocked {
+                            TOWER_HOUSE_INDEX
+                        } else { planets_all.len() };
+                        let planets=&planets_all[..visible_count];
 
                         d.draw_text(
                             planets[index].name,
@@ -4221,6 +4380,68 @@ fn add_hungry_star_3d(
         );
     }
 
+}
+
+fn add_hungry_star_explosion(
+    objects: &mut Vec<Object>,
+    center: Vec3,
+    timer: f32,
+) {
+    if timer > 1.55 {
+        return;
+    }
+
+    let pink=Material::new(Vec3::new(1.0,0.10,0.52),0.9,1.0,0.0,0.55);
+    let gold=Material::new(Vec3::new(1.0,0.82,0.12),0.9,1.0,0.0,0.65);
+    let white=Material::new(Vec3::new(1.0,0.92,1.0),0.9,1.0,0.0,0.75);
+
+    if timer < 0.22 {
+        let compression=(1.0-timer/0.22).max(0.12);
+        objects.push(Object::Sphere(Sphere::new(center,0.82*compression,white)));
+        return;
+    }
+
+    let progress=((timer-0.22)/1.20).clamp(0.0,1.0);
+    let radius=0.35+progress*4.2;
+    let particle_radius=(0.22*(1.0-progress)+0.045).max(0.045);
+
+    for index in 0..18 {
+        let angle=index as f32/18.0*std::f32::consts::PI*2.0;
+        let vertical=((index*7%11)as f32/10.0-0.5)*1.8;
+        let direction=Vec3::new(angle.cos(),vertical,angle.sin()).normalize();
+        objects.push(Object::Sphere(Sphere::new(
+            center+direction*radius,particle_radius,
+            if index%3==0 { gold } else { pink },
+        )));
+    }
+
+    if progress < 0.55 {
+        objects.push(Object::Sphere(Sphere::new(
+            center,0.70*(1.0-progress/0.55).max(0.08),white,
+        )));
+    }
+}
+
+fn draw_hungry_feed_projectiles(
+    d:&mut RaylibDrawHandle<'_>,
+    projectiles:&[HungryFeedProjectile],
+) {
+    for projectile in projectiles {
+        let t=projectile.progress.clamp(0.0,1.0);
+        let eased=t*t*(3.0-2.0*t);
+        let mut position=projectile.start+(projectile.target-projectile.start)*eased;
+        position.y-=(std::f32::consts::PI*t).sin()*55.0;
+        let sparkle=Sparkle{
+            position,
+            velocity:Vector2::zero(),
+            radius:13.0+(std::f32::consts::PI*t).sin()*3.0,
+            active:true,
+            rotation:t*std::f32::consts::PI*3.0,
+            rotation_speed:0.0,
+            color:Color::new(255,220,55,255),
+        };
+        draw_sparkle(d,&sparkle);
+    }
 }
 
 fn spawn_sparkle(
