@@ -103,12 +103,7 @@ fn add_inner_volume(
     }
 }
 
-fn add_mario_face(
-    objects: &mut Vec<Object>,
-    red: Material,
-    brown: Material,
-    skin: Material,
-) {
+fn add_mario_face(objects: &mut Vec<Object>, red: Material, brown: Material, skin: Material) {
     for row in 0..H {
         for col in 0..W {
             let c = char_at(MARIO[row], col);
@@ -131,12 +126,7 @@ fn add_mario_face(
     }
 }
 
-fn add_luigi_face(
-    objects: &mut Vec<Object>,
-    green: Material,
-    white: Material,
-    skin: Material,
-) {
+fn add_luigi_face(objects: &mut Vec<Object>, green: Material, white: Material, skin: Material) {
     for row in 0..H {
         for col in 0..W {
             let c = char_at(LUIGI[row], col);

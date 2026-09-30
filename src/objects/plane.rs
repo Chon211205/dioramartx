@@ -25,11 +25,7 @@ impl Plane {
 
         let t = (self.point - *origin).dot(&self.normal) / denominator;
 
-        if t > 0.001 {
-            Some(t)
-        } else {
-            None
-        }
+        if t > 0.001 { Some(t) } else { None }
     }
 
     pub fn normal_at(&self) -> Vec3 {

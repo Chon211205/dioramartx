@@ -7,6 +7,7 @@ default-run = "diorama"
 [dependencies]
 raylib = "6.0.0"
 nokhwa = { version = "0.10.7", default-features = false, features = ["input-native"] }
+rand = "0.8"
 
 [[bin]]
 name = "tide_dash"

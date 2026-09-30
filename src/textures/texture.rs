@@ -14,94 +14,48 @@ pub struct TextureMap {
 
 impl TextureMap {
     pub fn from_file(path: &str) -> Self {
-        let c_path =
-            CString::new(path)
-                .expect("Ruta invalida para textura");
+        let c_path = CString::new(path).expect("Ruta invalida para textura");
 
         unsafe {
-            let image =
-                ffi::LoadImage(
-                    c_path.as_ptr(),
-                );
+            let image = ffi::LoadImage(c_path.as_ptr());
 
-            if image.data.is_null()
-                || image.width <= 0
-                || image.height <= 0
-            {
-                panic!(
-                    "No se pudo cargar la textura: {}",
-                    path
-                );
+            if image.data.is_null() || image.width <= 0 || image.height <= 0 {
+                panic!("No se pudo cargar la textura: {}", path);
             }
 
-            let width =
-                image.width as usize;
+            let width = image.width as usize;
 
-            let height =
-                image.height as usize;
+            let height = image.height as usize;
 
-            let colors_ptr =
-                ffi::LoadImageColors(
-                    image,
-                );
+            let colors_ptr = ffi::LoadImageColors(image);
 
             if colors_ptr.is_null() {
-                ffi::UnloadImage(
-                    image,
-                );
+                ffi::UnloadImage(image);
 
-                panic!(
-                    "No se pudieron leer los colores: {}",
-                    path
-                );
+                panic!("No se pudieron leer los colores: {}", path);
             }
 
-            let count =
-                width * height;
+            let count = width * height;
 
-            let colors =
-                slice::from_raw_parts(
-                    colors_ptr,
-                    count,
-                );
+            let colors = slice::from_raw_parts(colors_ptr, count);
 
-            let mut data =
-                Vec::with_capacity(
-                    count,
-                );
+            let mut data = Vec::with_capacity(count);
 
-            let mut alpha =
-                Vec::with_capacity(
-                    count,
-                );
+            let mut alpha = Vec::with_capacity(count);
 
             for color in colors {
-                data.push(
-                    Vec3::new(
-                        color.r as f32
-                            / 255.0,
+                data.push(Vec3::new(
+                    color.r as f32 / 255.0,
+                    color.g as f32 / 255.0,
+                    color.b as f32 / 255.0,
+                ));
 
-                        color.g as f32
-                            / 255.0,
-
-                        color.b as f32
-                            / 255.0,
-                    ),
-                );
-
-                alpha.push(
-                    color.a as f32
-                        / 255.0,
-                );
+                alpha.push(color.a as f32 / 255.0);
             }
 
-            ffi::UnloadImageColors(
-                colors_ptr,
-            );
+            ffi::UnloadImageColors(colors_ptr);
 
-            ffi::UnloadImage(
-                image,
-            );
+            ffi::UnloadImage(image);
 
             Self {
                 width,
@@ -112,112 +66,43 @@ impl TextureMap {
         }
     }
 
-    pub fn sample(
-        &self,
-        u: f32,
-        v: f32,
-    ) -> Vec3 {
-        let index =
-            self.sample_index(
-                u,
-                v,
-            );
+    pub fn sample(&self, u: f32, v: f32) -> Vec3 {
+        let index = self.sample_index(u, v);
 
         self.data[index]
     }
 
-    pub fn sample_alpha(
-        &self,
-        u: f32,
-        v: f32,
-    ) -> f32 {
-        let index =
-            self.sample_index(
-                u,
-                v,
-            );
+    pub fn sample_alpha(&self, u: f32, v: f32) -> f32 {
+        let index = self.sample_index(u, v);
 
         self.alpha[index]
     }
 
-    pub fn sample_rgba(
-        &self,
-        u: f32,
-        v: f32,
-    ) -> (Vec3, f32) {
-        let index =
-            self.sample_index(
-                u,
-                v,
-            );
+    pub fn sample_rgba(&self, u: f32, v: f32) -> (Vec3, f32) {
+        let index = self.sample_index(u, v);
 
-        (
-            self.data[index],
-            self.alpha[index],
-        )
+        (self.data[index], self.alpha[index])
     }
 
-    pub fn sample_scalar(
-        &self,
-        u: f32,
-        v: f32,
-    ) -> f32 {
-        let color =
-            self.sample(
-                u,
-                v,
-            );
+    pub fn sample_scalar(&self, u: f32, v: f32) -> f32 {
+        let color = self.sample(u, v);
 
-        (
-            color.x
-                + color.y
-                + color.z
-        ) / 3.0
+        (color.x + color.y + color.z) / 3.0
     }
 
-    fn sample_index(
-        &self,
-        u: f32,
-        v: f32,
-    ) -> usize {
-        let u =
-            u.rem_euclid(
-                1.0,
-            );
+    fn sample_index(&self, u: f32, v: f32) -> usize {
+        let u = u.rem_euclid(1.0);
 
-        let v =
-            v.rem_euclid(
-                1.0,
-            );
+        let v = v.rem_euclid(1.0);
 
-        let x =
-            (
-                u
-                    * self.width
-                        as f32
-            ) as usize;
+        let x = (u * self.width as f32) as usize;
 
-        let y =
-            (
-                (
-                    1.0
-                        - v
-                )
-                    * self.height
-                        as f32
-            ) as usize;
+        let y = ((1.0 - v) * self.height as f32) as usize;
 
-        let x =
-            x.min(
-                self.width - 1,
-            );
+        let x = x.min(self.width - 1);
 
-        let y =
-            y.min(
-                self.height - 1,
-            );
+        let y = y.min(self.height - 1);
 
-        y * self.width
-            + x
+        y * self.width + x
     }
 }
