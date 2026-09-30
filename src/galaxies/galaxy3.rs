@@ -79,7 +79,7 @@ pub fn create_galaxy() -> Vec<PlanetDefinition> {
         PlanetDefinition::new(
             "Tower House",
             create_tower_house_world,
-            Vec3::new(20.0, 2.0, 4.5),
+            Vec3::new(25.5, 2.0, 4.5),
             0.52,
             3.8,
             Vec3::new(0.0, -3.7, 0.0),
