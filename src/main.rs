@@ -1456,6 +1456,38 @@ fn main() {
                             galaxy_objects.extend(preview);
                         }
 
+                        if current_galaxy == 2 {
+                            let hungry_base =
+                                Vec3::new(17.0, -1.80, 5.0);
+
+                            if let Some(last_node) =
+                                nodes.last()
+                            {
+                                add_path_scaled(
+                                    &mut galaxy_objects,
+                                    *last_node,
+                                    hungry_base,
+                                    path_yellow_material,
+                                    1.0,
+                                );
+                            }
+
+                            add_hungry_star_base(
+                                &mut galaxy_objects,
+                                hungry_base,
+                                path_yellow_material,
+                            );
+
+                            add_hungry_star_3d(
+                                &mut galaxy_objects,
+                                hungry_star_world_position(
+                                    current_time,
+                                ),
+                                camera.position,
+                                current_time,
+                            );
+                        }
+
                         let galaxy_scene =
                             Scene::new(
                                 galaxy_objects,
@@ -3992,6 +4024,203 @@ fn sparkle_color(
                 255,
             ),
     }
+}
+
+fn hungry_star_world_position(
+    time: f32,
+) -> Vec3 {
+    Vec3::new(
+        17.0,
+        0.15
+            + (time * 1.8).sin()
+                * 0.12,
+        5.0,
+    )
+}
+
+fn add_hungry_star_base(
+    objects: &mut Vec<Object>,
+    center: Vec3,
+    material: Material,
+) {
+    objects.push(
+        Object::Cylinder(
+            Cylinder::new_oriented(
+                center,
+                Vec3::new(0.0, 1.0, 0.0),
+                1.55,
+                0.28,
+                material,
+            ),
+        ),
+    );
+
+    objects.push(
+        Object::Cylinder(
+            Cylinder::new_oriented(
+                center
+                    + Vec3::new(0.0, 0.19, 0.0),
+                Vec3::new(0.0, 1.0, 0.0),
+                1.18,
+                0.16,
+                material,
+            ),
+        ),
+    );
+}
+
+fn add_hungry_star_3d(
+    objects: &mut Vec<Object>,
+    center: Vec3,
+    camera_position: Vec3,
+    time: f32,
+) {
+    let pulse =
+        1.0
+            + (time * 4.0).sin()
+                * 0.045;
+
+    let scale =
+        pulse * 1.18;
+
+    let pink =
+        Material::new(
+            Vec3::new(
+                1.0,
+                0.16,
+                0.52,
+            ),
+            0.92,
+            0.85,
+            0.0,
+            0.22,
+        );
+
+    let highlight =
+        Material::new(
+            Vec3::new(1.0, 0.48, 0.76),
+            0.96,
+            0.95,
+            0.0,
+            0.32,
+        );
+
+    let face =
+        Material::new(
+            Vec3::new(0.005, 0.005, 0.008),
+            0.20,
+            0.12,
+            0.0,
+            0.02,
+        );
+
+    let forward =
+        (camera_position - center)
+            .normalize();
+
+    let mut right =
+        Vec3::new(0.0, 1.0, 0.0)
+            .cross(&forward);
+
+    if right.length() < 0.001 {
+        right =
+            Vec3::new(1.0, 0.0, 0.0);
+    }
+
+    right =
+        right.normalize();
+
+    let up =
+        forward.cross(&right)
+            .normalize();
+
+    objects.push(
+        Object::Sphere(
+            Sphere::new(
+                center,
+                0.72 * scale,
+                pink,
+            ),
+        ),
+    );
+
+    objects.push(
+        Object::Sphere(
+            Sphere::new(
+                center
+                    - right * (0.23 * scale)
+                    + up * (0.18 * scale)
+                    + forward * (0.63 * scale),
+                0.105 * scale,
+                face,
+            ),
+        ),
+    );
+
+    objects.push(
+        Object::Sphere(
+            Sphere::new(
+                center
+                    + right * (0.23 * scale)
+                    + up * (0.18 * scale)
+                    + forward * (0.63 * scale),
+                0.105 * scale,
+                face,
+            ),
+        ),
+    );
+
+    objects.push(
+        Object::Ellipsoid(
+            Ellipsoid::new(
+                center
+                    - up * (0.18 * scale)
+                    + forward * (0.66 * scale),
+                Vec3::new(
+                    0.20 * scale,
+                    0.16 * scale,
+                    0.08 * scale,
+                ),
+                face,
+            ),
+        ),
+    );
+
+    let spin =
+        time * 0.16;
+
+    for index in 0..5 {
+        let angle =
+            std::f32::consts::PI / 2.0
+                + index as f32
+                    * std::f32::consts::PI
+                    * 2.0
+                    / 5.0
+                + spin;
+
+        let direction =
+            right * angle.cos()
+                + up * angle.sin();
+
+        objects.push(
+            Object::Cone(
+                Cone::new_oriented(
+                    center
+                        + direction
+                            * (0.92 * scale),
+                    direction,
+                    0.52 * scale,
+                    1.45 * scale,
+                    if index % 2 == 0 {
+                        highlight
+                    } else {
+                        pink
+                    },
+                ),
+            ),
+        );
+    }
+
 }
 
 fn spawn_sparkle(
