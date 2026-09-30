@@ -196,6 +196,8 @@ impl Camera {
 
         self.target_goal =
             self.target;
+
+        self.update_position();
     }
 
 }
