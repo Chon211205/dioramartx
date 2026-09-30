@@ -13,8 +13,6 @@ mod webcam;
 mod tide_dash_game;
 #[path = "minigame/star_squadron.rs"]
 mod star_squadron_game;
-#[path = "minigame/rainbow_kart.rs"]
-mod rainbow_kart_game;
 
 use raylib::audio::RaylibAudio;
 use raylib::prelude::*;
@@ -178,11 +176,6 @@ fn main() {
         star_squadron_game::EmbeddedGame::new();
 
     let mut galaga_game_active = false;
-
-    let mut rainbow_kart_game =
-        rainbow_kart_game::EmbeddedGame::new();
-
-    let mut rainbow_kart_game_active = false;
 
     let galaxies_planets: Vec<Vec<PlanetDefinition>> =
         vec![
@@ -515,45 +508,6 @@ fn main() {
 
             d.draw_text(
                 "BACKSPACE - Volver al planeta",
-                24,
-                current_screen_height - 42,
-                22,
-                Color::WHITE,
-            );
-
-            continue;
-        }
-
-        if rainbow_kart_game_active {
-            race_music.update_stream();
-
-            if !race_music.is_stream_playing() {
-                race_music.play_stream();
-            }
-
-            if rl.is_key_pressed(
-                KeyboardKey::KEY_BACKSPACE,
-            ) {
-                race_music.stop_stream();
-                rainbow_kart_game_active = false;
-            } else {
-                rainbow_kart_game.update(
-                    &mut rl,
-                    dt,
-                );
-            }
-
-            let mut d =
-                rl.begin_drawing(
-                    &thread,
-                );
-
-            d.clear_background(Color::BLACK);
-
-            rainbow_kart_game.draw(&mut d);
-
-            d.draw_text(
-                "BACKSPACE - Volver al circuito",
                 24,
                 current_screen_height - 42,
                 22,
@@ -1118,11 +1072,6 @@ fn main() {
                             && selected_planet
                                 == Some(6);
 
-                    let rainbow_kart_selected =
-                        current_galaxy == 2
-                            && selected_planet
-                                == Some(5);
-
                     if water_circuit_selected
                         && rl.is_key_pressed(
                             KeyboardKey::KEY_P,
@@ -1155,17 +1104,6 @@ fn main() {
 
                         galaga_music
                             .play_stream();
-                    }
-
-                    if rainbow_kart_selected
-                        && rl.is_key_pressed(
-                            KeyboardKey::KEY_P,
-                        )
-                    {
-                        rainbow_kart_game.start();
-                        rainbow_kart_game_active = true;
-                        level_music.stop_stream();
-                        race_music.play_stream();
                     }
 
                     if rl.is_key_pressed(
@@ -1961,14 +1899,12 @@ fn main() {
                         Color::LIGHTGRAY,
                     );
 
-                    if (current_galaxy
+                    if current_galaxy
                         == 1
                         && (selected_planet
                             == Some(1)
                             || selected_planet
-                                == Some(6)))
-                        || (current_galaxy == 2
-                            && selected_planet == Some(5))
+                                == Some(6))
                     {
                         d.draw_rectangle_rounded(
                             Rectangle::new(
@@ -2004,10 +1940,7 @@ fn main() {
                         );
 
                         d.draw_text(
-                            if current_galaxy == 2
-                            {
-                                "P - JUGAR RAINBOW KART"
-                            } else if selected_planet
+                            if selected_planet
                                 == Some(6)
                             {
                                 "P - JUGAR GALAGA"
