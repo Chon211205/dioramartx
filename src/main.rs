@@ -1057,7 +1057,7 @@ fn main() {
                     camera.pan(
                         move_forward,
                         move_right,
-                        4.0 * dt,
+                        7.0 * dt,
                     );
                 }
 
@@ -1821,7 +1821,7 @@ fn main() {
                     );
 
                     d.draw_text(
-                        "WASD - Mover mapa",
+                        "WASD - Desplazarse por el mapa",
                         30,
                         130,
                         20,
