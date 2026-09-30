@@ -657,20 +657,23 @@ fn main() {
                                 RENDER_HEIGHT as f32,
                             );
 
-                            if current_galaxy == 2
-                                && !tower_house_unlocked
-                                && hungry_unlock_timer < 0.0
-                                && sparkle_score > 0
-                                && hungry_shot_ready
-                                && hungry_star_fed + (hungry_feed_projectiles.len() as u32)
-                                    < HUNGRY_STAR_COST
-                            {
-                                let hungry_screen = world_to_screen(
-                                    hungry_star_world_position(current_time),
-                                    &camera,
-                                    &viewport,
-                                );
-                                let feeds_star = hungry_screen
+                            if sparkle_score > 0 && hungry_shot_ready {
+                                let can_feed_hungry_star = current_galaxy == 2
+                                    && !tower_house_unlocked
+                                    && hungry_unlock_timer < 0.0
+                                    && hungry_star_fed
+                                        + (hungry_feed_projectiles
+                                            .iter()
+                                            .filter(|projectile| projectile.feeds_star)
+                                            .count()
+                                            as u32)
+                                        < HUNGRY_STAR_COST;
+                                let feeds_star = can_feed_hungry_star
+                                    && world_to_screen(
+                                        hungry_star_world_position(current_time),
+                                        &camera,
+                                        &viewport,
+                                    )
                                     .map(|p| {
                                         (p.x - mouse_position.x).powi(2)
                                             + (p.y - mouse_position.y).powi(2)
