@@ -5,6 +5,7 @@ use crate::worlds::brothers_planet::create_brothers_planet_world;
 use crate::worlds::castle_planet::create_castle_planet;
 use crate::worlds::kirby_planet::create_kirby_planet_world;
 use crate::worlds::mirror_planet::{create_mirror_planet_preview, create_mirror_planet_world};
+use crate::worlds::tower_house_planet::create_tower_house_world;
 
 pub fn create_galaxy() -> Vec<PlanetDefinition> {
     vec![
@@ -74,6 +75,14 @@ pub fn create_galaxy() -> Vec<PlanetDefinition> {
             0.90,
             3.40,
             Vec3::new(0.0, -4.80, 0.0),
+        ),
+        PlanetDefinition::new(
+            "Tower House",
+            create_tower_house_world,
+            Vec3::new(20.0, 2.0, 4.5),
+            0.52,
+            3.8,
+            Vec3::new(0.0, -3.7, 0.0),
         ),
     ]
 }
