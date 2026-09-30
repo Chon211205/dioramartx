@@ -93,8 +93,9 @@ enum SelectorTransition {
 
 fn main() {
     let (mut rl, thread) = raylib::init()
-        .size(800, 600)
+        .size(1280, 720)
         .title("Galaxy Diorama")
+        .resizable()
         .build();
 
     let audio = RaylibAudio::init_audio_device().expect("No se pudo iniciar el audio");
@@ -145,14 +146,16 @@ fn main() {
     world_3_music.set_volume(1.0);
 
     let monitor = raylib::core::window::get_current_monitor();
-
-    let screen_width = raylib::core::window::get_monitor_width(monitor);
-
-    let screen_height = raylib::core::window::get_monitor_height(monitor);
-
-    rl.set_window_size(screen_width, screen_height);
-
-    rl.toggle_fullscreen();
+    let monitor_width = raylib::core::window::get_monitor_width(monitor);
+    let monitor_height = raylib::core::window::get_monitor_height(monitor);
+    let mut windowed_width = 1280.min(monitor_width - 80).max(800);
+    let mut windowed_height = 720.min(monitor_height - 80).max(600);
+    let mut windowed_position = Vector2::new(
+        ((monitor_width - windowed_width) / 2) as f32,
+        ((monitor_height - windowed_height) / 2) as f32,
+    );
+    rl.set_window_size(windowed_width, windowed_height);
+    rl.set_window_position(windowed_position.x as i32, windowed_position.y as i32);
     rl.set_target_fps(60);
     rl.hide_cursor();
 
@@ -253,6 +256,24 @@ fn main() {
     world_1_music.play_stream();
 
     while !rl.window_should_close() {
+        if rl.is_key_pressed(KeyboardKey::KEY_F11) {
+            if rl.is_window_fullscreen() {
+                rl.toggle_fullscreen();
+                rl.set_window_size(windowed_width, windowed_height);
+                rl.set_window_position(windowed_position.x as i32, windowed_position.y as i32);
+            } else {
+                windowed_width = rl.get_screen_width();
+                windowed_height = rl.get_screen_height();
+                windowed_position = rl.get_window_position();
+
+                let monitor = raylib::core::window::get_current_monitor();
+                let fullscreen_width = raylib::core::window::get_monitor_width(monitor);
+                let fullscreen_height = raylib::core::window::get_monitor_height(monitor);
+                rl.set_window_size(fullscreen_width, fullscreen_height);
+                rl.toggle_fullscreen();
+            }
+        }
+
         let current_screen_width = rl.get_screen_width();
 
         let current_screen_height = rl.get_screen_height();
@@ -1448,6 +1469,13 @@ fn main() {
         }
 
         d.draw_fps(current_screen_width - 110, 20);
+        d.draw_text(
+            "F11 - Ventana / Pantalla completa",
+            current_screen_width - 335,
+            48,
+            18,
+            Color::LIGHTGRAY,
+        );
 
         draw_star_cursor(&mut d, mouse_position);
     }
